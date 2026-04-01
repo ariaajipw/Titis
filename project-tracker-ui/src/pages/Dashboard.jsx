@@ -4,6 +4,7 @@ import { KanbanBoard } from '../components/dashboard/KanbanBoard';
 import { computeStats } from '../utils/taskHelpers';
 
 export const Dashboard = ({ tasks, loading }) => {
+  console.log("Data Task di Dashboard:", tasks);
   const stats = computeStats(tasks);
 
   return (
