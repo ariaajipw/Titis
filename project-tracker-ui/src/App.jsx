@@ -11,17 +11,18 @@ import { useTasks }  from './hooks/useTasks';
 
 function App() {
   const [activeMenu, setActiveMenu] = useState('dashboard');
-  const { tasks, loading, refetch } = useTasks();
   
+  // ✅ Kita ambil addTask dari hook (ini yang akan dikirim ke Dashboard)
+  const { tasks, loading, refetch, addTask } = useTasks(); 
 
   /**
    * Render halaman berdasarkan menu aktif.
-   * Nanti tinggal tambah case baru seiring fitur bertambah.
    */
   const renderPage = () => {
     switch (activeMenu) {
       case 'dashboard':
-        return <Dashboard tasks={tasks} loading={loading} />;
+        // ✅ Kirim addTask sebagai props ke Dashboard
+        return <Dashboard tasks={tasks} loading={loading} addTask={addTask} />;
       default:
         return (
           <div className="flex items-center justify-center h-full">
@@ -52,10 +53,12 @@ function App() {
       {/* ── Bottom Nav — Mobile only ── */}
       <MobileNav activeMenu={activeMenu} onMenuClick={setActiveMenu} />
 
-      {/* ── Toast Notifications ── */}
+      {/* ── Toast Notifications — Satu untuk semua halaman ── */}
       <Toaster
         position="top-right"
         theme="dark"
+        richColors
+        closeButton
         toastOptions={{
           style: {
             background: '#1c1c1e',
