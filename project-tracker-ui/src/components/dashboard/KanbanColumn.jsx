@@ -12,6 +12,7 @@ export const KanbanColumn = ({ column, tasks, loading }) => {
         flex items-center justify-between
         px-4 py-3 rounded-xl mb-3
         border ${column.borderColor} ${column.headerBg}
+        transition-colors duration-200
       `}>
         <div className="flex items-center gap-2.5">
           <span className={`w-2 h-2 rounded-full ${column.dotColor}`} />
@@ -33,9 +34,9 @@ export const KanbanColumn = ({ column, tasks, loading }) => {
           : tasks.length > 0
             ? tasks.map((task) => <TaskCard key={task.id} task={task} />)
             : (
-              <div className="flex flex-col items-center justify-center py-10 px-4 text-center rounded-xl border-2 border-dashed border-zinc-700/50">
-                <p className="text-zinc-600 text-sm">Tidak ada task</p>
-                <p className="text-zinc-700 text-xs mt-1">di kolom ini</p>
+              <div className="flex flex-col items-center justify-center py-10 px-4 text-center rounded-xl border-2 border-dashed border-slate-200 dark:border-zinc-700/50">
+                <p className="text-slate-400 dark:text-zinc-600 text-sm">No tasks here</p>
+                <p className="text-slate-300 dark:text-zinc-700 text-xs mt-1">in this column</p>
               </div>
             )
         }

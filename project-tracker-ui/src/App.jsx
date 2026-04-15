@@ -2,49 +2,52 @@
 import { useState } from 'react';
 import { Toaster } from 'sonner';
 
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { Sidebar }   from './components/layout/Sidebar';
 import { MobileNav } from './components/layout/MobileNav';
 import { Header }    from './components/layout/Header';
 import { Dashboard } from './pages/Dashboard';
+import { Tasks }     from './pages/Tasks';
+import { Team }      from './pages/Team';
+import { Reports }   from './pages/Reports';
+import { Settings }  from './pages/Settings';
 
 import { useTasks }  from './hooks/useTasks';
 
-function App() {
+function AppContent() {
   const [activeMenu, setActiveMenu] = useState('dashboard');
-  
-  // ✅ Kita ambil addTask dari hook (ini yang akan dikirim ke Dashboard)
-  const { tasks, loading, refetch, addTask } = useTasks(); 
+  const { tasks, loading, refetch, addTask } = useTasks();
+  const { theme } = useTheme();
 
-  /**
-   * Render halaman berdasarkan menu aktif.
-   */
   const renderPage = () => {
     switch (activeMenu) {
       case 'dashboard':
-        // ✅ Kirim addTask sebagai props ke Dashboard
         return <Dashboard tasks={tasks} loading={loading} addTask={addTask} />;
+      case 'tasks':
+        return <Tasks tasks={tasks} loading={loading} addTask={addTask} />;
+      case 'team':
+        return <Team />;
+      case 'reports':
+        return <Reports tasks={tasks} loading={loading} />;
+      case 'settings':
+        return <Settings />;
       default:
         return (
           <div className="flex items-center justify-center h-full">
-            <p className="text-zinc-500">Halaman "{activeMenu}" coming soon.</p>
+            <p className="text-slate-400 dark:text-zinc-500">Page not found.</p>
           </div>
         );
     }
   };
 
   return (
-    <div className="h-screen flex bg-zinc-950 overflow-hidden">
-
+    <div className="h-screen flex bg-slate-50 dark:bg-zinc-950 overflow-hidden transition-colors duration-200">
       {/* ── Sidebar — Desktop only ── */}
       <Sidebar activeMenu={activeMenu} onMenuClick={setActiveMenu} />
 
       {/* ── Main Content ── */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-
-        {/* Header */}
         <Header onRefresh={refetch} loading={loading} />
-
-        {/* Page Content */}
         <main className="flex-1 overflow-auto p-4 lg:p-8 pb-20 lg:pb-8">
           {renderPage()}
         </main>
@@ -53,21 +56,22 @@ function App() {
       {/* ── Bottom Nav — Mobile only ── */}
       <MobileNav activeMenu={activeMenu} onMenuClick={setActiveMenu} />
 
-      {/* ── Toast Notifications — Satu untuk semua halaman ── */}
+      {/* ── Toast Notifications ── */}
       <Toaster
         position="top-right"
-        theme="dark"
+        theme={theme}
         richColors
         closeButton
-        toastOptions={{
-          style: {
-            background: '#1c1c1e',
-            border: '1px solid #3f3f46',
-            color: '#e4e4e7',
-          },
-        }}
       />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }
 

@@ -1,11 +1,11 @@
 // src/components/dashboard/TaskSkeleton.jsx
 
 const SkeletonLine = ({ className }) => (
-  <div className={`bg-zinc-700/50 rounded animate-pulse ${className}`} />
+  <div className={`bg-slate-200 dark:bg-zinc-700/50 rounded animate-pulse ${className}`} />
 );
 
 export const TaskSkeleton = () => (
-  <div className="bg-zinc-800/70 border border-zinc-700/50 rounded-xl p-4 space-y-3">
+  <div className="bg-white dark:bg-zinc-800/70 border border-slate-200 dark:border-zinc-700/50 rounded-xl p-4 space-y-3">
     <SkeletonLine className="h-5 w-20 rounded-full" />
     <SkeletonLine className="h-4 w-full" />
     <SkeletonLine className="h-4 w-3/4" />
