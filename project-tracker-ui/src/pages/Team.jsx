@@ -29,7 +29,7 @@ const RoleBadge = ({ role }) => {
 };
 
 export const Team = () => (
-  <div className="max-w-3xl">
+  <div className="max-w-full">
     {/* ── Header ── */}
     <div className="mb-6 flex flex-col sm:flex-row sm:items-end gap-4 justify-between">
       <div>

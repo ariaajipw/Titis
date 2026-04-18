@@ -12,7 +12,7 @@ export const Dashboard = ({ tasks, loading, addTask }) => {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="mb-6 flex justify-between items-end">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-end gap-4 justify-between">
         <div>
           <h1 className="text-slate-900 dark:text-zinc-100 text-2xl font-bold">Dashboard</h1>
           <p className="text-slate-400 dark:text-zinc-500 text-sm mt-1">
@@ -30,7 +30,7 @@ export const Dashboard = ({ tasks, loading, addTask }) => {
 
       <StatsBar stats={stats} loading={loading} />
 
-      <div className="flex-1 min-h-0 mt-6">
+      <div className="flex-1 min-h-0 mt-6 justify-center">
         <KanbanBoard tasks={tasks} loading={loading} />
       </div>
 

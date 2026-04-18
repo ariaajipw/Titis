@@ -22,11 +22,11 @@ export const KanbanBoard = ({ tasks, loading }) => (
     </div>
 
     {/* ── MOBILE (< lg) — Horizontal Scroll dengan Snap ── */}
-    <div className="lg:hidden flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scroll-smooth -mx-4 px-4">
+    <div className="lg:hidden flex-col-1 gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scroll-smooth justify-center">
       {KANBAN_COLUMNS.map((col) => (
         <div
           key={col.key}
-          className="flex-none w-[85vw] snap-start"
+          className="flex-none w-full snap-start gap-4"
         >
           <KanbanColumn
             column={col}

@@ -14,8 +14,8 @@ const SectionHeader = ({ icon: Icon, title, description }) => (
       <Icon className="w-4 h-4 text-violet-600 dark:text-violet-400" />
     </div>
     <div>
-      <h2 className="text-sm font-semibold text-slate-800 dark:text-zinc-100">{title}</h2>
-      {description && <p className="text-xs text-slate-400 dark:text-zinc-500 mt-0.5">{description}</p>}
+      <h2 className="text-m font-semibold text-slate-800 dark:text-zinc-100">{title}</h2>
+      {description && <p className="text-s text-slate-400 dark:text-zinc-500 mt-0.5">{description}</p>}
     </div>
   </div>
 );
@@ -46,7 +46,7 @@ const Toggle = ({ label, description, defaultChecked }) => (
     </div>
     <div className="relative flex-shrink-0">
       <input type="checkbox" className="sr-only peer" defaultChecked={defaultChecked} />
-      <div className="w-10 h-5.5 bg-slate-200 dark:bg-zinc-700 rounded-full peer peer-checked:bg-violet-500 transition-colors" />
+      <div className="w-10 h-5.5 bg-slate-200 dark:bg-zinc-700 rounded-full peer peer-checked:bg-violet-500 dark:peer-checked:bg-violet-700 transition-colors" />
       <div className="absolute top-0.5 left-0.5 w-4.5 h-4.5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-[18px]" />
     </div>
   </label>
@@ -56,7 +56,7 @@ export const Settings = () => {
   const { theme, setTheme } = useTheme();
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-full">
       {/* ── Header ── */}
       <div className="mb-8">
         <h1 className="text-slate-900 dark:text-zinc-100 text-2xl font-bold">Settings</h1>

@@ -19,7 +19,7 @@ export const useTasks = () => {
       const data = response.data?.data ?? response.data ?? [];
       setTasks(Array.isArray(data) ? data : []);
     } catch (err) {
-      const message = err?.response?.data?.message ?? err.message ?? 'Gagal memuat data tasks.';
+      const message = err?.response?.data?.message ?? err.message ?? 'Failed to fetch tasks.';
       setError(message);
       // Tetap pakai toast di sini agar kalau API mati langsung ketahuan
       toast.error('Error Connection', { description: message });
@@ -44,7 +44,7 @@ export const useTasks = () => {
       const message = 
         err?.response?.data?.message ?? 
         err?.response?.data?.errors?.title?.[0] ?? 
-        "Gagal menambahkan task.";
+        "Failed to add task.";
         
       return { success: false, error: message };
     }
