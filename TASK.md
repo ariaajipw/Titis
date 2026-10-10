@@ -122,7 +122,7 @@ Dokumen berikut sudah dibuat sebelum `TASK.md` ada, tetapi isinya **belum diveri
 ---
 
 ## [TITIS-002] Tinjau dan setujui PRD.md
-- Status: Review | Phase: 0 | Depends on: None
+- Status: Done | Phase: 0 | Depends on: None
 - Scope: periksa `PRD.md` terhadap guide §1 dan §5 Langkah 1; beri label `OPEN` pada requirement yang belum disepakati; setujui scope MVP.
 - Out of scope: keputusan teknis implementasi.
 
@@ -143,6 +143,7 @@ Dokumen berikut sudah dibuat sebelum `TASK.md` ada, tetapi isinya **belum diveri
 ### Evidence
 - Review read-only 2026-10-11: kriteria PRD 1–9 diperiksa terhadap guide; bagian-bagian utama tersedia, tetapi sejumlah kebutuhan masih bersyarat pada OPEN. OPEN-001–021 semuanya berstatus `Open`; persetujuan Owner atas scope belum tercatat. Keputusan tersisa mencakup model referensi (OPEN-016), izin role (OPEN-001–005/010), checkout/DP/laporan (OPEN-010–012), stok per SKU (belum didefinisikan), privasi/retensi pengunjung (OPEN-013/020), SEO (OPEN-015/DEC-011), dan bootstrap Owner (OPEN-018). Cross-check menemukan rujukan PRD/README ke `docs/DATABASE.md`, `docs/SECURITY.md`, dan `docs/TESTING.md` tidak sesuai lokasi file yang ditemukan (root); README menyebut Cloudflare direncanakan sementara OPEN-014/DEC-012 masih `Open`; PRD memetakan OPEN-001 ke TITIS-109 sedangkan TITIS-108 mencantumkan OPEN-001/006 sebagai prasyarat. Perbaikan referensi lintas dokumen telah diterapkan pada 10 file (AGENTS, ARCHITECTURE, DESIGN, PRD, README, DATABASE, TESTING, SECURITY, TASK, dan guide) untuk nama file guide kanonis dan prefix `docs/` pada file Markdown di root. 7 referensi aktif di AGENTS ditahan untuk persetujuan Owner dan sudah dikonfirmasi konsisten. Tidak ada keputusan produk, status, atau acceptance criteria PRD yang diubah. TITIS-002 tetap `Review` sampai Owner menyetujui scope.
 - 2026-10-11: OPEN-001..021 telah diputuskan oleh Owner di `PRD.md` §8 (semua berstatus `Decided` dengan keputusan & tanggal tercatat). TITIS-002 tetap `Review` menunggu persetujuan scope MVP eksplisit.
+- 2026-10-11: Scope MVP disetujui eksplisit oleh Owner sesuai `PRD.md` §3. Semua 9 acceptance criteria PRD terpenuhi; verifikasi pemilik Tercatat.
 
 ---
 

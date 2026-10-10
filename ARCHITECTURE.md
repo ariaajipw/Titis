@@ -32,7 +32,7 @@ Turunan dari `TITIS_MASTER_BUILD_GUIDE_FINAL.md` §2.3, dalam bentuk yang dapat 
 
 | ID | Topik | Status | Terkait | Harus `Accepted` sebelum |
 |---|---|---|---|---|
-| DEC-001 | Baseline frontend (Vite + React 18 + TypeScript, SPA) | Proposed | — | TITIS-101 |
+| DEC-001 | Baseline frontend (Vite + React 19.x + TypeScript, SPA) | Accepted | — | TITIS-101 |
 | DEC-002 | Library routing | Open | DEC-011, DEC-016 | TITIS-106 |
 | DEC-003 | Pendekatan validasi form | Open | DEC-019 | TITIS-107 |
 | DEC-004 | Styling: Tailwind CSS v4 + design tokens | Proposed | `DESIGN.md` | TITIS-102 |
@@ -44,13 +44,13 @@ Turunan dari `TITIS_MASTER_BUILD_GUIDE_FINAL.md` §2.3, dalam bentuk yang dapat 
 | DEC-010 | Tipe database ter-generate dan representasi status | Proposed | — | TITIS-105 |
 | DEC-011 | Strategi SEO untuk halaman publik | Accepted | OPEN-015 | TITIS-004 (dibahas di TITIS-006) |
 | DEC-012 | Hosting, environment, dan deployment | Open | OPEN-014 | TITIS-111 (dibahas di TITIS-005) |
-| DEC-013 | Tooling pengujian | Proposed (E2E & a11y: Open) | `TESTING.md` | TITIS-101 (E2E: TITIS-404; a11y otomatis: TITIS-405) |
+| DEC-013 | Tooling pengujian | Accepted (E2E & a11y otomatis: Open) | `TESTING.md` | TITIS-101 (E2E: TITIS-404; a11y otomatis: TITIS-405) |
 | DEC-014 | Model konten CMS dan rendering aman | Proposed | OPEN-006 | TITIS-109 |
-| DEC-015 | Package manager, runtime Node, dan CI | Proposed | — | TITIS-101 |
+| DEC-015 | Package manager, runtime Node, dan CI | Accepted | — | TITIS-101 |
 | DEC-016 | Autentikasi, sesi, sumber role, dan penamaan kunci | Proposed | OPEN-018 | TITIS-103 |
 | DEC-017 | Perlindungan spam/abuse form publik | Open | THR-09, OPEN-007 | TITIS-203 |
-| DEC-018 | Manajemen state klien | Proposed | DEC-005 | TITIS-101 |
-| DEC-019 | Penanganan error dan observability | Proposed | — | TITIS-106 |
+| DEC-018 | Manajemen state klien | Accepted | DEC-005 | TITIS-101 |
+| DEC-019 | Penanganan error dan observability | Accepted | — | TITIS-106 |
 
 Setiap keputusan di bawah memakai format log keputusan. Kolom **Tanggal** diisi saat status berubah menjadi `Accepted`.
 
@@ -59,14 +59,14 @@ Setiap keputusan di bawah memakai format log keputusan. Kolom **Tanggal** diisi 
 ## 4. Keputusan stack frontend dan styling
 
 ### DEC-001 — Baseline frontend
-- **Status:** Proposed
+- **Status:** Accepted
 - **Konteks:** Rencana proyek mengusulkan Vite + React 18 + TypeScript. Aplikasi memiliki area publik dan admin dengan kebutuhan interaksi tinggi di admin.
-- **Pilihan yang dipertimbangkan:** (A) SPA Vite + React 18 + TypeScript; (B) framework dengan SSR/SSG.
-- **Keputusan:** Usulan (A), sesuai baseline rencana. React 18 dipertahankan sampai kompatibilitas pustaka diperiksa; jangan upgrade mayor tanpa DEC baru.
+- **Pilihan yang dipertimbangkan:** (A) SPA Vite + React 19.x + TypeScript; (B) framework dengan SSR/SSG.
+- **Keputusan:** Opsi (A). Vite + React 19.x + TypeScript, SPA. Versi persis dipin saat scaffold TITIS-101.
 - **Alasan:** Sederhana, cepat, cocok untuk admin; Supabase menangani backend.
 - **Dampak/trade-off:** SEO halaman publik memerlukan keputusan terpisah (DEC-011). Struktur routing bergantung DEC-002.
 - **Dokumen/task terdampak:** TITIS-101, README.
-- **Tanggal:** —
+- **Tanggal:** 2026-10-11
 
 ### DEC-004 — Styling
 - **Status:** Proposed
@@ -79,14 +79,14 @@ Setiap keputusan di bawah memakai format log keputusan. Kolom **Tanggal** diisi 
 - **Tanggal:** —
 
 ### DEC-018 — Manajemen state klien
-- **Status:** Proposed
+- **Status:** Accepted
 - **Konteks:** Zustand dan sejenisnya berasal dari desain lama dan tidak otomatis bagian dari TITIS.
 - **Pilihan:** (A) Tanpa library state global: server state di TanStack Query, state UI lokal di komponen, state lintas-komponen minimal via React context (sesi/tema), filter/pagination di URL; (B) menambah store global.
-- **Keputusan:** Usulan (A). Menambah store global memerlukan DEC baru dengan alasan konkret.
+- **Keputusan:** Opsi (A). TanStack Query untuk server state; React Context terbatas untuk state lintas-komponen (sesi/tema); URL untuk state navigasi (filter/pagination); tanpa global store tambahan.
 - **Alasan:** Mengurangi dependency dan sumber kebenaran ganda.
 - **Dampak:** Filter daftar (booking, transaksi, laporan) disimpan di URL agar dapat dibagikan dan dipulihkan.
 - **Task terdampak:** TITIS-101.
-- **Tanggal:** —
+- **Tanggal:** 2026-10-11
 
 ## 5. Server state dan data fetching
 
@@ -287,27 +287,28 @@ Aturan ketergantungan (arah impor):
 - **Tanggal:** —
 
 ### DEC-015 — Package manager, runtime, dan CI
-- **Status:** Proposed
-- **Keputusan:** Usulan: `npm` dengan `package-lock.json` yang di-commit; Node.js 24 (Active LTS menurut jadwal rilis resmi Node.js) via `.nvmrc`; `engines` di `package.json` konsisten dengan `.nvmrc`; CI di GitHub Actions. Jadwal Node.js berubah per Oktober 2026 (Node 26 menuju LTS); tinjau ulang runtime saat TITIS-101 dan sebelum rilis (TITIS-410).
+- **Status:** Accepted
+- **Keputusan:** npm dengan `package-lock.json` yang di-commit; Node.js 24 LTS via `.nvmrc`; `engines` di `package.json` konsisten dengan `.nvmrc`; GitHub Actions ditambahkan setelah skrip proyek tersedia. Tinjau ulang runtime saat TITIS-101 dan sebelum rilis (TITIS-410).
 - **Aturan CI:** workflow dibuat **setelah** script nyata ada di `package.json` dan dapat dijalankan lokal; langkah CI = script yang sama (type-check, lint, test, build, test database bila tersedia). Tidak ada step CI untuk script yang tidak ada. CI minimal dibuat pada Phase 1 (TITIS-113) dan diperluas di Phase 4 (TITIS-403), agar pemeriksaan selisih tipe (DEC-010) dan test database berjalan sejak fondasi.
 - **Dampak:** Versi paket dikunci saat scaffold lewat lockfile; reproduksi dari klon bersih diuji (TEST-REL-01).
 - **Task terdampak:** TITIS-101, TITIS-403, TITIS-410.
-- **Tanggal:** —
+- **Tanggal:** 2026-10-11
 
 ### DEC-013 — Tooling pengujian
-- **Status:** Proposed (komponen E2E dan a11y otomatis: Open)
-- **Keputusan:** Usulan: Vitest + React Testing Library untuk unit/komponen; `supabase test db` (pgTAP) untuk constraint, RLS, dan RPC; skrip integrasi dua-koneksi untuk uji konkurensi. **Open:** alat E2E (kandidat: Playwright) dan alat cek aksesibilitas otomatis; putuskan sebelum TITIS-404.
-- **Alasan:** Menutup lapisan test yang dipetakan di `TESTING.md`.
+- **Status:** Accepted (E2E & a11y otomatis: Open; pendekatan tes konkurensi: Open)
+- **Keputusan:** Vitest + React Testing Library untuk unit/komponen; `supabase test db` (pgTAP) untuk constraint, RLS, dan RPC. **Open:** alat E2E (kandidat: Playwright), alat cek aksesibilitas otomatis, dan pendekatan/tooling tes konkurensi dua koneksi; putuskan sebelum TITIS-404.
+- **Prasyarat operasional:** Menjalankan `supabase test db` memerlukan Supabase CLI dan container runtime kompatibel Docker untuk stack Supabase lokal. Persiapan ini dilakukan sebagai bagian setup TITIS-101/TITIS-103, bukan dependency paket proyek.
+- **Alasan:** Menutup lapisan test yang dipetakan di `TESTING.md`. Tes konkurensi dibutuhkan; metode/tooling-nya belum diputuskan.
 - **Task terdampak:** TITIS-101, TITIS-404.
-- **Tanggal:** —
+- **Tanggal:** 2026-10-11
 
 ## 14. Error handling dan observability
 
 ### DEC-019 — Penanganan error dan observability
-- **Status:** Proposed
-- **Keputusan:** Usulan: *error boundary* per area (publik/admin); satu tipe error ternormalisasi (kode, pesan pengguna, detail tersanitasi) yang memetakan error database/RPC ke pesan yang dapat ditindaklanjuti (mis. bentrok jadwal, izin ditolak); state `loading/empty/error/forbidden` disediakan komponen standar (`DESIGN.md` §9). Log klien dan server tidak memuat token, secret, atau data pribadi (`SECURITY.md` §8.2). **Open:** apakah layanan pelacakan error produksi diperlukan; bila ya, putuskan lewat DEC baru dengan memperhatikan privasi.
+- **Status:** Accepted
+- **Keputusan:** Error boundary per area (publik/admin); satu tipe error ternormalisasi (kode, pesan pengguna, detail tersanitasi) memetakan error database/RPC ke pesan actionable; state `loading/empty/error/forbidden` di komponen standar (`DESIGN.md` §9); log klien dan server tidak memuat token, secret, atau data pribadi (`SECURITY.md` §8.2). Tanpa error tracking pihak ketiga pada MVP.
 - **Task terdampak:** TITIS-106.
-- **Tanggal:** —
+- **Tanggal:** 2026-10-11
 
 ## 15. Kebijakan dependency
 

@@ -141,7 +141,7 @@ Stack awal yang diusulkan dalam rencana proyek:
 
 | Area | Baseline | Status |
 |---|---|---|
-| Frontend | Vite + React 18 + TypeScript | Usulan baseline; kunci dalam `ARCHITECTURE.md` sebelum scaffold. |
+| Frontend | Vite + React 19.x + TypeScript (SPA) | Baseline disetujui (DEC-001); versi persis dipin saat scaffold TITIS-101. |
 | Styling | Tailwind CSS v4 | Usulan baseline; gunakan satu pola konfigurasi yang konsisten. |
 | Data fetching/server state | TanStack Query | Diusulkan; tetapkan aturan cache, invalidation, loading, dan error di arsitektur. |
 | Database | Supabase PostgreSQL | Baseline. Skema dikelola melalui SQL migrations. |
