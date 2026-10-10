@@ -42,7 +42,7 @@ Turunan dari `TITIS_MASTER_BUILD_GUIDE_FINAL.md` §2.3, dalam bentuk yang dapat 
 | DEC-008 | Checkout atomik + idempotency | Proposed | OPEN-010, OPEN-011 | TITIS-304 |
 | DEC-009 | Representasi uang dan angka | Proposed | OPEN-010, OPEN-013 | TITIS-104 |
 | DEC-010 | Tipe database ter-generate dan representasi status | Proposed | — | TITIS-105 |
-| DEC-011 | Strategi SEO untuk halaman publik | Open | OPEN-015 | TITIS-004 (dibahas di TITIS-006) |
+| DEC-011 | Strategi SEO untuk halaman publik | Accepted | OPEN-015 | TITIS-004 (dibahas di TITIS-006) |
 | DEC-012 | Hosting, environment, dan deployment | Open | OPEN-014 | TITIS-111 (dibahas di TITIS-005) |
 | DEC-013 | Tooling pengujian | Proposed (E2E & a11y: Open) | `TESTING.md` | TITIS-101 (E2E: TITIS-404; a11y otomatis: TITIS-405) |
 | DEC-014 | Model konten CMS dan rendering aman | Proposed | OPEN-006 | TITIS-109 |
@@ -260,8 +260,8 @@ Aturan ketergantungan (arah impor):
 - **Tanggal:** —
 
 ### DEC-011 — Strategi SEO halaman publik
-- **Status:** Open
-- **Konteks:** SPA Vite merender di klien; konten dinamis penting mungkin tidak terindeks seperti yang diharapkan. Kebutuhan indeksasi belum diputuskan (OPEN-015).
+- **Status:** Accepted
+- **Konteks:** SPA Vite merender di klien; konten dinamis penting mungkin tidak terindeks seperti yang diharapkan. Kebutuhan indeksasi diputuskan via OPEN-015.
 - **Pilihan:**
 
   | Opsi | Ringkas | Kelebihan | Risiko/trade-off |
@@ -271,19 +271,19 @@ Aturan ketergantungan (arah impor):
   | C | Framework SSR/SSG untuk situs publik | SEO paling kuat | Mengubah baseline; kompleksitas lebih besar |
   | D | Situs publik statis terpisah dari admin | Pemisahan jelas | Dua artefak build dan deploy |
 
-- **Keputusan:** Belum ada. Wajib dikunci (minimal arah) **sebelum DEC-002** (diputuskan di TITIS-004), karena memengaruhi routing. Keputusan SEO dicatat di TITIS-006. Perlu informasi dari OPEN-015: apakah indeksasi mesin pencari penting untuk bisnis pilot.
+- **Keputusan:** Opsi B — SPA dengan prerender rute publik saat build. Perubahan konten CMS memerlukan build ulang; otomatisasi menyusul. Dicatat di TITIS-006.
 - **Dampak:** Memengaruhi routing, build, hosting (DEC-012), dan acceptance AC-PUB-01.3.
 - **Task terdampak:** TITIS-106, TITIS-110.
-- **Tanggal:** —
+- **Tanggal:** 2026-10-11
 
 ## 13. Lingkungan, hosting, dan tooling
 
 ### DEC-012 — Hosting, environment, dan deployment
 - **Status:** Open
-- **Konteks:** Provider, domain, dan prosedur belum dikunci (OPEN-014). Provider dari guide lama tidak boleh diambil otomatis.
+- **Konteks:** Provider, domain, dan prosedur diputuskan via OPEN-014. Provider dari guide lama tidak boleh diambil otomatis.
 - **Kebutuhan minimum penyedia:** hosting aset statis SPA dengan *fallback* rute klien; injeksi variabel lingkungan saat build; HTTPS dan domain kustom; deploy pratinjau (diutamakan); rollback ke build sebelumnya; kompatibel dengan opsi SEO yang dipilih.
 - **Lingkungan:** development (Supabase lokal via CLI), staging (opsional; proyek Supabase terpisah), production. Credential, URL, seed, dan konfigurasi tidak tercampur. URL redirect autentikasi dan CORS disetel per lingkungan.
-- **Keputusan:** Belum ada. Wajib `Accepted` sebelum setup deploy (TITIS-111); keputusannya dibahas di TITIS-005. Kandidat yang disebut di draf awal `TASK.md`: Cloudflare (Workers dengan static assets atau Pages); belum diputuskan.
+- **Keputusan:** Arah: Cloudflare Workers Static Assets untuk frontend Vite; Supabase backend terpisah. Domain, environment, rollback, dan persetujuan rilis diputuskan di TITIS-005.
 - **Tanggal:** —
 
 ### DEC-015 — Package manager, runtime, dan CI
