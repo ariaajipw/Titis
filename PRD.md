@@ -2,9 +2,9 @@
 
 > **Status:** Draft untuk ditinjau pemilik proyek (`TASK.md` → TITIS-002). Belum disetujui.
 > **Sumber kebenaran untuk:** tujuan produk, pengguna, scope, requirements, user stories, dan acceptance criteria.
-> **Bukan untuk:** keputusan teknis (lihat `ARCHITECTURE.md`), skema (lihat `docs/DATABASE.md`), atau hak akses teknis (lihat `docs/SECURITY.md`).
+> **Bukan untuk:** keputusan teknis (lihat `ARCHITECTURE.md`), skema (lihat `DATABASE.md`), atau hak akses teknis (lihat `SECURITY.md`).
 > **Konvensi label:**
-> - **OPEN-xxx** — keputusan produk yang belum disetujui. Agent tidak boleh memilihnya sendiri (`MASTER_BUILD_GUIDE.md` §1.5).
+> - **OPEN-xxx** — keputusan produk yang belum disetujui. Agent tidak boleh memilihnya sendiri (`TITIS_MASTER_BUILD_GUIDE_FINAL.md` §1.5).
 > - **(Usulan)** — isi yang diturunkan dari rencana proyek atau diusulkan sebagai titik awal; **belum menjadi requirement final** sampai pemilik proyek menyetujuinya.
 > - **P0 / P1 / P2** — prioritas usulan: P0 wajib untuk MVP, P1 masuk MVP bila OPEN terkait diputuskan masuk scope, P2 setelah MVP.
 > - **Status OPEN:** `Open` (belum diputuskan) · `Decided` (diputuskan pemilik; tanggal dicatat) · `Deferred` (ditunda dengan owner, alasan, dan tenggat). Hanya `Decided` yang membolehkan implementasi bergantung padanya.
@@ -59,7 +59,7 @@ Role sistem hanya **Owner** dan **Staff**. Pengunjung adalah aktor tanpa akun. R
 
 ### 2.3 Kemampuan Staff
 
-Kemampuan Staff **belum diputuskan** dan ditandai OPEN pada §8 (OPEN-001 s.d. OPEN-005, OPEN-010). Matriks izin teknis ada di `docs/SECURITY.md` §4 dan harus mengikuti keputusan ini.
+Kemampuan Staff **belum diputuskan** dan ditandai OPEN pada §8 (OPEN-001 s.d. OPEN-005, OPEN-010). Matriks izin teknis ada di `SECURITY.md` §4 dan harus mengikuti keputusan ini.
 
 ## 3. Scope MVP
 
@@ -126,7 +126,7 @@ Tidak dibangun kecuali scope diubah secara sengaja dan dampaknya disetujui:
 
 ## 5. User stories dan acceptance criteria
 
-Format ID: `US-<AREA>-nn` untuk story, `AC-<AREA>-nn.m` untuk kriteria. Setiap AC harus dapat diamati dan diuji; pemetaan ke test ada di `docs/TESTING.md` §9. AC yang bergantung pada keputusan terbuka diberi tanda **[OPEN-xxx]**: rumusnya final setelah keputusan itu diambil.
+Format ID: `US-<AREA>-nn` untuk story, `AC-<AREA>-nn.m` untuk kriteria. Setiap AC harus dapat diamati dan diuji; pemetaan ke test ada di `TESTING.md` §9. AC yang bergantung pada keputusan terbuka diberi tanda **[OPEN-xxx]**: rumusnya final setelah keputusan itu diambil.
 
 ### 5.1 Autentikasi dan akun (AUTH)
 
@@ -283,11 +283,11 @@ Format ID: `US-<AREA>-nn` untuk story, `AC-<AREA>-nn.m` untuk kriteria. Setiap A
 
 **US-RPT-01 — Sales Insight (P0).** Sebagai Owner, saya ingin melihat ringkasan penjualan. **[OPEN-012]**
 
-- AC-RPT-01.1 Setiap metrik yang tampil mempunyai definisi tertulis yang disetujui (lihat `docs/DATABASE.md` §9 untuk katalog metrik).
+- AC-RPT-01.1 Setiap metrik yang tampil mempunyai definisi tertulis yang disetujui (lihat `DATABASE.md` §9 untuk katalog metrik).
 - AC-RPT-01.2 Angka laporan dapat direkonsiliasi dengan data transaksi dan pembayaran yang mendasarinya.
 - AC-RPT-01.3 DP, pelunasan, pembatalan/void, dan refund diperlakukan sesuai keputusan dan tidak terhitung dua kali.
 
-**Daftar metrik tingkat produk (Usulan — OPEN-012).** `MASTER_BUILD_GUIDE.md` §5 Langkah 1 dan TITIS-002 meminta PRD memuat metrik yang ingin ditampilkan; rumus rinci tetap di `docs/DATABASE.md` §9. Samakan daftar ini dengan katalog di sana saat `docs/DATABASE.md` ditinjau (TITIS-007).
+**Daftar metrik tingkat produk (Usulan — OPEN-012).** `TITIS_MASTER_BUILD_GUIDE_FINAL.md` §5 Langkah 1 dan TITIS-002 meminta PRD memuat metrik yang ingin ditampilkan; rumus rinci tetap di `DATABASE.md` §9. Samakan daftar ini dengan katalog di sana saat `DATABASE.md` ditinjau (TITIS-007).
 
 | Metrik | Pertanyaan bisnis yang dijawab |
 |---|---|
@@ -312,8 +312,8 @@ Dasar pengakuan (penjualan vs penerimaan kas) dan perlakuan DP/pelunasan/void/re
 
 | ID | Persyaratan | Verifikasi |
 |---|---|---|
-| NFR-01 | **Keamanan akses:** aturan akses ditegakkan di lapisan data/server, bukan hanya UI (lihat `docs/SECURITY.md`). | Test RLS/akses |
-| NFR-02 | **Integritas data:** invariants di `docs/DATABASE.md` §8 ditegakkan. | Test database |
+| NFR-01 | **Keamanan akses:** aturan akses ditegakkan di lapisan data/server, bukan hanya UI (lihat `SECURITY.md`). | Test RLS/akses |
+| NFR-02 | **Integritas data:** invariants di `DATABASE.md` §8 ditegakkan. | Test database |
 | NFR-03 | **Aksesibilitas:** semantic HTML, keyboard/focus, label input, kontras, status error jelas (target di `DESIGN.md` §8). | Test UI/a11y |
 | NFR-04 | **Responsivitas:** layout berfungsi pada ukuran layar yang disepakati di `DESIGN.md` §7. | Test UI |
 | NFR-05 | **Kegagalan eksplisit:** loading, empty, validation error, permission denied, network error, dan retry dirancang untuk setiap alur. | Test UI |
@@ -326,16 +326,16 @@ Dasar pengakuan (penjualan vs penerimaan kas) dan perlakuan DP/pelunasan/void/re
 3. **Pembayaran (bila DP termasuk MVP):** DP dicatat → pelunasan dicatat → saldo dan laporan konsisten.
 4. **Laporan:** metrik dihitung dari data transaksi/pembayaran sesuai definisi yang disetujui.
 
-Detail status dan transisi (Usulan) ada di `docs/DATABASE.md` §6.
+Detail status dan transisi (Usulan) ada di `DATABASE.md` §6.
 
 ## 7. Kriteria keberhasilan MVP
 
 MVP dianggap berhasil bila **semua** berikut terbukti, bukan sekadar dinyatakan:
 
-1. Semua AC berprioritas P0 lulus pada test yang dipetakan di `docs/TESTING.md`.
-2. Exit criteria PHASE 1–4 di `MASTER_BUILD_GUIDE.md` §7 terpenuhi dan tercatat di `TASK.md`.
-3. Tidak ada temuan keamanan berstatus blocker (`docs/SECURITY.md` §10).
-4. Laporan direkonsiliasi dengan fixture hasil hitung manual (`docs/TESTING.md` §8).
+1. Semua AC berprioritas P0 lulus pada test yang dipetakan di `TESTING.md`.
+2. Exit criteria PHASE 1–4 di `TITIS_MASTER_BUILD_GUIDE_FINAL.md` §7 terpenuhi dan tercatat di `TASK.md`.
+3. Tidak ada temuan keamanan berstatus blocker (`SECURITY.md` §10).
+4. Laporan direkonsiliasi dengan fixture hasil hitung manual (`TESTING.md` §8).
 5. Orang lain dapat menjalankan proyek dari repository bersih memakai README (TEST-REL-01).
 6. Setidaknya satu calon pengguna pilot dapat menyelesaikan alur booking dan transaksi pada lingkungan uji. **(Usulan; calon pilot belum ditetapkan.)**
 
@@ -356,7 +356,7 @@ Semua item berikut harus diputuskan atau secara eksplisit ditunda sebelum fitur 
 | OPEN-009 | Aturan bentrok | Bentrok per resource? Batas interval (rentang setengah-terbuka `[mulai, selesai)`?), apakah `pending` ikut memblokir, perilaku saat dua keputusan hampir bersamaan | Per resource; `[mulai, selesai)`; hanya `confirmed` memblokir | Open | — | TITIS-201 |
 | OPEN-010 | POS | Item yang dijual, pajak, pembulatan, model diskon, metode pembayaran, format nomor transaksi, void/refund masuk scope atau tidak, aturan struk, akses Staff ke katalog/riwayat/void | Katalog sederhana; void sebagai P1; struk P1 | Open | — | TITIS-301 |
 | OPEN-011 | Pembayaran | Apakah DP wajib/opsional, cara pelunasan, metode, status pembayaran, kelebihan/kekurangan bayar, koreksi, kaitan booking↔transaksi | DP opsional dan P1; koreksi lewat catatan pembalik | Open | — | TITIS-301, TITIS-306 |
-| OPEN-012 | Laporan | Definisi tiap metrik, rentang waktu, dasar pengakuan (penjualan vs penerimaan kas), perlakuan DP/pelunasan/pembatalan/refund | Lihat katalog metrik `docs/DATABASE.md` §9 | Open | — | TITIS-309 |
+| OPEN-012 | Laporan | Definisi tiap metrik, rentang waktu, dasar pengakuan (penjualan vs penerimaan kas), perlakuan DP/pelunasan/pembatalan/refund | Lihat katalog metrik `DATABASE.md` §9 | Open | — | TITIS-309 |
 | OPEN-013 | Data bisnis | Mata uang, format angka/tanggal, zona waktu bisnis, retensi data, kebutuhan ekspor/backup | IDR; zona waktu bisnis tunggal (mis. Asia/Jakarta); ekspor dasar P2 | Open | — | TITIS-104 |
 | OPEN-014 | Hosting | Provider frontend, domain, lingkungan dev/staging/production, rollback, siapa menyetujui rilis | Belum ada usulan | Open | — | TITIS-005 |
 | OPEN-015 | SEO | Kebutuhan indeksasi halaman publik, metadata, sitemap, apakah SPA Vite memerlukan prerendering | Lihat opsi `ARCHITECTURE.md` DEC-011 | Open | — | TITIS-006 |
@@ -369,7 +369,7 @@ Semua item berikut harus diputuskan atau secara eksplisit ditunda sebelum fitur 
 
 Cara mencatat keputusan: ubah kolom **Status** menjadi `Decided`, isi **Keputusan & tanggal** (beserta alasan singkat), dan buat entri `DEC-xxx` di `ARCHITECTURE.md` bila keputusannya sulit dibalik. `Deferred` wajib mencantumkan owner, alasan, dan tenggat di kolom **Keputusan & tanggal**. Jangan mengubah asumsi menjadi requirement final secara diam-diam.
 
-**Gate Phase 0:** semua OPEN harus berstatus `Decided` atau `Deferred` sebelum TITIS-014. OPEN yang memengaruhi role (OPEN-001 s.d. 005), lifecycle dan bentrok booking (OPEN-007 s.d. 009), alur checkout/pembayaran (OPEN-010, 011), definisi laporan (OPEN-012), dan data bisnis (OPEN-013) **tidak boleh `Deferred` melewati gate itu** (`MASTER_BUILD_GUIDE.md` §7, exit criteria PHASE 0). OPEN lain boleh `Deferred` bila owner, alasan, dan tenggat tercatat dan tenggatnya jatuh sebelum task yang diblokir. Kolom **Blokir** memakai ID task di `TASK.md`, satu-satunya sumber ID task.
+**Gate Phase 0:** semua OPEN harus berstatus `Decided` atau `Deferred` sebelum TITIS-014. OPEN yang memengaruhi role (OPEN-001 s.d. 005), lifecycle dan bentrok booking (OPEN-007 s.d. 009), alur checkout/pembayaran (OPEN-010, 011), definisi laporan (OPEN-012), dan data bisnis (OPEN-013) **tidak boleh `Deferred` melewati gate itu** (`TITIS_MASTER_BUILD_GUIDE_FINAL.md` §7, exit criteria PHASE 0). OPEN lain boleh `Deferred` bila owner, alasan, dan tenggat tercatat dan tenggatnya jatuh sebelum task yang diblokir. Kolom **Blokir** memakai ID task di `TASK.md`, satu-satunya sumber ID task.
 
 ## 9. Asumsi, dependensi, dan risiko produk
 

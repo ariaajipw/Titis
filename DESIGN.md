@@ -1,8 +1,8 @@
 # DESIGN — Panduan Desain TITIS
 
-> **Status:** **Draft kerangka (Phase 0)**. Nilai visual (warna, font, skala) **sengaja belum diisi** karena harus berasal dari mockup Google Stitch yang disetujui (langkah 3 di `MASTER_BUILD_GUIDE.md` §5). Bagian aksesibilitas, state, dan pola interaksi sudah berlaku sebagai standar. Peninjauan: `TASK.md` → TITIS-006.
+> **Status:** **Draft kerangka (Phase 0)**. Nilai visual (warna, font, skala) **sengaja belum diisi** karena harus berasal dari mockup Google Stitch yang disetujui (langkah 3 di `TITIS_MASTER_BUILD_GUIDE_FINAL.md` §5). Bagian aksesibilitas, state, dan pola interaksi sudah berlaku sebagai standar. Peninjauan: `TASK.md` → TITIS-006.
 > **Sumber kebenaran untuk:** design tokens, layout, komponen, perilaku responsif, aksesibilitas, dan referensi visual yang disetujui.
-> **Bukan untuk:** hak akses atau aturan transaksi (lihat `docs/SECURITY.md`, `docs/DATABASE.md`).
+> **Bukan untuk:** hak akses atau aturan transaksi (lihat `SECURITY.md`, `DATABASE.md`).
 > **Label:** `DQ-xx` = pertanyaan desain terbuka (§13). `OPEN-xxx` → `PRD.md` §8. `DEC-xxx` → `ARCHITECTURE.md`.
 
 ---
@@ -97,7 +97,7 @@ Setiap komponen mendefinisikan state yang berlaku. Kolom diisi `✓` bila state 
 
 Aturan khusus:
 
-- **Lencana status** memuat **teks** (dan ikon bila perlu); warna hanya penguat. Himpunan label mengikuti status final di `docs/DATABASE.md` §6.
+- **Lencana status** memuat **teks** (dan ikon bila perlu); warna hanya penguat. Himpunan label mengikuti status final di `DATABASE.md` §6.
 - **Tampilan uang** selalu melalui satu formatter bersama (OPEN-013) dan menampilkan nilai dari server, bukan hasil hitung klien sebagai sumber kebenaran.
 - **Tombol** yang memicu aksi asinkron masuk state `loading`, tidak dapat diklik ganda (mendukung idempotency, DEC-008), dan tetap fokusable.
 
@@ -112,7 +112,7 @@ Aturan khusus:
 ### 6.2 Admin dashboard
 
 - Kerangka: sidebar (desktop) / menu geser atau bar bawah (ponsel) + area konten + header dengan identitas pengguna dan logout.
-- Item navigasi yang tidak diizinkan untuk role **disembunyikan sebagai kenyamanan**; keamanan tetap di backend (`docs/SECURITY.md` §1).
+- Item navigasi yang tidak diizinkan untuk role **disembunyikan sebagai kenyamanan**; keamanan tetap di backend (`SECURITY.md` §1).
 - Hierarki informasi: Ringkasan → Booking → Kasir/Transaksi → Laporan → Konten → Pengaturan (urutan final: DQ-05).
 - Halaman daftar: filter di atas, tabel/daftar, paginasi, state kosong yang menjelaskan langkah berikutnya.
 - Halaman kasir (POS): dioptimalkan untuk tablet/desktop dengan target sentuh besar; total dan pembayaran selalu terlihat.

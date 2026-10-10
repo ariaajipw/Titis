@@ -23,7 +23,7 @@ Dokumen ini menghubungkan rencana produk, spesifikasi teknis, desain, aturan AI,
 
 ### 0.2 Pembagian tanggung jawab dokumen
 
-- `MASTER_BUILD_GUIDE.md` — urutan fase, milestone, aturan kerja, gate, dan status proyek tingkat tinggi.
+- `TITIS_MASTER_BUILD_GUIDE_FINAL.md` — urutan fase, milestone, aturan kerja, gate, dan status proyek tingkat tinggi.
 - `TASK.md` — daftar pekerjaan aktual, status per task, dependensi, bukti verifikasi, dan task berikutnya.
 - Dokumen spesifikasi — definisi terperinci untuk tiap domain, sesuai bagian 3.
 
@@ -44,7 +44,7 @@ Jangan memelihara dua daftar checklist granular yang sama. Detail pekerjaan ting
 
 ### 0.4 Cara memulai sesi coding
 
-1. Buka `MASTER_BUILD_GUIDE.md` untuk memahami milestone dan status tingkat tinggi.
+1. Buka `TITIS_MASTER_BUILD_GUIDE_FINAL.md` untuk memahami milestone dan status tingkat tinggi.
 2. Buka `AGENTS.md` dan dokumen spesifik yang relevan dengan task.
 3. Buka `TASK.md`, pilih satu task berstatus `Ready`/siap dikerjakan (atau `Review` bila tugasnya meninjau dokumen), dan baca dependensinya.
 4. Pastikan git working tree bersih atau perubahan sebelumnya sudah dipahami.
@@ -182,16 +182,16 @@ Versi paket yang pasti tidak ditetapkan di guide ini. Sebelum scaffold, periksa 
 
 | File | Sumber kebenaran untuk | Jangan gunakan untuk |
 |---|---|---|
-| `MASTER_BUILD_GUIDE.md` | Roadmap, fase, milestone, gate, workflow, dan status tingkat tinggi | Spesifikasi detail setiap fitur atau skema SQL. |
+| `TITIS_MASTER_BUILD_GUIDE_FINAL.md` | Roadmap, fase, milestone, gate, workflow, dan status tingkat tinggi | Spesifikasi detail setiap fitur atau skema SQL. |
 | `PRD.md` | Tujuan produk, pengguna, scope, requirements, user stories, dan acceptance criteria | Menetapkan implementasi teknis yang belum diputuskan. |
 | `ARCHITECTURE.md` | Struktur aplikasi, aliran data, modul, routing, integrasi, batas frontend/server, serta keputusan library | Menggantikan migration files sebagai definisi schema. |
 | `DESIGN.md` | Design tokens, layout, komponen, responsive behavior, aksesibilitas, dan referensi visual yang disetujui | Menentukan hak akses database atau aturan transaksi. |
 | `AGENTS.md` | Aturan kerja dan batas kewenangan AI coding agent | Menggandakan roadmap atau seluruh isi PRD. |
 | `TASK.md` | Task aktif, status, dependensi, acceptance criteria per task, bukti tes, blocker, dan task selanjutnya | Mengulangi isi dokumen spesifikasi. |
 | `README.md` | Deskripsi repository, setup, konfigurasi, command, dan deployment yang telah benar-benar dikonfirmasi | Menjadi sumber utama scope atau keputusan internal yang belum selesai. |
-| `docs/DATABASE.md` | Penjelasan skema, relasi, status, invariants, dan alasan desain database | Menjadi sumber kebenaran schema yang bisa berbeda dari SQL. |
-| `docs/SECURITY.md` | Threat model ringkas, permission matrix, RLS, secrets, alur public access, dan mitigasi | Menggantikan enforcement aktual serta tes keamanan. |
-| `docs/TESTING.md` | Strategi tes, test cases, lingkungan tes, dan release verification | Mengklaim tes lolos tanpa hasil aktual. |
+| `DATABASE.md` | Penjelasan skema, relasi, status, invariants, dan alasan desain database | Menjadi sumber kebenaran schema yang bisa berbeda dari SQL. |
+| `SECURITY.md` | Threat model ringkas, permission matrix, RLS, secrets, alur public access, dan mitigasi | Menggantikan enforcement aktual serta tes keamanan. |
+| `TESTING.md` | Strategi tes, test cases, lingkungan tes, dan release verification | Mengklaim tes lolos tanpa hasil aktual. |
 | `supabase/migrations/*.sql` | Definisi skema, constraint, policy, function/RPC, dan perubahan database yang berlaku | Digantikan oleh edit manual di dashboard tanpa migration. |
 | `supabase/tests/` | Tes aturan database/security yang diotomatisasi | Menggantikan tes UI/e2e yang relevan. |
 | `docs/design/references/` | Screenshot/mockup desain yang disetujui | Menjadi spesifikasi perilaku atau arsitektur tanpa penjelasan di DESIGN.md. |
@@ -215,7 +215,7 @@ Tambahkan hanya bila dibutuhkan:
 
 - `CLAUDE.md` — dibuat saat Claude Code akan digunakan; sebaiknya pendek dan merujuk aturan canonical dari `AGENTS.md`.
 - `CONTRIBUTING.md` — menjelang kontribusi publik.
-- `SECURITY.md` pada root atau proses pelaporan kerentanan publik — saat proyek siap menerima laporan dari luar; bedakan dari `docs/SECURITY.md` yang menjelaskan desain keamanan aplikasi.
+- `SECURITY.md` pada root — berisi dua bagian: (1) desain keamanan aplikasi TITIS (§1–12) dan (2) kebijakan pelaporan kerentanan publik (§13). Keduanya dalam satu file; file terpisah untuk pelaporan kerentanan tidak dibuat sebelum TITIS-077.
 - `CHANGELOG.md` — saat mulai menerbitkan versi/rilis yang perlu dicatat.
 - `docs/decisions/` — untuk Architectural Decision Records jika keputusan penting mulai sulit dilacak lewat git history.
 
@@ -229,7 +229,7 @@ Struktur ini adalah arah, bukan alasan untuk membuat seluruh file kosong pada ha
 
 ```text
 titis/
-├── MASTER_BUILD_GUIDE.md
+├── TITIS_MASTER_BUILD_GUIDE_FINAL.md
 ├── PRD.md
 ├── ARCHITECTURE.md
 ├── DESIGN.md
@@ -330,7 +330,7 @@ Pastikan PRD mencakup:
 
 Requirement yang belum disepakati harus diberi label `OPEN`/tertunda. Jangan mengubah asumsi menjadi requirement final diam-diam.
 
-### Langkah 2 — Susun `ARCHITECTURE.md`, `docs/DATABASE.md`, dan `docs/SECURITY.md`
+### Langkah 2 — Susun `ARCHITECTURE.md`, `DATABASE.md`, dan `SECURITY.md`
 
 Setelah PRD ditinjau, tentukan:
 
@@ -345,7 +345,7 @@ Setelah PRD ditinjau, tentukan:
 - Strategi secret, logging, backup, migrasi, dan generated database types.
 - Keputusan SEO untuk konten publik Vite.
 
-`docs/DATABASE.md` menjelaskan schema yang direalisasikan; SQL migrations tetap sumber kebenaran yang dieksekusi.
+`DATABASE.md` menjelaskan schema yang direalisasikan; SQL migrations tetap sumber kebenaran yang dieksekusi.
 
 ### Langkah 3 — Susun `DESIGN.md` dengan Google Stitch
 
@@ -364,7 +364,7 @@ Rancang public website dan admin dashboard sebagai area terpisah yang berbagi de
 
 Jangan menyalin generated code Stitch secara membabi buta. Kode hasil generator harus mengikuti stack, aksesibilitas, data model, dan komponen proyek.
 
-### Langkah 4 — Susun `docs/TESTING.md`
+### Langkah 4 — Susun `TESTING.md`
 
 Definisikan strategi pengujian sejak awal, terutama untuk authorization, booking conflicts, checkout, pembayaran, dan laporan. Kriteria rinci dapat berkembang per fase, tetapi pendekatan testing tidak boleh baru dipikirkan setelah sistem selesai.
 
@@ -456,7 +456,7 @@ Agent boleh mengusulkan perubahan dengan dampak, alternatif, biaya pemeliharaan,
 
 ```text
 Baca file berikut sebelum bertindak:
-- MASTER_BUILD_GUIDE.md
+- TITIS_MASTER_BUILD_GUIDE_FINAL.md
 - AGENTS.md
 - TASK.md
 - Dokumen yang secara spesifik relevan dengan task ini
@@ -532,10 +532,9 @@ Fase di bawah merupakan urutan kerja tingkat tinggi. Rincian checklist operasion
 - [ ] `PRD.md` ditinjau dan scope MVP disetujui.
 - [ ] Model bisnis referensi dan fitur out-of-scope disepakati.
 - [ ] `ARCHITECTURE.md` menetapkan stack, routing, data fetching, dan batas frontend/Supabase.
-- [ ] `docs/DATABASE.md` memuat rancangan entitas, relasi, status, dan invariants utama.
-- [ ] `docs/SECURITY.md` memuat matriks izin awal dan strategi RLS.
-- [ ] `DESIGN.md` serta referensi Stitch untuk halaman utama/admin disetujui.
-- [ ] `docs/TESTING.md` memuat strategi tes untuk booking, POS, pembayaran, RLS, dan laporan.
+- [ ] `DATABASE.md` memuat rancangan entitas, relasi, status, dan invariants utama.
+- [ ] `SECURITY.md` memuat matriks izin awal dan strategi RLS.
+- [ ] `TESTING.md` memuat strategi tes untuk booking, POS, pembayaran, RLS, dan laporan.
 - [ ] Keputusan yang masih terbuka diberi owner dan tidak menghalangi implementasi secara diam-diam.
 - [ ] `TASK.md` memuat task implementasi terurut dengan acceptance criteria.
 
@@ -642,7 +641,7 @@ Fase di bawah merupakan urutan kerja tingkat tinggi. Rincian checklist operasion
 
 - Simpan setiap perubahan schema, constraint, index, RLS policy, trigger, function/RPC, dan perubahan terkait dalam migration file yang terurut.
 - Jangan mengubah database remote secara manual tanpa migration yang direpresentasikan di Git.
-- `docs/DATABASE.md` menjelaskan alasan dan struktur, tetapi migration files mendefinisikan apa yang diterapkan.
+- `DATABASE.md` menjelaskan alasan dan struktur, tetapi migration files mendefinisikan apa yang diterapkan.
 - Sebelum menerapkan migration, tinjau SQL, perkiraan dampak data, rollback/recovery, dan apakah operasi destruktif.
 - Uji migration pada database lokal atau project development yang terpisah sebelum target remote yang lebih penting.
 - Jangan jalankan reset/drop/truncate atau migration destruktif pada production tanpa rencana, backup yang sesuai, dan persetujuan eksplisit.
@@ -697,7 +696,7 @@ Login membuktikan identitas sesi; itu tidak otomatis memberi hak akses pada semu
 
 ### 9.2 RLS
 
-Untuk setiap tabel yang dapat diakses client, `docs/SECURITY.md` harus menjawab:
+Untuk setiap tabel yang dapat diakses client, `SECURITY.md` harus menjawab:
 
 - Siapa yang boleh `SELECT`, `INSERT`, `UPDATE`, dan `DELETE`?
 - Apakah akses public/anonymous memang diperlukan? Untuk field apa?

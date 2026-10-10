@@ -2,9 +2,9 @@
 
 > **Fungsi:** daftar pekerjaan aktual TITIS — status per task, dependensi, acceptance criteria, bukti verifikasi, blocker, dan task berikutnya.
 >
-> **Bukan untuk:** mengulang isi `PRD.md`, `ARCHITECTURE.md`, `DESIGN.md`, `docs/DATABASE.md`, `docs/SECURITY.md`, atau `docs/TESTING.md`. Rujuk dokumen itu; jangan menyalin isinya ke sini.
+> **Bukan untuk:** mengulang isi `PRD.md`, `ARCHITECTURE.md`, `DESIGN.md`, `DATABASE.md`, `SECURITY.md`, atau `TESTING.md`. Rujuk dokumen itu; jangan menyalin isinya ke sini.
 >
-> **Roadmap tingkat tinggi:** `MASTER_BUILD_GUIDE.md` (bagian 7). Detail pekerjaan harian hidup di file ini.
+> **Roadmap tingkat tinggi:** `TITIS_MASTER_BUILD_GUIDE_FINAL.md` (bagian 7). Detail pekerjaan harian hidup di file ini.
 
 ---
 
@@ -33,7 +33,7 @@ Ganti blok ini hanya setelah kondisinya diverifikasi di repository. Jangan biark
 6. Ubah status hanya setelah syarat statusnya terpenuhi (bagian 3).
 7. Perbarui dokumen sumber kebenaran bila behavior atau keputusan berubah; catat keputusan sulit dibalik sebagai `DEC-XXX`.
 
-Aturan yang tidak boleh dilanggar ada di `MASTER_BUILD_GUIDE.md` (bagian 0.3) dan `AGENTS.md`. Singkatnya: satu agent penulis aktif dalam satu waktu, tidak ada perubahan scope/stack/dependency/skema/akses/deployment tanpa persetujuan pemilik, tidak ada secret di frontend atau Git, dan task belum selesai tanpa bukti.
+Aturan yang tidak boleh dilanggar ada di `TITIS_MASTER_BUILD_GUIDE_FINAL.md` (bagian 0.3) dan `AGENTS.md`. Singkatnya: satu agent penulis aktif dalam satu waktu, tidak ada perubahan scope/stack/dependency/skema/akses/deployment tanpa persetujuan pemilik, tidak ada secret di frontend atau Git, dan task belum selesai tanpa bukti.
 
 ---
 
@@ -50,7 +50,7 @@ Aturan yang tidak boleh dilanggar ada di `MASTER_BUILD_GUIDE.md` (bagian 0.3) da
 
 `Done` tidak boleh dipakai hanya karena file sudah ada atau AI sudah menghasilkan kode.
 
-### Definition of Done (ringkas, selengkapnya di `MASTER_BUILD_GUIDE.md` §10.2)
+### Definition of Done (ringkas, selengkapnya di `TITIS_MASTER_BUILD_GUIDE_FINAL.md` §10.2)
 
 - [ ] Perilaku sesuai acceptance criteria dan tetap dalam scope.
 - [ ] Validasi dan error state yang relevan ditangani.
@@ -117,7 +117,7 @@ Dokumen berikut sudah dibuat sebelum `TASK.md` ada, tetapi isinya **belum diveri
 - [ ] Uji pemahaman: minta agent meringkas aturan dan batasannya **tanpa mengubah file**.
 
 ### Evidence
-- Hasil aktual / file / commit / blocker: _belum ada_
+- Review read-only 2026-10-11: aturan minimum dan daftar otorisasi pemilik selaras dengan guide; aturan satu penulis, non-duplikasi roadmap/PRD, kosakata OPEN/DEC dan ID TITIS-013, serta rujukan penegakan teknis ke TITIS-013 terverifikasi. Verifikasi referensi panduan kanonis pada `AGENTS.md` memastikan seluruh 6 lokasi menggunakan `TITIS_MASTER_BUILD_GUIDE_FINAL.md`; tidak ditemukan referensi aktif ke `MASTER_BUILD_GUIDE.md` yang masih perlu diperbaiki. `AGENTS.md` tidak diubah karena sudah konsisten.
 
 ---
 
@@ -141,7 +141,7 @@ Dokumen berikut sudah dibuat sebelum `TASK.md` ada, tetapi isinya **belum diveri
 - [ ] Pemilik menyatakan scope MVP disetujui (catat tanggal di Evidence).
 
 ### Evidence
-- Hasil aktual / file / commit / blocker: _belum ada_
+- Review read-only 2026-10-11: kriteria PRD 1–9 diperiksa terhadap guide; bagian-bagian utama tersedia, tetapi sejumlah kebutuhan masih bersyarat pada OPEN. OPEN-001–021 semuanya berstatus `Open`; persetujuan Owner atas scope belum tercatat. Keputusan tersisa mencakup model referensi (OPEN-016), izin role (OPEN-001–005/010), checkout/DP/laporan (OPEN-010–012), stok per SKU (belum didefinisikan), privasi/retensi pengunjung (OPEN-013/020), SEO (OPEN-015/DEC-011), dan bootstrap Owner (OPEN-018). Cross-check menemukan rujukan PRD/README ke `docs/DATABASE.md`, `docs/SECURITY.md`, dan `docs/TESTING.md` tidak sesuai lokasi file yang ditemukan (root); README menyebut Cloudflare direncanakan sementara OPEN-014/DEC-012 masih `Open`; PRD memetakan OPEN-001 ke TITIS-109 sedangkan TITIS-108 mencantumkan OPEN-001/006 sebagai prasyarat. Perbaikan referensi lintas dokumen telah diterapkan pada 10 file (AGENTS, ARCHITECTURE, DESIGN, PRD, README, DATABASE, TESTING, SECURITY, TASK, dan guide) untuk nama file guide kanonis dan prefix `docs/` pada file Markdown di root. 7 referensi aktif di AGENTS ditahan untuk persetujuan Owner dan sudah dikonfirmasi konsisten. Tidak ada keputusan produk, status, atau acceptance criteria PRD yang diubah. TITIS-002 tetap `Review` sampai Owner menyetujui scope.
 
 ---
 
@@ -224,7 +224,7 @@ Dokumen berikut sudah dibuat sebelum `TASK.md` ada, tetapi isinya **belum diveri
 
 ---
 
-## [TITIS-007] Tinjau docs/DATABASE.md
+## [TITIS-007] Tinjau DATABASE.md
 - Status: Review | Phase: 0 | Depends on: TITIS-003, TITIS-004
 - Scope: periksa rancangan entitas, relasi, status, dan invariants terhadap guide §8.2.
 - Out of scope: menulis migration SQL.
@@ -244,7 +244,7 @@ Dokumen berikut sudah dibuat sebelum `TASK.md` ada, tetapi isinya **belum diveri
 
 ---
 
-## [TITIS-008] Tinjau docs/SECURITY.md
+## [TITIS-008] Tinjau SECURITY.md
 - Status: Review | Phase: 0 | Depends on: TITIS-007
 - Scope: periksa terhadap guide §9.
 - Out of scope: menulis policy RLS dalam SQL.
@@ -283,7 +283,7 @@ Dokumen berikut sudah dibuat sebelum `TASK.md` ada, tetapi isinya **belum diveri
 
 ---
 
-## [TITIS-010] Tinjau docs/TESTING.md
+## [TITIS-010] Tinjau TESTING.md
 - Status: Review | Phase: 0 | Depends on: TITIS-007, TITIS-008
 - Scope: periksa strategi tes terhadap guide §10.
 - Out of scope: menulis tes.
@@ -330,8 +330,8 @@ Dokumen berikut sudah dibuat sebelum `TASK.md` ada, tetapi isinya **belum diveri
 - [ ] Tidak ada konflik tersisa, atau konflik tercatat sebagai blocker dengan owner.
 - [ ] Setiap ID task yang dirujuk di PRD, ARCHITECTURE, AGENTS, dan guide ada di `TASK.md` dengan arti yang sama.
 - [ ] Kosakata status konsisten: OPEN (`Open`/`Decided`/`Deferred`), DEC (`Proposed`/`Open`/`Accepted`/`Rejected`/`Superseded`), task (`Blocked`/`Ready`/`In Progress`/`Review`/`Done`/`Deferred`).
-- [ ] Rujukan pasal ke `docs/DATABASE.md`, `docs/SECURITY.md`, `docs/TESTING.md`, dan `DESIGN.md` dari PRD/ARCHITECTURE/AGENTS valid (daftar rujukan ada di `REVIEW_KONSISTENSI.md`).
-- [ ] Nama file guide konsisten dengan semua rujukan (`MASTER_BUILD_GUIDE.md` dirujuk di guide, prompt template, dan README; sesuaikan nama file atau rujukannya).
+- [ ] Rujukan pasal ke `DATABASE.md`, `SECURITY.md`, `TESTING.md`, dan `DESIGN.md` dari PRD/ARCHITECTURE/AGENTS valid (daftar rujukan ada di `REVIEW_KONSISTENSI.md`).
+- [ ] Nama file guide konsisten dengan semua rujukan (`TITIS_MASTER_BUILD_GUIDE_FINAL.md` dirujuk di guide, prompt template, dan README; sesuaikan nama file atau rujukannya).
 - [ ] Tautan di `README.md` valid; tidak ada dua checklist granular yang sama.
 
 ### Verification
@@ -449,7 +449,7 @@ Semua task Phase 1 `Blocked` sampai TITIS-014 selesai. Perintah verifikasi memak
 
 ## [TITIS-104] Migration awal
 - Status: Blocked | Phase: 1 | Depends on: TITIS-103, TITIS-007
-- Scope: tabel fondasi sesuai `docs/DATABASE.md` yang dibutuhkan Phase 1 saja (profil/role, konten situs, pengaturan).
+- Scope: tabel fondasi sesuai `DATABASE.md` yang dibutuhkan Phase 1 saja (profil/role, konten situs, pengaturan).
 - Out of scope: tabel booking, POS, dan pembayaran.
 - Prasyarat keputusan: DEC-009 dan DEC-016 berstatus `Accepted`; OPEN-013 berstatus `Decided`.
 
@@ -659,7 +659,7 @@ Semua task Phase 1 `Blocked` sampai TITIS-014 selesai. Perintah verifikasi memak
 
 ## 7. PHASE 2–4 — Daftar Ringkas
 
-Semua `Blocked` sampai fase sebelumnya selesai. Setiap task di-expand ke format lengkap (bagian 4) saat fasenya menjadi aktif. Exit criteria tiap fase ada di `MASTER_BUILD_GUIDE.md` §7. Kolom "Prasyarat keputusan" memetakan OPEN (`PRD.md` §8) dan DEC (`ARCHITECTURE.md` §3) yang harus `Decided`/`Accepted` sebelum task dimulai.
+Semua `Blocked` sampai fase sebelumnya selesai. Setiap task di-expand ke format lengkap (bagian 4) saat fasenya menjadi aktif. Exit criteria tiap fase ada di `TITIS_MASTER_BUILD_GUIDE_FINAL.md` §7. Kolom "Prasyarat keputusan" memetakan OPEN (`PRD.md` §8) dan DEC (`ARCHITECTURE.md` §3) yang harus `Decided`/`Accepted` sebelum task dimulai.
 
 ### PHASE 2 — Booking & Resource Scheduling
 
@@ -740,7 +740,7 @@ Catat pertanyaan yang memengaruhi data, keamanan, alur pengguna, atau arsitektur
 | # | Pertanyaan | Owner | Task terdampak | Status |
 |---|---|---|---|---|
 | Q-01 | Hosting: apakah Cloudflare sudah menjadi keputusan pemilik? Draf lama menyebutnya tanpa DEC-012 / OPEN-014. Bila ya, catat sebagai usulan dan pilih Workers static assets atau Pages. | Pemilik proyek | TITIS-005, TITIS-111 | Open |
-| Q-02 | `docs/DATABASE.md`, `docs/SECURITY.md`, `docs/TESTING.md`, dan `DESIGN.md` belum ikut diperiksa silang (tidak tersedia pada review 2026-10-10); rujukan pasal dan ID `TEST-*`/`THR-*`/`INV-*` ke dokumen itu belum terverifikasi. | Pemilik proyek | TITIS-012 | Open |
+| Q-02 | `DATABASE.md`, `SECURITY.md`, `TESTING.md`, dan `DESIGN.md` belum ikut diperiksa silang (tidak tersedia pada review 2026-10-10); rujukan pasal dan ID `TEST-*`/`THR-*`/`INV-*` ke dokumen itu belum terverifikasi. | Pemilik proyek | TITIS-012 | Open |
 | Q-03 | OPEN-019, OPEN-020, OPEN-021 (komunikasi hasil booking, data pribadi pengunjung, bahasa) ditambahkan sebagai usulan review. Setujui, ubah, atau tolak. | Pemilik proyek | TITIS-003 | Open |
 | Q-04 | Perubahan rencana kerja dari review 2026-10-10 (TITIS-113 CI minimal, dependensi TITIS-004/006/007/012/208/306/308/309/403) disetujui? | Pemilik proyek | TITIS-004, 006, 007, 012, 113 | Open |
 

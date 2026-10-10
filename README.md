@@ -47,13 +47,13 @@ Keputusan final dikunci di [`ARCHITECTURE.md`](ARCHITECTURE.md). Sampai saat itu
 
 | File | Isi |
 |---|---|
-| [`MASTER_BUILD_GUIDE.md`](MASTER_BUILD_GUIDE.md) | Roadmap, fase, aturan kerja, dan gate |
+| [`TITIS_MASTER_BUILD_GUIDE_FINAL.md`](TITIS_MASTER_BUILD_GUIDE_FINAL.md) | Roadmap, fase, aturan kerja, dan gate |
 | [`PRD.md`](PRD.md) | Tujuan produk, scope, requirements, acceptance criteria |
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | Struktur aplikasi, aliran data, keputusan teknis |
 | [`DESIGN.md`](DESIGN.md) | Design tokens, komponen, layout, aksesibilitas |
-| [`docs/DATABASE.md`](docs/DATABASE.md) | Penjelasan skema, relasi, dan invariants |
-| [`docs/SECURITY.md`](docs/SECURITY.md) | Matriks izin, RLS, dan model ancaman |
-| [`docs/TESTING.md`](docs/TESTING.md) | Strategi dan verifikasi pengujian |
+| [`DATABASE.md`](DATABASE.md) | Penjelasan skema, relasi, dan invariants |
+| [`SECURITY.md`](SECURITY.md) | Matriks izin, RLS, dan model ancaman |
+| [`TESTING.md`](TESTING.md) | Strategi dan verifikasi pengujian |
 | [`AGENTS.md`](AGENTS.md) | Aturan kerja AI coding agent |
 | [`TASK.md`](TASK.md) | Task aktif, status, dan bukti progres |
 
@@ -83,7 +83,7 @@ Belum tersedia. Bagian berikut akan diisi **hanya setelah** setiap langkahnya di
 
 Untuk developer maupun AI agent:
 
-1. Baca `MASTER_BUILD_GUIDE.md` dan `AGENTS.md`.
+1. Baca `TITIS_MASTER_BUILD_GUIDE_FINAL.md` dan `AGENTS.md`.
 2. Buka `TASK.md`, pilih **satu** task yang siap dikerjakan, dan baca dependensinya.
 3. Kerjakan hanya scope task tersebut, verifikasi hasilnya, lalu catat bukti di `TASK.md`.
 

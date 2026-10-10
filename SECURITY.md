@@ -1,10 +1,10 @@
 # SECURITY — Desain Keamanan TITIS
 
 > **Status:** **Draft (Phase 0)**. Menunggu tinjauan pemilik proyek (`TASK.md` → TITIS-005). Belum ada kontrol yang diimplementasikan.
-> **Sumber kebenaran untuk:** model ancaman ringkas, matriks izin, strategi RLS, alur akses publik, kebijakan secret/logging, dan mitigasi.
-> **Bukan pengganti:** enforcement aktual (policy, constraint, function di `supabase/migrations/`) dan test keamanan (`supabase/tests/`, `docs/TESTING.md`). Dokumen ini hanya menjelaskan; **test membuktikan**.
-> **Dibedakan dari** `SECURITY.md` di root (kebijakan pelaporan kerentanan publik, dibuat saat proyek siap menerima laporan — lihat §13).
-> **Label:** `OPEN-xxx` → `PRD.md` §8; `DEC-xxx` → `ARCHITECTURE.md` §3; `INV-xxx` → `docs/DATABASE.md` §8; `TEST-xxx` → `docs/TESTING.md`.
+> **Sumber kebenaran untuk:** model ancaman ringkas, matriks izin, strategi RLS, alur akses publik, kebijakan secret/logging, mitigasi, dan kebijakan pelaporan kerentanan publik.
+> **Bukan pengganti:** enforcement aktual (policy, constraint, function di `supabase/migrations/`) dan test keamanan (`supabase/tests/`, `TESTING.md`). Dokumen ini hanya menjelaskan; **test membuktikan**.
+> **Struktur:** Bagian 1–12 menjelaskan desain keamanan aplikasi TITIS. Bagian 13 menjelaskan kebijakan pelaporan kerentanan publik. Keduanya berada dalam satu file `SECURITY.md` di root; file terpisah tidak dibuat sebelum ada kebutuhan nyata (TITIS-077).
+> **Label:** `OPEN-xxx` → `PRD.md` §8; `DEC-xxx` → `ARCHITECTURE.md` §3; `INV-xxx` → `DATABASE.md` §8; `TEST-xxx` → `TESTING.md`.
 
 ---
 
@@ -82,7 +82,7 @@ Aktor × aksi. Sel berisi: **Ya**, **Tidak**, **Ya\*** (hanya jalur terkontrol/R
 Aturan tambahan:
 
 - Setiap perubahan pada matriks ini adalah perubahan model izin dan memerlukan persetujuan pemilik proyek (`AGENTS.md` §3.2).
-- Setiap baris matriks harus mempunyai test akses (diizinkan **dan** ditolak) — pemetaan di `docs/TESTING.md` §9.
+- Setiap baris matriks harus mempunyai test akses (diizinkan **dan** ditolak) — pemetaan di `TESTING.md` §9.
 - Staff **tidak dapat** mengubah role dirinya maupun orang lain (INV-ACC-02).
 
 ## 5. Strategi RLS per tabel (Usulan)
@@ -147,7 +147,7 @@ Fungsi `SECURITY DEFINER` berjalan dengan hak pemiliknya dan merupakan sumber es
 5. Validasi semua input (tipe, panjang, rentang, himpunan nilai) dan tolak sisanya.
 6. Kembalikan data seminimal mungkin.
 7. Fungsi pembantu internal diletakkan di schema yang tidak terekspos ke API publik.
-8. Tulis jejak audit untuk aksi sensitif (`docs/DATABASE.md` §4.5).
+8. Tulis jejak audit untuk aksi sensitif (`DATABASE.md` §4.5).
 9. Setiap fungsi punya test sebagai anonymous, Staff, dan Owner (diizinkan dan ditolak).
 
 ## 8. Secret, logging, dan respons insiden
@@ -244,6 +244,29 @@ Temuan lain dicatat sebagai known issue dengan tingkat risiko; jangan menyatakan
 - Kebijakan password, reset password, dan batas percobaan login mengikuti kemampuan Supabase Auth dan dicatat saat TITIS-015/016.
 - Pesan kegagalan login generik (AC-AUTH-01.2).
 
-## 13. Pelaporan kerentanan publik
+## 13. Kebijakan pelaporan kerentanan publik
 
-`SECURITY.md` di root (alamat kontak, ruang lingkup, SLA wajar) ditambahkan saat proyek siap menerima laporan dari luar (TITIS-077). Sebelum itu, kerentanan yang ditemukan dilaporkan langsung kepada pemilik proyek, bukan di issue publik.
+Bagian ini mendokumentasikan kebijakan pelaporan kerentanan publik untuk proyek TITIS. Saat ini proyek **belum siap menerima laporan kerentanan dari publik**. Kebijakan ini ditulis sebagai persiapan dan akan diaktifkan pada TITIS-077 setelah persetujuan pemilik proyek.
+
+### 13.1 Status saat ini
+
+- Proyek tidak menerima laporan kerentanan melalui saluran publik (issue tracker, email publik, program bug bounty).
+- Kerentanan yang ditemukan oleh pihak internal atau auditor dilaporkan langsung kepada pemilik proyek.
+- Tidak ada alamat kontak keamanan publik, ruang lingkup program, atau SLA respons yang dipublikasikan.
+
+### 13.2 Persyaratan aktivasi (TITIS-077)
+
+Sebelum menerima laporan eksternal, berikut harus terpenuhi:
+
+- [ ] Pemilik proyek menyetujui publikasi kebijakan.
+- [ ] Alamat kontak keamanan (mis. `security@domain.tld`) dikonfigurasi dan diuji.
+- [ ] Ruang lingkup (scope) program didefinisikan: aset yang termasuk/dikecualikan, tipe kerentanan yang dilaporkan, dan yang tidak.
+- [ ] SLA wajar untuk konfirmasi awal, triase, dan resolusi dicatat.
+- [ ] Prosedur koordinasi pembukaan informasi (coordinated disclosure) ditulis.
+- [ ] Halaman/mekanisme pelaporan (form, email, atau platform pihak ketiga) siap digunakan.
+
+### 13.3 Prosedur setelah aktif
+
+- Laporan masuk melalui saluran yang ditentukan → dikonfirmasi dalam SLA → ditriage → diperbaiki → koordinasi publikasi jika perlu.
+- Detail teknis kerentanan tidak dipublikasikan sebelum perbaikan diterapkan dan diverifikasi.
+- Credit diberikan kepada pelapor sesuai preferensi mereka (anonim/terbuka).

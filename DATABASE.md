@@ -2,9 +2,9 @@
 
 > **Status:** **Draft rancangan (Phase 0)**. Belum ada migration; belum ada tabel yang direalisasikan. Seluruh nama tabel/kolom/tipe di bawah adalah **usulan konseptual**.
 > **Sumber kebenaran untuk:** penjelasan entitas, relasi, status, invariants, dan alasan desain.
-> **Bukan sumber kebenaran schema:** definisi yang dieksekusi adalah `supabase/migrations/*.sql`. Bila dokumen ini berbeda dari migration, hentikan pekerjaan terkait dan selesaikan konflik (`MASTER_BUILD_GUIDE.md` §3.2). Setelah migration ada, dokumen ini diperbarui agar menjelaskan schema yang **direalisasikan** (TITIS-013 dst.).
+> **Bukan sumber kebenaran schema:** definisi yang dieksekusi adalah `supabase/migrations/*.sql`. Bila dokumen ini berbeda dari migration, hentikan pekerjaan terkait dan selesaikan konflik (`TITIS_MASTER_BUILD_GUIDE_FINAL.md` §3.2). Setelah migration ada, dokumen ini diperbarui agar menjelaskan schema yang **direalisasikan** (TITIS-013 dst.).
 > **Tinjauan:** `TASK.md` → TITIS-004.
-> **Label:** `OPEN-xxx` merujuk `PRD.md` §8; `DEC-xxx` merujuk `ARCHITECTURE.md` §3; `INV-xxx` adalah invariant di §8 dan menjadi rujukan test di `docs/TESTING.md`. Kebijakan akses (RLS) **tidak** diulang di sini; lihat `docs/SECURITY.md` §5.
+> **Label:** `OPEN-xxx` merujuk `PRD.md` §8; `DEC-xxx` merujuk `ARCHITECTURE.md` §3; `INV-xxx` adalah invariant di §8 dan menjadi rujukan test di `TESTING.md`. Kebijakan akses (RLS) **tidak** diulang di sini; lihat `SECURITY.md` §5.
 
 ---
 
@@ -24,7 +24,7 @@
 | Pelaku | Kolom `created_by` / `decided_by` / `recorded_by` mengacu `profiles.id` pada aksi staf. |
 | Penghapusan | Data keuangan dan audit **tidak pernah di-hard-delete** (§8, INV-PAY-04, INV-AUD-01). Entitas master (resource, katalog) dinonaktifkan dengan `is_active = false`, bukan dihapus, bila pernah direferensikan. |
 | Nilai terbatas | Himpunan nilai (status, role, metode) memakai `text` + `CHECK` (lebih mudah dimigrasi daripada enum native). Keputusan akhir di DEC-009/DEC-010 bila perlu. |
-| RLS | Setiap tabel yang dapat diakses client wajib RLS aktif (INV-ACC-03). Rinciannya di `docs/SECURITY.md`. |
+| RLS | Setiap tabel yang dapat diakses client wajib RLS aktif (INV-ACC-03). Rinciannya di `SECURITY.md`. |
 | Migration | Satu perubahan logis per file; penamaan mengikuti `supabase migration new <nama>` (timestamp otomatis). Lihat §11. |
 
 ## 3. Konvensi data
@@ -221,7 +221,7 @@ Semua status adalah `text` + `CHECK` dan hanya berubah melalui jalur yang diteta
 | `actor_id`, `actor_role` | uuid, text | `NULL` bila aksi anonim melalui jalur publik |
 | `action` | text | mis. `booking.confirm`, `payment.void`, `role.change` |
 | `entity_type`, `entity_id` | text, uuid | |
-| `details` | jsonb | **dibersihkan**: tanpa token/secret/data sensitif (`docs/SECURITY.md` §8.2) |
+| `details` | jsonb | **dibersihkan**: tanpa token/secret/data sensitif (`SECURITY.md` §8.2) |
 
 ## 5. Diagram relasi
 
@@ -313,7 +313,7 @@ Konsekuensi yang harus diputuskan di OPEN-009 dan diverifikasi saat TITIS-031:
 
 ## 8. Invariants
 
-Setiap invariant harus ditegakkan di **database/lapisan tepercaya** (constraint, FK, trigger, RPC, RLS), bukan hanya UI. Kolom “Test” merujuk `docs/TESTING.md`.
+Setiap invariant harus ditegakkan di **database/lapisan tepercaya** (constraint, FK, trigger, RPC, RLS), bukan hanya UI. Kolom “Test” merujuk `TESTING.md`.
 
 ### 8.1 Access control
 
@@ -385,14 +385,14 @@ Aturan inti yang mencegah penghitungan ganda:
 | MET-12 | Item terlaris | Σ `quantity` per `item_name_snapshot` | `order_items` | tanggal order |
 | MET-13 | Booking menurut status | Count `bookings` per `status` | `bookings` | `starts_at` |
 
-Contoh hitung manual untuk rekonsiliasi ada di `docs/TESTING.md` §8. Bila definisi berubah, perbarui tabel ini **dan** fixture test.
+Contoh hitung manual untuk rekonsiliasi ada di `TESTING.md` §8. Bila definisi berubah, perbarui tabel ini **dan** fixture test.
 
 ## 10. Seed dan data uji
 
 - Data demo **sintetis**; tanpa data pelanggan asli.
 - `supabase/seed.sql` dapat dijalankan ulang (idempoten) dan tidak bergantung pada ID production.
 - **Tidak ada password atau secret di seed.** Akun uji (Owner/Staff) dibuat oleh skrip lokal yang membangkitkan kredensial acak saat dijalankan dan tidak menyimpannya di Git.
-- Fixture edge case disiapkan sengaja: waktu bertabrakan, pembayaran parsial, transaksi gagal, record tanpa izin, nilai batas (`docs/TESTING.md` §8).
+- Fixture edge case disiapkan sengaja: waktu bertabrakan, pembayaran parsial, transaksi gagal, record tanpa izin, nilai batas (`TESTING.md` §8).
 
 ## 11. Migration dan tipe
 

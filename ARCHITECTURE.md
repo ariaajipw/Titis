@@ -2,8 +2,8 @@
 
 > **Status:** **Draft (Phase 0)**. Seluruh keputusan di bawah berstatus `Proposed` atau `Open` sampai disetujui pemilik proyek (`TASK.md` → TITIS-004). Tidak ada kode yang boleh di-scaffold sebelum DEC yang ditandai “final sebelum” untuk task terkait berstatus `Accepted`.
 > **Sumber kebenaran untuk:** struktur aplikasi, aliran data, modul, routing, integrasi, batas frontend/server, dan keputusan library.
-> **Bukan pengganti:** migration files (definisi schema), `docs/DATABASE.md` (penjelasan data), `docs/SECURITY.md` (izin dan model ancaman).
-> **Label:** `DEC-xxx` = keputusan arsitektur (format log: `MASTER_BUILD_GUIDE.md` §13.4). Status: `Proposed` (ada usulan, belum disetujui) · `Open` (belum ada usulan; perlu data/keputusan) · `Accepted` · `Rejected` · `Superseded`. `OPEN-xxx` → `PRD.md` §8.
+> **Bukan pengganti:** migration files (definisi schema), `DATABASE.md` (penjelasan data), `SECURITY.md` (izin dan model ancaman).
+> **Label:** `DEC-xxx` = keputusan arsitektur (format log: `TITIS_MASTER_BUILD_GUIDE_FINAL.md` §13.4). Status: `Proposed` (ada usulan, belum disetujui) · `Open` (belum ada usulan; perlu data/keputusan) · `Accepted` · `Rejected` · `Superseded`. `OPEN-xxx` → `PRD.md` §8.
 
 ---
 
@@ -16,11 +16,11 @@
 
 ## 2. Prinsip arsitektur
 
-Turunan dari `MASTER_BUILD_GUIDE.md` §2.3, dalam bentuk yang dapat diperiksa:
+Turunan dari `TITIS_MASTER_BUILD_GUIDE_FINAL.md` §2.3, dalam bentuk yang dapat diperiksa:
 
 1. **Batas frontend:** frontend berisi UI dan logika presentasi; bukan tempat secret dan bukan satu-satunya penjaga aturan bisnis kritis.
 2. **Validasi tepercaya:** status booking, harga, total checkout, hak akses, dan kepemilikan data ditegakkan di database/server (DEC-006, DEC-007, DEC-008).
-3. **RLS secara default** untuk setiap tabel yang diakses client (`docs/SECURITY.md` §5, §9).
+3. **RLS secara default** untuk setiap tabel yang diakses client (`SECURITY.md` §5, §9).
 4. **Operasi bisnis majemuk bersifat atomik** (checkout, pembayaran) — DEC-008.
 5. **Satu definisi data:** tipe TypeScript dihasilkan dari schema, bukan ditulis tangan (DEC-010).
 6. **Kegagalan eksplisit:** loading, empty, validation error, permission denied, network error, retry dirancang di setiap alur (DEC-019).
@@ -44,7 +44,7 @@ Turunan dari `MASTER_BUILD_GUIDE.md` §2.3, dalam bentuk yang dapat diperiksa:
 | DEC-010 | Tipe database ter-generate dan representasi status | Proposed | — | TITIS-105 |
 | DEC-011 | Strategi SEO untuk halaman publik | Open | OPEN-015 | TITIS-004 (dibahas di TITIS-006) |
 | DEC-012 | Hosting, environment, dan deployment | Open | OPEN-014 | TITIS-111 (dibahas di TITIS-005) |
-| DEC-013 | Tooling pengujian | Proposed (E2E & a11y: Open) | `docs/TESTING.md` | TITIS-101 (E2E: TITIS-404; a11y otomatis: TITIS-405) |
+| DEC-013 | Tooling pengujian | Proposed (E2E & a11y: Open) | `TESTING.md` | TITIS-101 (E2E: TITIS-404; a11y otomatis: TITIS-405) |
 | DEC-014 | Model konten CMS dan rendering aman | Proposed | OPEN-006 | TITIS-109 |
 | DEC-015 | Package manager, runtime Node, dan CI | Proposed | — | TITIS-101 |
 | DEC-016 | Autentikasi, sesi, sumber role, dan penamaan kunci | Proposed | OPEN-018 | TITIS-103 |
@@ -179,7 +179,7 @@ Aturan ketergantungan (arah impor):
 - **Penamaan kunci:** `VITE_SUPABASE_URL` dan `VITE_SUPABASE_PUBLISHABLE_KEY` (kunci publik). Supabase merekomendasikan *publishable key* (`sb_publishable_…`) dan *secret key* (`sb_secret_…`); *anon key* dan `service_role` adalah legacy keys yang menurut dokumentasi Supabase dijadwalkan dihentikan pada akhir 2026 (dicek 2026-10-10). Pakai legacy keys hanya bila project memang masih memakainya. Verifikasi kunci pada dashboard project saat TITIS-012 (guide §2.2: jangan mengandalkan ingatan). Secret key/`service_role` tidak pernah di klien.
 - **Alasan:** Sederhana, tanpa akun publik, sesuai AC-AUTH-01.4.
 - **Dampak:** Prosedur bootstrap Owner dan siklus akun Staff (OPEN-018) harus dirancang; pengaturan sign-up publik dinonaktifkan.
-- **Dokumen/task terdampak:** `docs/SECURITY.md` §12, `.env.example`, TITIS-103, TITIS-106, TITIS-107.
+- **Dokumen/task terdampak:** `SECURITY.md` §12, `.env.example`, TITIS-103, TITIS-106, TITIS-107.
 - **Tanggal:** —
 
 ### Aturan di frontend
@@ -196,7 +196,7 @@ Aturan ketergantungan (arah impor):
 - **Keputusan:** Usulan (B). Naik ke (C) hanya bila DEC-017 memerlukan verifikasi/ratelimit yang tidak dapat dilakukan di database. Keputusan akhir dicatat di sini dan harus teruji (TEST-BKG-01, -02, -03, -08).
 - **Alasan:** Daftar field terbatas, status dipaksa, validasi tepercaya, tanpa backend tambahan.
 - **Dampak:** Kontrak input/output RPC menjadi bagian dari API yang diuji; respons publik minimal.
-- **Dokumen/task terdampak:** `docs/SECURITY.md` §6.1, `docs/DATABASE.md`, TITIS-203.
+- **Dokumen/task terdampak:** `SECURITY.md` §6.1, `DATABASE.md`, TITIS-203.
 - **Tanggal:** —
 
 ### DEC-017 — Perlindungan spam/abuse
@@ -211,7 +211,7 @@ Aturan ketergantungan (arah impor):
 - **Status:** Proposed
 - **Konteks:** Pemeriksaan di UI/API tidak aman terhadap dua permintaan bersamaan (INV-BKG-05).
 - **Pilihan:** (A) *exclusion constraint* pada booking `confirmed` per resource dan rentang waktu; (B) cek-lalu-tulis di RPC dengan kunci eksplisit; (C) cek di aplikasi — **ditolak**.
-- **Keputusan:** Usulan (A) (ilustrasi di `docs/DATABASE.md` §7.1). Rincian batas interval, buffer, dan apakah `pending` memblokir mengikuti OPEN-009 dan OPEN-007.
+- **Keputusan:** Usulan (A) (ilustrasi di `DATABASE.md` §7.1). Rincian batas interval, buffer, dan apakah `pending` memblokir mengikuti OPEN-009 dan OPEN-007.
 - **Alasan:** Menegakkan invariant di database; aman terhadap konkurensi.
 - **Dampak:** Memerlukan ekstensi PostgreSQL yang tersedia di Supabase; pelanggaran harus diterjemahkan menjadi pesan jelas.
 - **Task terdampak:** TITIS-202, TITIS-205.
@@ -238,7 +238,7 @@ Aturan ketergantungan (arah impor):
 - **Tanggal:** —
 
 ### Aturan waktu
-- Semua instant `timestamptz`; zona waktu bisnis dari `business_settings.timezone`. Konversi hanya di lapisan presentasi dan di fungsi pelaporan. Lihat `docs/DATABASE.md` §3.2.
+- Semua instant `timestamptz`; zona waktu bisnis dari `business_settings.timezone`. Konversi hanya di lapisan presentasi dan di fungsi pelaporan. Lihat `DATABASE.md` §3.2.
 
 ### DEC-010 — Tipe ter-generate dan representasi status
 - **Status:** Proposed
@@ -297,7 +297,7 @@ Aturan ketergantungan (arah impor):
 ### DEC-013 — Tooling pengujian
 - **Status:** Proposed (komponen E2E dan a11y otomatis: Open)
 - **Keputusan:** Usulan: Vitest + React Testing Library untuk unit/komponen; `supabase test db` (pgTAP) untuk constraint, RLS, dan RPC; skrip integrasi dua-koneksi untuk uji konkurensi. **Open:** alat E2E (kandidat: Playwright) dan alat cek aksesibilitas otomatis; putuskan sebelum TITIS-404.
-- **Alasan:** Menutup lapisan test yang dipetakan di `docs/TESTING.md`.
+- **Alasan:** Menutup lapisan test yang dipetakan di `TESTING.md`.
 - **Task terdampak:** TITIS-101, TITIS-404.
 - **Tanggal:** —
 
@@ -305,7 +305,7 @@ Aturan ketergantungan (arah impor):
 
 ### DEC-019 — Penanganan error dan observability
 - **Status:** Proposed
-- **Keputusan:** Usulan: *error boundary* per area (publik/admin); satu tipe error ternormalisasi (kode, pesan pengguna, detail tersanitasi) yang memetakan error database/RPC ke pesan yang dapat ditindaklanjuti (mis. bentrok jadwal, izin ditolak); state `loading/empty/error/forbidden` disediakan komponen standar (`DESIGN.md` §9). Log klien dan server tidak memuat token, secret, atau data pribadi (`docs/SECURITY.md` §8.2). **Open:** apakah layanan pelacakan error produksi diperlukan; bila ya, putuskan lewat DEC baru dengan memperhatikan privasi.
+- **Keputusan:** Usulan: *error boundary* per area (publik/admin); satu tipe error ternormalisasi (kode, pesan pengguna, detail tersanitasi) yang memetakan error database/RPC ke pesan yang dapat ditindaklanjuti (mis. bentrok jadwal, izin ditolak); state `loading/empty/error/forbidden` disediakan komponen standar (`DESIGN.md` §9). Log klien dan server tidak memuat token, secret, atau data pribadi (`SECURITY.md` §8.2). **Open:** apakah layanan pelacakan error produksi diperlukan; bila ya, putuskan lewat DEC baru dengan memperhatikan privasi.
 - **Task terdampak:** TITIS-106.
 - **Tanggal:** —
 

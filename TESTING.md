@@ -3,7 +3,7 @@
 > **Status:** **Draft strategi (Phase 0)**. Belum ada test yang dijalankan; **tidak ada klaim lulus** di dokumen ini. Peninjauan: `TASK.md` → TITIS-007.
 > **Sumber kebenaran untuk:** strategi tes, test case, lingkungan tes, dan verifikasi rilis.
 > **Bukan untuk:** mengklaim tes lulus. Hasil aktual dicatat di `TASK.md`/CI dengan format §10.
-> **Label:** `TEST-xxx` = test case (katalog §5, **sumber kebenaran pemetaan test → requirement**). `AC-`/`US-`/`NFR-` → `PRD.md`; `INV-` → `docs/DATABASE.md` §8; `THR-` dan `PERM-` → `docs/SECURITY.md`; `DEC-` → `ARCHITECTURE.md`; `OPEN-` → `PRD.md` §8.
+> **Label:** `TEST-xxx` = test case (katalog §5, **sumber kebenaran pemetaan test → requirement**). `AC-`/`US-`/`NFR-` → `PRD.md`; `INV-` → `DATABASE.md` §8; `THR-` dan `PERM-` → `SECURITY.md`; `DEC-` → `ARCHITECTURE.md`; `OPEN-` → `PRD.md` §8.
 > Kolom pemetaan di dokumen lain (INV→TEST, THR→TEST) adalah **tampilan navigasi**; bila berbeda dari katalog §5, katalog ini yang berlaku dan dokumen lain diperbaiki.
 
 ---
@@ -17,7 +17,7 @@
 
 ## 2. Aturan verifikasi
 
-Diturunkan dari `MASTER_BUILD_GUIDE.md` §10.1:
+Diturunkan dari `TITIS_MASTER_BUILD_GUIDE_FINAL.md` §10.1:
 
 - Periksa `package.json` untuk script nyata sebelum menulis command CI atau mengklaim cakupan. Dokumen ini **tidak** menulis nama script yang belum ada.
 - Jalankan verifikasi yang relevan dengan scope. Task kecil tidak selalu memerlukan seluruh e2e; perubahan lintas modul, schema, role, checkout, atau booking memerlukan verifikasi lebih menyeluruh.
@@ -54,13 +54,13 @@ Alat adalah usulan (DEC-013); versi mengikuti lockfile saat scaffold.
 - **CI:** menjalankan script yang sama dengan lokal (DEC-015); tidak ada step untuk script yang belum ada.
 - **Staging (opsional):** hanya untuk smoke test; bukan tempat uji destruktif.
 - **Production:** tidak pernah dipakai untuk test, benchmark, reset, atau fixture.
-- **Data:** sintetis (`docs/DATABASE.md` §10). Akun uji memakai kredensial acak yang dibuat saat dijalankan dan tidak disimpan di Git.
+- **Data:** sintetis (`DATABASE.md` §10). Akun uji memakai kredensial acak yang dibuat saat dijalankan dan tidak disimpan di Git.
 - **Isolasi:** test database berjalan dalam transaksi yang di-*rollback* atau memakai fixture unik; test tidak bergantung pada urutan eksekusi atau ID tetap.
 - **Waktu:** test yang bergantung waktu memakai waktu yang dapat dikendalikan (tidak bergantung jam sistem) dan menguji zona waktu bisnis eksplisit.
 
 ## 5. Katalog test case
 
-Kolom **Memverifikasi** adalah sumber kebenaran pemetaan. **Fase** = fase `MASTER_BUILD_GUIDE.md` §7 saat test pertama kali wajib ada. Level: `unit`, `komponen`, `db` (pgTAP), `integrasi`, `e2e`, `manual`, `proses`.
+Kolom **Memverifikasi** adalah sumber kebenaran pemetaan. **Fase** = fase `TITIS_MASTER_BUILD_GUIDE_FINAL.md` §7 saat test pertama kali wajib ada. Level: `unit`, `komponen`, `db` (pgTAP), `integrasi`, `e2e`, `manual`, `proses`.
 
 ### 5.1 Autentikasi
 
@@ -83,7 +83,7 @@ Kolom **Memverifikasi** adalah sumber kebenaran pemetaan. **Fase** = fase `MASTE
 | TEST-RLS-03 | Staff ditolak untuk aksi Owner-only dan aksi yang dibatasi keputusan OPEN | db | THR-03, PERM-02, PERM-03, PERM-05, PERM-07, PERM-10, PERM-11, PERM-13, PERM-15, PERM-16, PERM-17, PERM-18, PERM-19, PERM-20, PERM-21, PERM-22, PERM-23, PERM-24 | 1 |
 | TEST-RLS-04 | Owner diizinkan pada seluruh aksi yang didokumentasikan | db | PERM-01, PERM-04, PERM-06, PERM-12 | 1 |
 | TEST-RLS-05 | Staff tidak dapat mengubah `role` dirinya atau pengguna lain; field role/owner tidak dapat diubah lewat update biasa | db | INV-ACC-01, INV-ACC-02, THR-02, AC-AUTH-03.3 | 1 |
-| TEST-RLS-06 | View, RPC, dan Edge Function menegakkan kontrol setara tabel; fungsi `SECURITY DEFINER` mematuhi `docs/SECURITY.md` §7 | db | INV-ACC-04, THR-18 | 1 |
+| TEST-RLS-06 | View, RPC, dan Edge Function menegakkan kontrol setara tabel; fungsi `SECURITY DEFINER` mematuhi `SECURITY.md` §7 | db | INV-ACC-04, THR-18 | 1 |
 | TEST-RLS-07 | Anonim hanya melihat konten `published` dan kolom publik (profil, resource, katalog) | db | PERM-01, PERM-04, PERM-06, PERM-12, AC-PUB-01.1, AC-PUB-02.1, THR-10 | 1 |
 | TEST-RLS-08 | Staff yang dinonaktifkan kehilangan akses seketika di lapisan data | db | AC-AUTH-03.2 | 1 |
 
@@ -269,7 +269,7 @@ Fixture tambahan yang dibutuhkan: booking yang bertabrakan (tepat bersebelahan, 
 
 ## 9. Keterlacakan (requirement → test)
 
-Tabel di bawah **dihasilkan dari katalog §5** (kolom *Memverifikasi*). Untuk INV→TEST lihat `docs/DATABASE.md` §8; untuk THR→TEST lihat `docs/SECURITY.md` §11. Item tanpa test ditandai **BELUM ADA** dan dianggap risiko terbuka.
+Tabel di bawah **dihasilkan dari katalog §5** (kolom *Memverifikasi*). Untuk INV→TEST lihat `DATABASE.md` §8; untuk THR→TEST lihat `SECURITY.md` §11. Item tanpa test ditandai **BELUM ADA** dan dianggap risiko terbuka.
 
 <!-- TRACE-TABLES -->
 
@@ -289,7 +289,7 @@ Catatan         : [temuan, tanpa secret/data pribadi]
 
 ## 11. Verifikasi rilis
 
-Prosedur dan checklist sebelum/sesudah deployment ada di `MASTER_BUILD_GUIDE.md` §11.2–§11.3; jangan disalin ke sini. Test rilis yang spesifik: TEST-REL-01..04. Deployment berhasil hanya membuktikan aplikasi dapat diakses; **tidak** membuktikan keamanan, kebenaran laporan, atau terpenuhinya AC.
+Prosedur dan checklist sebelum/sesudah deployment ada di `TITIS_MASTER_BUILD_GUIDE_FINAL.md` §11.2–§11.3; jangan disalin ke sini. Test rilis yang spesifik: TEST-REL-01..04. Deployment berhasil hanya membuktikan aplikasi dapat diakses; **tidak** membuktikan keamanan, kebenaran laporan, atau terpenuhinya AC.
 
 ## 12. Hal yang belum ditetapkan
 
