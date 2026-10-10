@@ -1,0 +1,10 @@
+{
+  "name": "titis",
+  "version": "0.0.0",
+  "private": true,
+  "description": "TITIS: aplikasi open-source pengelolaan bisnis lokal (company profile dinamis, CMS, booking, POS sederhana, pembayaran manual, laporan operasional).",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  }
+}
