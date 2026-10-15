@@ -1,343 +1,553 @@
 # ARCHITECTURE — TITIS
 
-> **Status:** **Draft (Phase 0)**. Seluruh keputusan di bawah berstatus `Proposed` atau `Open` sampai disetujui pemilik proyek (`TASK.md` → TITIS-004). Tidak ada kode yang boleh di-scaffold sebelum DEC yang ditandai “final sebelum” untuk task terkait berstatus `Accepted`.
-> **Sumber kebenaran untuk:** struktur aplikasi, aliran data, modul, routing, integrasi, batas frontend/server, dan keputusan library.
-> **Bukan pengganti:** migration files (definisi schema), `DATABASE.md` (penjelasan data), `SECURITY.md` (izin dan model ancaman).
-> **Label:** `DEC-xxx` = keputusan arsitektur (format log: `TITIS_MASTER_BUILD_GUIDE_FINAL.md` §13.4). Status: `Proposed` (ada usulan, belum disetujui) · `Open` (belum ada usulan; perlu data/keputusan) · `Accepted` · `Rejected` · `Superseded`. `OPEN-xxx` → `PRD.md` §8.
+> **Status:** Draft Phase 0 — disejajarkan dengan `PRD.md` dan `TITIS_MASTER_BUILD_GUIDE_FINAL.md` revisi 2026-10-15. Keputusan yang ditandai `Proposed` masih memerlukan persetujuan pemilik proyek sebelum task implementasi terkait dimulai.
+> **Sumber kebenaran:** struktur aplikasi, aliran data, modul, routing, integrasi, batas frontend/server, dan keputusan library.
+> **Bukan sumber kebenaran untuk:** product scope/acceptance criteria (`PRD.md`), schema yang benar-benar diterapkan (migration files), penjelasan domain database (`DATABASE.md`), security policy/threat model (`SECURITY.md`), desain visual (`DESIGN.md`), dan status task (`TASK.md`).
+> **Revisi:** 2026-10-15 — scope diselaraskan dengan MVP satu bulan: company profile fleksibel, booking anti-bentrok, POS lunas, dan satu akun Owner.
 
 ---
 
-## 1. Tujuan dokumen dan cara memakainya
+## 1. Tujuan dan aturan penggunaan
 
-1. Sebelum scaffold, baca §3 dan pastikan DEC yang relevan dengan task berstatus `Accepted`.
-2. Untuk mengubah keputusan: ubah status entri DEC, catat alasan dan dampak, perbarui dokumen terdampak. Jangan mengubah stack/library/dependency secara sepihak (`AGENTS.md` §3.2).
-3. Versi paket **tidak** dikunci di sini. Versi dipilih dan dikunci saat scaffold (TITIS-101) dengan memeriksa dokumentasi resmi dan kompatibilitas pada saat itu, lalu dikunci lewat lockfile.
-4. ID task (`TITIS-NNN`) hanya didefinisikan di `TASK.md`; dokumen ini merujuknya dan tidak menomori sendiri.
+1. Dokumen ini menerangkan **bagaimana** TITIS disusun; `PRD.md` menerangkan **apa** yang harus produk lakukan.
+2. Sebelum coding pada area yang terkait keputusan `Proposed`/`Open`, minta persetujuan pemilik proyek atau catat penundaan secara eksplisit di dokumen sumber kebenaran.
+3. Versi library harus diperiksa terhadap dokumentasi resmi saat scaffold, lalu dipin dengan `package-lock.json`. Versi yang disebut di sini adalah baseline, bukan pengganti verifikasi kompatibilitas.
+4. Perubahan schema harus melalui migration file dalam Git. Jangan mengubah schema production secara manual tanpa migration yang sesuai dan proses rilis yang disetujui.
+5. Jangan memperbesar scope lewat pilihan arsitektur. Bila opsi menambah kompleksitas (dependency, layanan, atau pekerjaan operasional), jelaskan manfaat, risiko, biaya, dan alternatif minimum sebelum meminta persetujuan.
+6. ID task hanya ditetapkan di `TASK.md`. Jangan membuat ID task baru dalam dokumen ini.
 
-## 2. Prinsip arsitektur
+### 1.1 Urutan sumber kebenaran
 
-Turunan dari `TITIS_MASTER_BUILD_GUIDE_FINAL.md` §2.3, dalam bentuk yang dapat diperiksa:
+Jika dokumen bertentangan:
 
-1. **Batas frontend:** frontend berisi UI dan logika presentasi; bukan tempat secret dan bukan satu-satunya penjaga aturan bisnis kritis.
-2. **Validasi tepercaya:** status booking, harga, total checkout, hak akses, dan kepemilikan data ditegakkan di database/server (DEC-006, DEC-007, DEC-008).
-3. **RLS secara default** untuk setiap tabel yang diakses client (`SECURITY.md` §5, §9).
-4. **Operasi bisnis majemuk bersifat atomik** (checkout, pembayaran) — DEC-008.
-5. **Satu definisi data:** tipe TypeScript dihasilkan dari schema, bukan ditulis tangan (DEC-010).
-6. **Kegagalan eksplisit:** loading, empty, validation error, permission denied, network error, retry dirancang di setiap alur (DEC-019).
-7. **Aksesibilitas dan responsivitas sejak awal** (`DESIGN.md`).
-8. **Observability secukupnya** tanpa membocorkan secret/data sensitif (DEC-019).
-9. **Hindari backend terpisah** bila kemampuan Supabase cukup; RPC atau Edge Function hanya bila ada kebutuhan jelas dan disetujui.
+1. Persyaratan produk dan batas MVP mengikuti `PRD.md` yang disetujui.
+2. Aliran aplikasi dan pilihan teknologi mengikuti `ARCHITECTURE.md` yang disetujui.
+3. Schema aktif selalu ditentukan migration SQL yang dieksekusi, bukan deskripsi Markdown.
+4. Permission dan batas akses perlu cocok antara `SECURITY.md`, migrations, function/grants, serta tes.
+5. `TITIS_MASTER_BUILD_GUIDE_FINAL.md` menentukan urutan fase dan gate; `TASK.md` menentukan task aktual.
 
-## 3. Daftar keputusan (register)
+Jika ketidaksesuaian memengaruhi data, security, perilaku bisnis, atau waktu MVP, hentikan implementasi yang terkait sampai konflik diselesaikan.
 
-| ID | Topik | Status | Terkait | Harus `Accepted` sebelum |
+---
+
+## 2. Batas arsitektur produk
+
+### 2.1 Scope yang memengaruhi desain
+
+TITIS MVP adalah satu instalasi untuk satu bisnis lokal. Area utamanya:
+
+- **Website publik:** template company profile, halaman konten, katalog aktif, fasilitas bila relevan, kontak, serta form permintaan booking.
+- **Dashboard Owner:** edit konten, kelola katalog dan resource, putuskan booking, jalankan POS, dan lihat laporan dasar.
+- **Backend:** satu proyek Supabase untuk Auth, PostgreSQL, RLS, migrations, dan Storage bila dibutuhkan. Supabase Edge Function dipakai hanya untuk jalur publik yang membutuhkannya.
+
+MVP hanya mempunyai **satu akun Owner**. Tidak ada akun Staff, permission matrix, signup publik, multi-tenant SaaS, payment gateway, DP/pelunasan, refund/void, inventaris stok, POS offline, page builder drag-and-drop, atau analitik lanjutan.
+
+### 2.2 Company profile: template dan custom UI/UX
+
+TITIS menyediakan satu template dasar yang layak digunakan dan struktur kode yang memungkinkan developer menyesuaikan desain publik untuk kebutuhan klien.
+
+- **Konten:** Owner mengubah informasi bisnis, teks, gambar yang disediakan, dan data katalog melalui dashboard.
+- **Presentasi:** developer dapat mengganti layout, susunan section, komponen, warna, tipografi, spacing, dan elemen visual melalui kode serta design tokens.
+- **Data/backend:** mode template dan mode custom tetap memakai CMS, katalog, booking, POS, Auth, dan database yang sama.
+- **Batas:** tidak ada page builder visual, editor HTML/CSS bebas, sistem tema universal yang dapat diubah sembarang oleh Owner, atau script yang dapat dijalankan dari CMS.
+
+Penyesuaian desain per klien merupakan pekerjaan implementasi yang perlu disepakati serta diperkirakan terpisah. Jangan mengubahnya menjadi kewajiban membuat editor visual di dashboard.
+
+---
+
+## 3. Prinsip arsitektur
+
+1. **Frontend untuk UI dan pengalaman pengguna.** Frontend tidak menyimpan secret dan tidak menjadi satu-satunya penjaga aturan bisnis penting.
+2. **Validasi tepercaya.** Permission, status booking, ketersediaan resource, harga, total checkout, serta idempotency ditegakkan di database/server.
+3. **RLS dan grants ditinjau bersama.** RLS tidak menggantikan pemeriksaan privilege untuk view, RPC, function, dan Edge Function.
+4. **Operasi checkout atomik.** Header order, item, dan catatan pembayaran harus tersimpan seluruhnya atau tidak tersimpan sama sekali.
+5. **Anti-bentrok di database.** Pemeriksaan jadwal di UI hanya untuk pengalaman pengguna; constraint database menjadi penjaga akhir saat permintaan bersamaan.
+6. **Satu sumber data katalog.** Produk/layanan publik dan POS memakai katalog yang sama; jangan menyimpan harga duplikat di CMS.
+7. **Perubahan konten tidak memerlukan edit kode.** Perubahan layout kompleks dapat memerlukan developer.
+8. **Dependency minimal.** Jangan menambah library atau layanan tanpa kebutuhan tertulis, alasan, dan persetujuan.
+9. **Migration sebagai schema source of truth.** Semua perubahan schema, constraint, index, RLS, dan function dicatat dalam migrations.
+10. **Error eksplisit dan aman.** Loading, empty, invalid input, permission denied, kegagalan jaringan, dan retry memiliki perilaku yang jelas. Log tidak berisi secret atau data pribadi yang tidak diperlukan.
+11. **Tes harus nyata.** Jangan menyatakan tes lulus sebelum command atau pemeriksaan benar-benar dijalankan.
+
+---
+
+## 4. Register keputusan arsitektur
+
+Status keputusan mengikuti konvensi: `Proposed` = diajukan tetapi belum disetujui; `Open` = belum ada opsi yang cukup; `Accepted` = disetujui; `Rejected` = ditolak; `Superseded` = digantikan keputusan lain. Keputusan yang berubah dari arsitektur lama kembali ditandai `Proposed` sampai selaras dengan baseline PRD revisi disetujui.
+
+| ID | Topik | Status saat revisi | Ringkasan | Gate terkait |
 |---|---|---|---|---|
-| DEC-001 | Baseline frontend (Vite + React 19.x + TypeScript, SPA) | Accepted | — | TITIS-101 |
-| DEC-002 | Library routing | Open | DEC-011, DEC-016 | TITIS-106 |
-| DEC-003 | Pendekatan validasi form | Open | DEC-019 | TITIS-107 |
-| DEC-004 | Styling: Tailwind CSS v4 + design tokens | Proposed | `DESIGN.md` | TITIS-102 |
-| DEC-005 | Server state: TanStack Query + aturan | Proposed | DEC-018, DEC-019 | TITIS-106 |
-| DEC-006 | Jalur tulis booking publik | Proposed | OPEN-007, DEC-017 | TITIS-203 |
-| DEC-007 | Penegakan anti-bentrok booking | Proposed | OPEN-009 | TITIS-202 |
-| DEC-008 | Checkout atomik + idempotency | Proposed | OPEN-010, OPEN-011 | TITIS-304 |
-| DEC-009 | Representasi uang dan angka | Proposed | OPEN-010, OPEN-013 | TITIS-104 |
-| DEC-010 | Tipe database ter-generate dan representasi status | Proposed | — | TITIS-105 |
-| DEC-011 | Strategi SEO untuk halaman publik | Accepted | OPEN-015 | TITIS-004 (dibahas di TITIS-006) |
-| DEC-012 | Hosting, environment, dan deployment | Open | OPEN-014 | TITIS-111 (dibahas di TITIS-005) |
-| DEC-013 | Tooling pengujian | Accepted (E2E & a11y otomatis: Open) | `TESTING.md` | TITIS-101 (E2E: TITIS-404; a11y otomatis: TITIS-405) |
-| DEC-014 | Model konten CMS dan rendering aman | Proposed | OPEN-006 | TITIS-109 |
-| DEC-015 | Package manager, runtime Node, dan CI | Accepted | — | TITIS-101 |
-| DEC-016 | Autentikasi, sesi, sumber role, dan penamaan kunci | Proposed | OPEN-018 | TITIS-103 |
-| DEC-017 | Perlindungan spam/abuse form publik | Open | THR-09, OPEN-007 | TITIS-203 |
-| DEC-018 | Manajemen state klien | Accepted | DEC-005 | TITIS-101 |
-| DEC-019 | Penanganan error dan observability | Accepted | — | TITIS-106 |
+| DEC-001 | Frontend Vite + React + TypeScript | Accepted | SPA; versi paket dikunci saat scaffold | Scaffold |
+| DEC-002 | Routing | Accepted* | React Router v7; tidak mewajibkan prerender/SSR | Routing |
+| DEC-003 | Form validation | Accepted | Native HTML + Valibot; validasi server tetap wajib | Forms |
+| DEC-004 | Styling | Accepted | Tailwind CSS v4 + design tokens | Design system |
+| DEC-005 | Server state | Accepted | TanStack Query; aturan cache/error di §7 | Data fetching |
+| DEC-006 | Public booking write path | Proposed | Jalur publik terbatas melalui Edge Function dan operasi database internal; tidak memberi akses write luas ke `anon` | Sebelum booking |
+| DEC-007 | Booking anti-bentrok | Accepted* | PostgreSQL exclusion constraint untuk booking confirmed; detail buffer diverifikasi bersama schema dan tes | Sebelum booking |
+| DEC-008 | Atomic checkout + idempotency | Accepted | Satu operasi terpercaya untuk order, items, payment | Sebelum POS |
+| DEC-009 | Representasi uang | Proposed | Menggantikan model generik multi-currency/discount lama: IDR, integer rupiah (`bigint`/string di TypeScript); tanpa diskon/pajak/pembulatan khusus | Sebelum schema POS |
+| DEC-010 | Database TypeScript types | Accepted | Generate dari schema/migrations, bukan ketik manual | Scaffold + schema changes |
+| DEC-011 | SEO publik | Proposed | Menggantikan keputusan lama yang mewajibkan prerender: metadata dasar pada MVP; prerender/SSR lanjutan deferred | Public pages |
+| DEC-012 | Hosting dan environment | Accepted* | Cloudflare Workers Static Assets + Supabase; domain final tetap terbuka | Deployment |
+| DEC-013 | Tooling testing | Proposed | Meninjau ulang rencana lama yang mewajibkan Playwright/axe: Vitest/RTL dan tes database wajib; E2E tooling tambahan tidak boleh menghambat core MVP | Testing setup |
+| DEC-014 | CMS content/rendering | Accepted* | Konten terstruktur dan rendering aman; tanpa HTML/script bebas | CMS |
+| DEC-015 | Runtime/package manager/CI | Accepted | npm, Node 24 LTS baseline, lockfile; CI mengikuti scripts nyata | Scaffold |
+| DEC-016 | Authentication | Proposed | Menggantikan model Owner/Staff lama: satu akun Owner, tanpa signup publik; Staff/role matrix dikeluarkan dari MVP | Sebelum auth |
+| DEC-017 | Booking spam/abuse | Proposed | Menggantikan rencana Turnstile wajib: proteksi sederhana; Turnstile tidak wajib kecuali disetujui atau diperlukan berdasarkan risiko | Sebelum booking publik |
+| DEC-018 | Client state | Accepted | Tanpa global state library tambahan; Context hanya bila diperlukan | Scaffold |
+| DEC-019 | Error handling/observability | Accepted* | Error state konsisten; tanpa error-tracking pihak ketiga pada MVP | Data UI |
+| DEC-020 | Template vs custom UI/UX | Proposed | Perubahan konten oleh Owner; custom layout oleh developer melalui kode | Sebelum CMS/design |
+| DEC-021 | Domain data/catalog | Proposed | Katalog bersama publik/POS; tabel minimum dan relasi dijelaskan di §8 | Sebelum migrations |
 
-Setiap keputusan di bawah memakai format log keputusan. Kolom **Tanggal** diisi saat status berubah menjadi `Accepted`.
+`*` Accepted mengikuti keputusan terdahulu yang tidak bertentangan secara prinsip; tetap cek kecocokan dengan dokumen dan versi aktual saat implementasi. Tanggal approval dari keputusan baru diisi setelah persetujuan pemilik proyek. Jangan menafsirkan keputusan `Proposed` sebagai izin implementasi.
 
 ---
 
-## 4. Keputusan stack frontend dan styling
+## 5. Baseline stack dan dependency
 
-### DEC-001 — Baseline frontend
-- **Status:** Accepted
-- **Konteks:** Rencana proyek mengusulkan Vite + React 18 + TypeScript. Aplikasi memiliki area publik dan admin dengan kebutuhan interaksi tinggi di admin.
-- **Pilihan yang dipertimbangkan:** (A) SPA Vite + React 19.x + TypeScript; (B) framework dengan SSR/SSG.
-- **Keputusan:** Opsi (A). Vite + React 19.x + TypeScript, SPA. Versi persis dipin saat scaffold TITIS-101.
-- **Alasan:** Sederhana, cepat, cocok untuk admin; Supabase menangani backend.
-- **Dampak/trade-off:** SEO halaman publik memerlukan keputusan terpisah (DEC-011). Struktur routing bergantung DEC-002.
-- **Dokumen/task terdampak:** TITIS-101, README.
-- **Tanggal:** 2026-10-11
+| Area | Baseline | Aturan |
+|---|---|---|
+| Frontend | Vite + React 19.x + TypeScript | SPA; periksa versi yang kompatibel saat scaffold |
+| Styling | Tailwind CSS v4 | CSS-first configuration dan token semantik dari `DESIGN.md` |
+| Routing | React Router v7 | Public routes dan admin routes memiliki layout terpisah; guard bukan keamanan data |
+| Server state | TanStack Query | Cache, invalidation, retry, dan mutation mengikuti §7 |
+| Form | HTML native + Valibot | Tidak memakai React Hook Form untuk MVP kecuali keputusan scope berubah |
+| Backend | Supabase PostgreSQL + Auth | Gunakan satu client frontend; semua jalur data harus punya model permission |
+| Media | Supabase Storage, jika diperlukan | Unggah hanya tipe/ukuran yang disetujui; tidak wajib membuat media manager kompleks |
+| Database changes | Supabase CLI migrations | Migrations disimpan di Git dan diuji pada environment non-production |
+| Database types | Supabase CLI type generation | Generated file di-commit; regenerate setelah perubahan schema |
+| Test | Vitest + React Testing Library; `supabase test db`/pgTAP bila tersedia | Tes aturan bisnis kritis wajib; tes konkurensi booking tidak boleh hanya simulasi UI |
+| Runtime/package manager | Node 24 LTS baseline + npm | Gunakan `.nvmrc`, `package.json` engines, dan `package-lock.json` konsisten |
+| CI | GitHub Actions | Tambahkan langkah hanya untuk script yang benar-benar ada dan dapat dijalankan lokal |
+| Hosting frontend | Cloudflare Workers Static Assets | Uji route fallback, asset, environment variables, dan status HTTP 404 aktual |
+| Backend hosting | Supabase | Pisahkan development/preview/production; preview tidak pernah memakai database produksi |
 
-### DEC-004 — Styling
-- **Status:** Proposed
-- **Konteks:** Rencana mengusulkan Tailwind CSS v4.
-- **Pilihan:** (A) Tailwind v4 dengan konfigurasi berbasis CSS dan design tokens sebagai variabel tema; (B) CSS Modules; (C) CSS-in-JS.
-- **Keputusan:** Usulan (A). **Satu** pola konfigurasi yang konsisten; tidak mencampur pendekatan styling lain.
-- **Alasan:** Konsisten dengan baseline; tokens dapat dipetakan dari `DESIGN.md` ke tema.
-- **Dampak:** Cara memuat tokens diverifikasi terhadap dokumentasi Tailwind versi terpasang saat TITIS-102. Komponen dasar dibangun di `components/` mengikuti `DESIGN.md`.
-- **Task terdampak:** TITIS-102.
-- **Tanggal:** —
+### 5.1 Aturan dependency
 
-### DEC-018 — Manajemen state klien
-- **Status:** Accepted
-- **Konteks:** Zustand dan sejenisnya berasal dari desain lama dan tidak otomatis bagian dari TITIS.
-- **Pilihan:** (A) Tanpa library state global: server state di TanStack Query, state UI lokal di komponen, state lintas-komponen minimal via React context (sesi/tema), filter/pagination di URL; (B) menambah store global.
-- **Keputusan:** Opsi (A). TanStack Query untuk server state; React Context terbatas untuk state lintas-komponen (sesi/tema); URL untuk state navigasi (filter/pagination); tanpa global store tambahan.
-- **Alasan:** Mengurangi dependency dan sumber kebenaran ganda.
-- **Dampak:** Filter daftar (booking, transaksi, laporan) disimpan di URL agar dapat dibagikan dan dipulihkan.
-- **Task terdampak:** TITIS-101.
-- **Tanggal:** 2026-10-11
+Dependency baru hanya boleh ditambahkan jika:
 
-## 5. Server state dan data fetching
+1. Ada kebutuhan yang tidak tertangani dengan baik oleh platform atau dependency yang sudah dipakai.
+2. Manfaat, kompleksitas, ukuran bundle, lisensi, dan pemeliharaan dipertimbangkan.
+3. Perubahan disetujui pemilik proyek dan dicatat di dokumen yang relevan.
+4. Lockfile diperbarui dan tes/build yang relevan dijalankan.
 
-### DEC-005 — Server state dengan TanStack Query
-- **Status:** Proposed
-- **Konteks:** Rencana mengusulkan TanStack Query; aturan cache, invalidation, loading, dan error harus ditetapkan.
-- **Pilihan:** (A) TanStack Query; (B) fetch manual + state lokal.
-- **Keputusan:** Usulan (A), dengan aturan:
-  1. Akses data dibungkus di `features/<fitur>/api` (atau `services/` bila lintas fitur); komponen tidak memanggil klien Supabase langsung.
-  2. Query key memakai factory per fitur (mis. `['bookings', 'list', filters]`) agar invalidasi presisi.
-  3. Setelah mutasi sukses, invalidasi hanya key yang terdampak.
-  4. **Tanpa optimistic update** untuk mutasi kritis: keputusan booking, checkout, pembayaran, void/refund. Hasil otoritatif datang dari server.
-  5. Mutasi **tidak** di-retry otomatis; retry hanya lewat tindakan pengguna dengan `client_request_id` yang sama (DEC-008). Query boleh retry terbatas pada kegagalan jaringan.
-  6. Setiap query/mutasi menyediakan state loading, empty, error, dan permission-denied yang dirender (DEC-019).
-  7. Saat logout atau pergantian user, seluruh cache dibersihkan.
-  8. Data yang tidak boleh terlihat user berikutnya tidak disimpan di storage browser persisten.
-- **Alasan:** Mencegah data basi, mencegah transaksi ganda, memusatkan penanganan error.
-- **Dampak:** Menambah satu dependency utama (perlu persetujuan saat scaffold).
-- **Task terdampak:** TITIS-106 dan seluruh fitur data.
-- **Tanggal:** —
+Jangan menambah Zustand, React Hook Form, page-builder library, payment SDK, error-tracking SaaS, atau library lain hanya karena generator UI menghasilkannya.
 
-### Aturan kelas data
-- **Data publik** (halaman, katalog publik, resource aktif): boleh di-cache lebih lama.
-- **Data admin** (booking, transaksi, laporan): selalu dianggap sensitif; waktu cache pendek; dibersihkan saat logout.
-- **Hasil perhitungan uang/total**: ditampilkan dari respons server, bukan dihitung ulang sebagai sumber kebenaran di klien (DEC-009).
+---
 
-## 6. Struktur aplikasi (Usulan)
+## 6. Struktur aplikasi frontend
 
-Struktur adalah arah, bukan alasan membuat folder kosong. Setelah disetujui, jangan memaksakan folder yang tidak membantu desain modul sebenarnya.
+Struktur ini merupakan arah minimum, bukan kewajiban membuat folder kosong. Sesuaikan detail setelah scaffold, tetapi pertahankan batas domain yang jelas.
 
 ```text
 src/
-├── app/          # bootstrap: providers, router, error boundary
-├── components/   # UI generik lintas fitur (tanpa logika domain)
-├── features/     # satu folder per domain
-│   ├── auth/  cms/  booking/  pos/  payments/  reports/  settings/
-│   └── <fitur>/{components, hooks, api, schemas, index.ts}
-├── hooks/        # hook generik lintas fitur
-├── lib/          # klien Supabase tunggal, formatter uang/tanggal, util
-├── routes/       # nama/isi final mengikuti DEC-002
-├── services/     # akses data tipis lintas fitur (bila perlu)
-└── types/        # tipe ter-generate + tipe bersama
+├── app/                  # bootstrap, providers, router, error boundaries
+├── components/           # komponen generik tanpa aturan domain
+├── features/
+│   ├── auth/             # login/logout dan sesi Owner
+│   ├── site/             # layout publik, template, section renderer
+│   ├── cms/              # edit profil dan konten terstruktur
+│   ├── catalog/          # katalog tunggal untuk publik dan POS
+│   ├── booking/          # form publik dan dashboard Owner
+│   ├── pos/              # cart, checkout client, riwayat transaksi
+│   └── reports/          # ringkasan laporan dasar
+├── hooks/                # hook generik lintas fitur bila diperlukan
+├── lib/                  # satu client Supabase, env config, formatter
+├── routes/               # komponen halaman/router mengikuti DEC-002
+└── types/                # generated database types dan tipe aplikasi turunan
 ```
 
-Aturan ketergantungan (arah impor):
+### 6.1 Aturan arah impor
 
-1. `app` → `features` → `components` / `hooks` / `lib` / `types`.
-2. Fitur **tidak** mengimpor internal fitur lain; hanya lewat `index.ts` publik fitur tersebut.
-3. `components` tidak mengimpor `features`; `lib` tidak mengimpor `features` atau `components`; `types` tidak mengimpor apa pun.
-4. **Satu** instance klien Supabase, dibuat di `lib/`.
-5. Area admin dimuat malas (lazy) sehingga bundle halaman publik tidak memuat kode admin. Pemisahan diverifikasi saat build (TEST-REL-01).
-6. Variabel lingkungan hanya dibaca di satu modul konfigurasi dan divalidasi saat start; tidak ada `import.meta.env` tersebar.
+1. `app` menghubungkan `features`, `components`, `hooks`, `lib`, dan `types`.
+2. Satu fitur tidak mengimpor file internal fitur lain; gunakan public export bila perlu berbagi perilaku.
+3. `components` tidak mengimpor `features`; `lib` tidak mengimpor UI/domain; `types` tidak mengimpor modul aplikasi.
+4. Hanya ada satu instance client Supabase frontend.
+5. Variabel lingkungan dibaca dan divalidasi dalam satu modul konfigurasi; jangan menyebar `import.meta.env` ke seluruh kode.
+6. Bundle admin sebaiknya dimuat secara lazy agar tidak ikut membesarkan halaman publik. Verifikasi hasil build sebelum menyatakan pemisahan berhasil.
+7. Komponen website publik harus bisa ditukar atau ditata ulang tanpa mengubah skema, alur booking, atau POS.
 
-## 7. Routing
+### 6.2 Batas public site dan Owner dashboard
 
-### DEC-002 — Library routing
-- **Status:** Open
-- **Konteks:** Routing belum dikunci. Dibutuhkan: dua area (publik/admin) dengan layout berbeda, guard autentikasi/role, lazy loading, 404, dan kompatibilitas dengan strategi SEO.
-- **Kriteria evaluasi:** dukungan guard/redirect per role; lazy loading rute; integrasi dengan TanStack Query (loader/prefetch); keamanan tipe parameter/search params (filter di URL, DEC-018); kompatibilitas prerender (DEC-011); ukuran bundle; kematangan dan pemeliharaan; kurva belajar bagi solo developer.
-- **Pilihan:** kandidat yang dievaluasi saat TITIS-004: React Router, TanStack Router (kandidat lain boleh ditambah).
-- **Keputusan:** Belum ada. **Tidak** ada usulan sampai DEC-011 punya arah, karena prerender dapat memengaruhi pilihan.
-- **Dampak:** Menentukan struktur `routes/` dan pola guard.
-- **Task terdampak:** TITIS-106.
-- **Tanggal:** —
+- Layout, navigasi, dan error boundary public site terpisah dari dashboard.
+- Route guard dashboard hanya untuk UX. RLS/function permissions tetap menjadi pengaman sebenarnya.
+- Area dashboard tidak diindeks; metadata dasar bukan pengganti kontrol akses.
+- Data booking, transaksi, payment, dan konfigurasi internal tidak boleh ikut ke bundle HTML publik atau respons API publik.
 
-### Aturan routing (berlaku untuk pilihan apa pun)
-- Guard rute adalah **kenyamanan UX**, bukan keamanan; keamanan ada di RLS/RPC.
-- Rute admin diawali prefix tetap (mis. `/admin`) dan tidak diindeks mesin pencari.
-- Sesi kedaluwarsa mengarahkan ke login tanpa menampilkan data admin (AC-AUTH-01.3).
+---
 
-## 8. Form dan validasi
+## 7. Routing, data fetching, dan penanganan error
 
-### DEC-003 — Pendekatan validasi form
-- **Status:** Open
-- **Konteks:** Validasi harus ada di klien (UX) **dan** di lapisan tepercaya (penegakan). Aturan server berada di SQL/RPC, sehingga skema TypeScript tidak otomatis menjadi sumber kebenaran server.
-- **Kriteria:** asosiasi error ke field secara aksesibel; ukuran bundle; kemudahan menjaga aturan klien selaras dengan aturan server; tipe aman.
-- **Pilihan:** (A) pustaka skema + pustaka form; (B) validasi native HTML + utilitas kecil; kandidat lain boleh ditambah.
-- **Keputusan:** Belum ada.
-- **Aturan tetap:** validasi klien tidak pernah menggantikan validasi server; setiap aturan bisnis kritis ada di database/RPC dan diuji (TEST-BKG-03, TEST-POS-01).
-- **Task terdampak:** TITIS-107, TITIS-109 dan seluruh form.
-- **Tanggal:** —
+### 7.1 Routing
 
-## 9. Autentikasi dan role
+Gunakan React Router v7 sebagai pilihan baseline yang telah ditetapkan sebelumnya. Rute publik minimum dari `PRD.md`:
 
-### DEC-016 — Autentikasi, sesi, sumber role, dan penamaan kunci
-- **Status:** Proposed
-- **Konteks:** Supabase Auth adalah baseline. Role harus dapat dipercaya dan tidak dapat diubah pengguna sendiri.
-- **Pilihan:** (A) email + password, tanpa pendaftaran publik, role di tabel `profiles`; (B) magic link/OTP; (C) role di metadata pengguna.
-- **Keputusan:** Usulan (A). Role dibaca dari `profiles` oleh fungsi pembantu database yang dipakai RLS. **Jangan** memakai metadata yang dapat diubah pengguna sebagai dasar otorisasi.
-- **Penamaan kunci:** `VITE_SUPABASE_URL` dan `VITE_SUPABASE_PUBLISHABLE_KEY` (kunci publik). Supabase merekomendasikan *publishable key* (`sb_publishable_…`) dan *secret key* (`sb_secret_…`); *anon key* dan `service_role` adalah legacy keys yang menurut dokumentasi Supabase dijadwalkan dihentikan pada akhir 2026 (dicek 2026-10-10). Pakai legacy keys hanya bila project memang masih memakainya. Verifikasi kunci pada dashboard project saat TITIS-012 (guide §2.2: jangan mengandalkan ingatan). Secret key/`service_role` tidak pernah di klien.
-- **Alasan:** Sederhana, tanpa akun publik, sesuai AC-AUTH-01.4.
-- **Dampak:** Prosedur bootstrap Owner dan siklus akun Staff (OPEN-018) harus dirancang; pengaturan sign-up publik dinonaktifkan.
-- **Dokumen/task terdampak:** `SECURITY.md` §12, `.env.example`, TITIS-103, TITIS-106, TITIS-107.
-- **Tanggal:** —
+- `/` — Beranda
+- `/tentang` — Tentang
+- `/layanan` — Produk/Layanan
+- `/ruang` — Ruang/Fasilitas bila relevan
+- `/booking` — Form booking
+- `/kontak` — Kontak
+- `*` — halaman 404
 
-### Aturan di frontend
-- Otorisasi di UI hanya menyembunyikan/mengarahkan; penegakan di database.
-- Status sesi disediakan lewat satu provider; komponen tidak membaca token langsung.
-- Tidak ada penyimpanan role di `localStorage` sebagai dasar keputusan.
+Rute dashboard berada di bawah prefix konsisten (misalnya `/admin`), mempunyai layout terpisah, dan memerlukan sesi Owner. URL final dashboard dapat dikunci saat implementasi routing.
 
-## 10. Jalur tulis kritis
+Halaman tambahan untuk desain custom boleh dibuat sesuai kebutuhan klien, tetapi tidak wajib dalam template dasar. Rute yang tidak dikenal harus menampilkan halaman 404. Konfigurasi hosting perlu diuji agar status HTTP 404 benar bila didukung jalur deploy.
 
-### DEC-006 — Jalur tulis booking publik
-- **Status:** Proposed
-- **Konteks:** Anonim harus dapat mengajukan booking tanpa mendapat akses tulis luas (THR-01).
-- **Pilihan:** (A) `INSERT` langsung oleh `anon` dengan RLS — **tidak disarankan** (kontrol kolom/status lemah); (B) RPC database yang memaksa status dan memvalidasi; (C) Edge Function (untuk verifikasi bot, rate limit, atau integrasi notifikasi).
-- **Keputusan:** Usulan (B). Naik ke (C) hanya bila DEC-017 memerlukan verifikasi/ratelimit yang tidak dapat dilakukan di database. Keputusan akhir dicatat di sini dan harus teruji (TEST-BKG-01, -02, -03, -08).
-- **Alasan:** Daftar field terbatas, status dipaksa, validasi tepercaya, tanpa backend tambahan.
-- **Dampak:** Kontrak input/output RPC menjadi bagian dari API yang diuji; respons publik minimal.
-- **Dokumen/task terdampak:** `SECURITY.md` §6.1, `DATABASE.md`, TITIS-203.
-- **Tanggal:** —
+### 7.2 SEO MVP
 
-### DEC-017 — Perlindungan spam/abuse
-- **Status:** Open
-- **Konteks:** Form publik tanpa login rentan terhadap spam (THR-09; AC-BKG-01.6).
-- **Opsi:** honeypot + batas permintaan menunggu per kontak (di RPC); verifikasi bot pihak ketiga yang diperiksa di Edge Function; pembatasan laju di lapisan hosting/edge.
-- **Yang harus diputuskan:** tingkat risiko yang diterima, dampak UX, privasi, biaya, dan ketersediaan mekanisme sesuai hosting (DEC-012).
-- **Keputusan:** Belum ada. Wajib `Accepted` sebelum TITIS-203 (jalur tulis publik); perlindungan yang dipilih diimplementasikan di RPC (TITIS-203) atau di TITIS-206 dan wajib selesai sebelum form publik dirilis.
-- **Tanggal:** —
+Mengikuti `PRD.md`, SEO MVP dibatasi pada:
 
-### DEC-007 — Penegakan anti-bentrok
-- **Status:** Proposed
-- **Konteks:** Pemeriksaan di UI/API tidak aman terhadap dua permintaan bersamaan (INV-BKG-05).
-- **Pilihan:** (A) *exclusion constraint* pada booking `confirmed` per resource dan rentang waktu; (B) cek-lalu-tulis di RPC dengan kunci eksplisit; (C) cek di aplikasi — **ditolak**.
-- **Keputusan:** Usulan (A) (ilustrasi di `DATABASE.md` §7.1). Rincian batas interval, buffer, dan apakah `pending` memblokir mengikuti OPEN-009 dan OPEN-007.
-- **Alasan:** Menegakkan invariant di database; aman terhadap konkurensi.
-- **Dampak:** Memerlukan ekstensi PostgreSQL yang tersedia di Supabase; pelanggaran harus diterjemahkan menjadi pesan jelas.
-- **Task terdampak:** TITIS-202, TITIS-205.
-- **Tanggal:** —
+- judul dan deskripsi metadata dasar;
+- URL yang konsisten dan tautan internal yang masuk akal;
+- struktur heading dan konten yang dapat diakses;
+- halaman 404 yang jelas.
 
-### DEC-008 — Checkout atomik dan idempotency
-- **Status:** Proposed
-- **Konteks:** Checkout dan pembayaran mengubah beberapa record sebagai satu tindakan bisnis.
-- **Pilihan:** (A) satu RPC yang menjalankan seluruh checkout dalam satu transaksi database; (B) beberapa panggilan dari klien — **ditolak**.
-- **Keputusan:** Usulan (A). RPC menerima daftar item (rujukan katalog + kuantitas) dan `client_request_id`; **harga, total, pajak, diskon, dan nomor transaksi dihitung server**; hasil yang sama dikembalikan bila `client_request_id` diulang. Apakah pembayaran awal masuk RPC yang sama atau RPC terpisah ditentukan dengan OPEN-010/011.
-- **Alasan:** Menghindari transaksi parsial dan ganda; menutup manipulasi harga.
-- **Dampak:** Logika uang terpusat di database (DEC-009).
-- **Task terdampak:** TITIS-304, TITIS-306, TITIS-310.
-- **Tanggal:** —
+**Prerender, SSR, dan otomasi build ulang ketika konten berubah bukan syarat MVP.** Vite SPA mengambil konten secara dinamis sehingga hasil indeksasi mesin pencari mungkin terbatas. Dokumentasikan trade-off ini dan jangan menjanjikan SEO teknis lanjutan kepada klien sebelum kebutuhan tersebut dikaji sebagai scope terpisah.
 
-## 11. Uang, waktu, dan tipe
+### 7.3 Server state dengan TanStack Query
 
-### DEC-009 — Representasi uang dan angka
-- **Status:** Proposed
-- **Konteks:** Floating-point tidak boleh dipakai untuk uang (INV-POS-05).
-- **Keputusan:** Usulan: `bigint` dalam satuan terkecil bisnis; jumlah desimal dari `business_settings.currency_decimals`; pajak/persen dalam *basis points*; aturan pembulatan diimplementasikan **sekali**, di database (fungsi kanonik). Jika klien menampilkan pratinjau total, ia hanya informatif dan wajib lulus uji paritas terhadap fungsi server (TEST-POS-05).
-- **Dampak:** Format tampilan (pemisah ribuan, simbol) mengikuti OPEN-013 di lapisan presentasi.
-- **Task terdampak:** TITIS-104, TITIS-302, TITIS-304.
-- **Tanggal:** —
+- Gunakan TanStack Query untuk request database/server dan status query/mutation.
+- Data publik dapat memakai cache lebih lama; data admin harus memiliki cache yang sesuai sensitivitasnya dan dibersihkan saat logout.
+- Jangan menggunakan optimistic update untuk checkout, konfirmasi booking, atau mutasi lain yang menentukan transaksi/availability.
+- Jangan mengulang mutasi checkout secara otomatis. Retry oleh pengguna harus menggunakan `client_request_id` yang sama.
+- Setelah mutasi berhasil, invalidasi query terkait; jangan mengandalkan state lokal sebagai bukti bahwa database sudah berubah.
+- Total transaksi final berasal dari respons database/RPC, bukan hitungan frontend.
 
-### Aturan waktu
-- Semua instant `timestamptz`; zona waktu bisnis dari `business_settings.timezone`. Konversi hanya di lapisan presentasi dan di fungsi pelaporan. Lihat `DATABASE.md` §3.2.
+### 7.4 Error handling dan logging
 
-### DEC-010 — Tipe ter-generate dan representasi status
-- **Status:** Proposed
-- **Konteks:** Tipe buatan tangan dapat menyimpang dari database.
-- **Keputusan:** Usulan: tipe TypeScript dihasilkan dari schema memakai tooling Supabase CLI dan di-commit; CI memeriksa tidak ada selisih terhadap schema (TEST-DB-04). Status bernilai terbatas (text + CHECK di database) dipetakan ke tipe union TS dari satu modul turunan, bukan diketik ulang.
-- **Dampak:** Setiap perubahan migration diikuti sinkronisasi tipe.
-- **Task terdampak:** TITIS-105 dan seterusnya.
-- **Tanggal:** —
+- Definisikan pola error ter-normalisasi: kode internal, pesan yang aman untuk pengguna, dan detail teknis yang telah disanitasi.
+- Tampilkan loading, empty, validation error, forbidden, network failure, success, dan retry state yang sesuai.
+- Pesan publik tidak membocorkan apakah booking lain ada, identitas Owner, detail SQL, atau data pribadi lain.
+- Jangan mencatat token, secret, kredensial, data pembayaran yang tidak dibutuhkan, atau detail kontak pribadi dalam log.
+- Tidak perlu error-tracking SaaS pada MVP. Error tracking dapat dievaluasi setelah versi dasar stabil.
 
-## 12. Konten publik dan SEO
+---
 
-### DEC-014 — Model konten CMS dan rendering aman
-- **Status:** Proposed
-- **Konteks:** Konten yang dapat diedit rentan terhadap XSS (THR-11; AC-CMS-02.3).
-- **Pilihan:** (A) seksi terstruktur (`jsonb` dengan skema per jenis seksi) tanpa HTML bebas; teks kaya dibatasi pada subset markup sederhana yang dirender melalui sanitizer; (B) menyimpan HTML bebas lalu menyanitasi — risiko lebih tinggi.
-- **Keputusan:** Usulan (A). Tautan hanya skema yang diizinkan (`http`, `https`, `mailto`, `tel`). Gambar hanya dari aset media terdaftar. Tidak pernah memakai pengaturan HTML mentah tanpa sanitizer.
-- **Dampak:** Perlu skema field per seksi; editor sederhana. Daftar field final mengikuti OPEN-006; bahasa konten mengikuti OPEN-021.
-- **Task terdampak:** TITIS-109, TITIS-110; TEST-CMS-03.
-- **Tanggal:** —
+## 8. Domain data dan sumber kebenaran
 
-### DEC-011 — Strategi SEO halaman publik
-- **Status:** Accepted
-- **Konteks:** SPA Vite merender di klien; konten dinamis penting mungkin tidak terindeks seperti yang diharapkan. Kebutuhan indeksasi diputuskan via OPEN-015.
-- **Pilihan:**
+Nama dan kolom di bawah adalah **model konseptual**, bukan pengganti migration final. Tipe, constraint, index, relasi, status, serta aturan retensi harus dirinci dalam `DATABASE.md` dan direalisasikan di `supabase/migrations/*.sql`.
 
-  | Opsi | Ringkas | Kelebihan | Risiko/trade-off |
-  |---|---|---|---|
-  | A | SPA dengan metadata di klien saja | Paling sederhana | Tidak semua crawler/pratinjau sosial membaca konten klien |
-  | B | SPA + *prerender* rute publik saat build | Tetap di Vite; HTML statis untuk crawler | Konten CMS berubah tanpa build ulang ⇒ perlu mekanisme pemicu/penyegaran |
-  | C | Framework SSR/SSG untuk situs publik | SEO paling kuat | Mengubah baseline; kompleksitas lebih besar |
-  | D | Situs publik statis terpisah dari admin | Pemisahan jelas | Dua artefak build dan deploy |
+### 8.1 Entitas minimum yang diperkirakan
 
-- **Keputusan:** Opsi B — SPA dengan prerender rute publik saat build. Perubahan konten CMS memerlukan build ulang; otomatisasi menyusul. Dicatat di TITIS-006.
-- **Dampak:** Memengaruhi routing, build, hosting (DEC-012), dan acceptance AC-PUB-01.3.
-- **Task terdampak:** TITIS-106, TITIS-110.
-- **Tanggal:** 2026-10-11
-
-## 13. Lingkungan, hosting, dan tooling
-
-### DEC-012 — Hosting, environment, dan deployment
-- **Status:** Open
-- **Konteks:** Provider, domain, dan prosedur diputuskan via OPEN-014. Provider dari guide lama tidak boleh diambil otomatis.
-- **Kebutuhan minimum penyedia:** hosting aset statis SPA dengan *fallback* rute klien; injeksi variabel lingkungan saat build; HTTPS dan domain kustom; deploy pratinjau (diutamakan); rollback ke build sebelumnya; kompatibel dengan opsi SEO yang dipilih.
-- **Lingkungan:** development (Supabase lokal via CLI), staging (opsional; proyek Supabase terpisah), production. Credential, URL, seed, dan konfigurasi tidak tercampur. URL redirect autentikasi dan CORS disetel per lingkungan.
-- **Keputusan:** Arah: Cloudflare Workers Static Assets untuk frontend Vite; Supabase backend terpisah. Domain, environment, rollback, dan persetujuan rilis diputuskan di TITIS-005.
-- **Tanggal:** —
-
-### DEC-015 — Package manager, runtime, dan CI
-- **Status:** Accepted
-- **Keputusan:** npm dengan `package-lock.json` yang di-commit; Node.js 24 LTS via `.nvmrc`; `engines` di `package.json` konsisten dengan `.nvmrc`; GitHub Actions ditambahkan setelah skrip proyek tersedia. Tinjau ulang runtime saat TITIS-101 dan sebelum rilis (TITIS-410).
-- **Aturan CI:** workflow dibuat **setelah** script nyata ada di `package.json` dan dapat dijalankan lokal; langkah CI = script yang sama (type-check, lint, test, build, test database bila tersedia). Tidak ada step CI untuk script yang tidak ada. CI minimal dibuat pada Phase 1 (TITIS-113) dan diperluas di Phase 4 (TITIS-403), agar pemeriksaan selisih tipe (DEC-010) dan test database berjalan sejak fondasi.
-- **Dampak:** Versi paket dikunci saat scaffold lewat lockfile; reproduksi dari klon bersih diuji (TEST-REL-01).
-- **Task terdampak:** TITIS-101, TITIS-403, TITIS-410.
-- **Tanggal:** 2026-10-11
-
-### DEC-013 — Tooling pengujian
-- **Status:** Accepted (E2E & a11y otomatis: Open; pendekatan tes konkurensi: Open)
-- **Keputusan:** Vitest + React Testing Library untuk unit/komponen; `supabase test db` (pgTAP) untuk constraint, RLS, dan RPC. **Open:** alat E2E (kandidat: Playwright), alat cek aksesibilitas otomatis, dan pendekatan/tooling tes konkurensi dua koneksi; putuskan sebelum TITIS-404.
-- **Prasyarat operasional:** Menjalankan `supabase test db` memerlukan Supabase CLI dan container runtime kompatibel Docker untuk stack Supabase lokal. Persiapan ini dilakukan sebagai bagian setup TITIS-101/TITIS-103, bukan dependency paket proyek.
-- **Alasan:** Menutup lapisan test yang dipetakan di `TESTING.md`. Tes konkurensi dibutuhkan; metode/tooling-nya belum diputuskan.
-- **Task terdampak:** TITIS-101, TITIS-404.
-- **Tanggal:** 2026-10-11
-
-## 14. Error handling dan observability
-
-### DEC-019 — Penanganan error dan observability
-- **Status:** Accepted
-- **Keputusan:** Error boundary per area (publik/admin); satu tipe error ternormalisasi (kode, pesan pengguna, detail tersanitasi) memetakan error database/RPC ke pesan actionable; state `loading/empty/error/forbidden` di komponen standar (`DESIGN.md` §9); log klien dan server tidak memuat token, secret, atau data pribadi (`SECURITY.md` §8.2). Tanpa error tracking pihak ketiga pada MVP.
-- **Task terdampak:** TITIS-106.
-- **Tanggal:** 2026-10-11
-
-## 15. Kebijakan dependency
-
-Setiap dependency harus memenuhi **semua**:
-
-1. Ada alasan tertulis (apa yang tidak dapat dilakukan platform/library yang sudah ada).
-2. Dipilih di arsitektur atau dicatat sebagai DEC bila signifikan; **disetujui pemilik proyek** sebelum ditambahkan (`AGENTS.md` §3.2).
-3. Pemeliharaan aktif, lisensi kompatibel dengan lisensi proyek (OPEN-017), dan tanpa advisori keamanan terbuka yang relevan.
-4. Dampak ukuran bundle publik dipertimbangkan.
-5. Lockfile ikut di-commit; pembaruan dependency dikerjakan sebagai task sendiri.
-
-Jangan menambah library hanya karena kode hasil generator (mis. Google Stitch) memakainya.
-
-## 16. Teknologi yang tidak dipakai
-
-Tidak menjadi bagian TITIS kecuali ada DEC baru yang `Accepted`: FastAPI, Railway, Zustand, Web3 (dari desain lama), backend terpisah di luar kemampuan Supabase, serta provider hosting dari guide lama.
-
-## 17. Batas frontend–database
-
-| Hal | Frontend | Database/server |
+| Entitas | Tujuan | Catatan |
 |---|---|---|
-| Hak akses | Menyembunyikan/mengarahkan | **Menegakkan** (RLS, grant, RPC) |
-| Status booking | Menampilkan, meminta transisi | **Menetapkan** dan memvalidasi transisi |
-| Harga/total/pajak/diskon | Menampilkan hasil server | **Menghitung** |
-| Anti-bentrok | Menampilkan hasil/penjelasan | **Menegakkan** (constraint) |
-| Idempotency | Membuat `client_request_id` | **Menegakkan** keunikan |
-| Secret | Hanya kunci publik | Secret server |
-| Validasi | UX (cepat, ramah) | **Penegakan** (otoritatif) |
+| `owner_profiles` atau padanan | Mengaitkan user Supabase Auth yang sah dengan akun Owner aktif | Tidak ada tabel role matrix untuk Staff di MVP. Pilih nama yang konsisten di `DATABASE.md`. |
+| `business_profile` | Satu baris profil/pengaturan bisnis untuk satu instalasi | Berisi nama, deskripsi, kontak, jam buka, zona waktu `Asia/Jakarta`, dan referensi media yang diperlukan. Hindari field publik berupa secret. |
+| `page_content` | Konten terstruktur untuk halaman/section company profile | Field dan bentuk JSONB/relasi ditetapkan sesuai CMS. Tidak menyimpan HTML atau script bebas. Konten tersimpan berlaku ke website publik; workflow draft/publish kompleks tidak masuk MVP. |
+| `products` | Katalog tunggal produk/layanan | Memiliki status aktif/nonaktif, nama, deskripsi, harga, dan gambar opsional. Website dan POS mengambil sumber yang sama. |
+| `resources` | Ruang/fasilitas yang dapat dipesan | Owner mengatur nama, status aktif, dan jam operasional yang diperlukan. Bagian website dapat disembunyikan bila tidak relevan. |
+| `bookings` | Permintaan booking dan statusnya | Data pribadi hanya untuk Owner; pengunjung tidak dapat membaca list/detail internal. |
+| `orders` | Header transaksi POS | Menyimpan nomor transaksi unik, total, status final, waktu, dan idempotency key atau referensinya. |
+| `order_items` | Detail item pada transaksi | Snapshot nama dan harga saat checkout, kuantitas, dan total baris. Riwayat tidak berubah ketika katalog berubah. |
+| `payments` | Catatan pembayaran untuk satu checkout lunas | Satu pembayaran manual per transaksi pada MVP; metode `cash`, `transfer`, atau `qris`. Tidak mendukung DP, pelunasan, refund, atau payment gateway. |
 
-## 18. Pertanyaan arsitektur terbuka
+Jangan membuat semua tabel lebih awal hanya karena muncul di daftar konsep. Finalisasi model sesuai alur yang disetujui dan uji migration dari environment bersih.
 
-Seluruh pertanyaan terbuka dilacak sebagai DEC berstatus `Open` pada §3 (DEC-002, -003, -011, -012, -017) beserta sub-keputusan E2E/a11y pada DEC-013 dan layanan pelacakan error pada DEC-019. Pertanyaan baru ditambahkan sebagai DEC berikutnya.
+### 8.2 CMS terstruktur
+
+- Simpan field bisnis dan section konten yang dibutuhkan template dasar.
+- Konten fleksibel sebaiknya berupa data terstruktur (field biasa atau JSONB yang tervalidasi), bukan HTML bebas.
+- Bentuk schema content harus memiliki validasi yang jelas per jenis section; jangan menerima sembarang object JSON untuk dirender secara langsung.
+- Sanitasi teks kaya pada subset markup yang secara eksplisit diizinkan bila memang dibutuhkan. Hindari `dangerouslySetInnerHTML` dengan konten CMS tak tepercaya.
+- Media disimpan di Storage dengan batas tipe/ukuran dan kontrol upload; referensi media divalidasi sebelum ditampilkan.
+- Design/layout berasal dari komponen kode. CMS mengubah konten dan visibilitas section yang diizinkan, bukan script atau markup arbitrer.
+- Kebutuhan SEO per halaman hanya metadata dasar pada MVP; konten SEO dinamis lanjutan tidak boleh membuat scope diam-diam berubah.
+
+### 8.3 Katalog bersama
+
+- `products` menjadi satu-satunya sumber nama, deskripsi, harga, status aktif, dan gambar produk/layanan.
+- Public site hanya memperlihatkan field publik dari item aktif.
+- POS hanya menjual item aktif dan membaca harga resmi dari database.
+- Harga di halaman publik tidak boleh dikelola sebagai salinan terpisah di `page_content`.
+- Jika perlu menampilkan bagian pilihan produk pada beranda, simpan referensi ID produk/urutan tampil, bukan salinan harga/nama sebagai sumber kebenaran kedua.
+
+### 8.4 Uang, waktu, dan tipe
+
+- Mata uang MVP: **IDR**; tidak ada pilihan multi-currency pada MVP.
+- Simpan nominal rupiah sebagai bilangan bulat dengan tipe database yang cukup (misalnya `bigint`); jangan gunakan floating-point.
+- Karena PostgreSQL `bigint` bisa melampaui rentang aman JavaScript `number`, tipe uang hasil generate/adapter harus diperlakukan sebagai string atau dikonversi dengan aturan yang aman. Jangan melakukan aritmetika uang final di frontend.
+- Kuantitas POS memakai integer positif dengan batas yang disepakati. Harga/kuantitas divalidasi di database.
+- Simpan instant sebagai `timestamptz`. Zona waktu bisnis MVP adalah `Asia/Jakarta`; filter laporan menghormati batas hari pada zona waktu itu.
+- Nomor transaksi unik harus dijamin database. Format tampilan final dapat mengikuti PRD, tetapi keunikan tidak boleh hanya bergantung pada counter frontend.
+
+---
+
+## 9. Authentication, authorization, dan RLS
+
+### 9.1 Model akses MVP
+
+- Hanya satu akun Owner yang dibuat melalui prosedur bootstrap/setup yang terdokumentasi.
+- Signup publik dinonaktifkan. Pengunjung publik tidak perlu akun.
+- Staff, pembagian izin, dan role matrix tidak termasuk MVP.
+- Sesi dikelola melalui Supabase Auth. Komponen tidak membaca atau memproses token secara langsung.
+- Role/identitas Owner tidak boleh berasal dari `user_metadata` atau input client yang dapat diubah pemakai.
+
+Fungsi helper kanonik untuk memeriksa Owner boleh dipilih pada `SECURITY.md`/migrations, tetapi harus sederhana, didokumentasikan, dan diuji. Jika memakai `SECURITY DEFINER`, batasi `EXECUTE`, gunakan `search_path` aman (atau kosong), dan schema-qualify semua referensi objek.
+
+### 9.2 Matriks akses konseptual
+
+| Data/operasi | Pengunjung anonim | Owner |
+|---|---|---|
+| Membaca profil/halaman publik | Boleh, hanya field publik | Boleh |
+| Membaca produk/layanan aktif | Boleh, hanya field publik | Boleh |
+| Membaca resource aktif/jam yang dipublikasikan | Boleh sesuai kebutuhan form/website | Boleh |
+| Mengirim booking baru | Boleh melalui jalur publik terbatas | Boleh mengelola booking melalui dashboard |
+| Membaca seluruh/detail data booking | Tidak boleh | Boleh |
+| Mengubah status booking | Tidak boleh | Boleh sesuai transisi yang diizinkan |
+| Mengelola profil/konten/katalog/resource | Tidak boleh | Boleh |
+| Membaca/membuat transaksi dan pembayaran | Tidak boleh | Boleh |
+| Membaca laporan | Tidak boleh | Boleh |
+
+RLS policy bukan satu-satunya kontrol. Evaluasi privilege table, views, RPC, Edge Functions, Storage policies, dan grants. Gunakan tampilan publik/view/RPC yang hanya mengekspos field yang dibutuhkan; jangan mengizinkan `anon` membaca seluruh row internal hanya untuk menampilkan beberapa kolom.
+
+### 9.3 Supabase keys dan environment
+
+- Frontend hanya menggunakan URL Supabase dan publishable key yang memang dimaksudkan untuk pemakaian publik.
+- `service_role`, secret key, password database, dan secret Turnstile/layanan lain tidak boleh berada di `VITE_*`, source frontend, bundle browser, Git, log, atau prompt.
+- Pisahkan local development, preview/staging, dan production. Preview tidak menggunakan database production.
+- Auth redirect URLs, CORS/origins, dan environment values harus diatur sesuai setiap lingkungan.
+- `.env.example` berisi nama variabel dan placeholder, bukan secret asli.
+
+---
+
+## 10. Jalur kritis: booking publik dan anti-bentrok
+
+### 10.1 Alur booking
+
+1. Pengunjung mengisi resource, waktu mulai/selesai, nama, kontak, jumlah orang, dan catatan opsional.
+2. Frontend memvalidasi format untuk UX, lalu mengirim permintaan ke jalur publik yang ditetapkan.
+3. Lapisan server menetapkan status `pending`; client tidak boleh memilih status atau field internal.
+4. Validasi tepercaya memeriksa resource aktif, waktu, durasi, jam operasional, horizon pemesanan, dan input lain yang diwajibkan.
+5. Owner melihat booking di dashboard, lalu mengonfirmasi, menolak, atau membatalkan.
+6. Konfirmasi yang bertabrakan ditolak oleh database dan dipetakan ke pesan aman yang dapat ditindaklanjuti.
+7. Owner menghubungi pengunjung secara manual; notifikasi otomatis dan reschedule mandiri bukan fitur MVP.
+
+### 10.2 Aturan jadwal MVP
+
+Mengikuti `PRD.md`:
+
+- Zona waktu bisnis: `Asia/Jakarta`.
+- Mulai booking mengikuti slot 60 menit; durasi adalah kelipatan 60 menit, dengan durasi maksimum 4 jam.
+- Buffer antar-booking: 15 menit. Aturan apakah buffer diterapkan setelah booking atau pada rentang reservasi yang diperiksa harus ditulis eksplisit pada `DATABASE.md` dan dibuktikan lewat tes batas.
+- Pemesanan maksimal 30 hari ke depan.
+- Resource dan jam operasional dapat diubah Owner. Slot, buffer, durasi maksimum, serta horizon pada MVP merupakan konfigurasi proyek yang ditetapkan; bukan editor kebijakan booking kompleks.
+- Hanya status `confirmed` memblokir waktu. `pending` tidak memblokir.
+- Interval waktu bersifat setengah-terbuka `[start, end)`. Booking lain boleh mulai persis ketika interval yang diblokir berakhir, termasuk buffer yang sudah dihitung.
+- Jika dua konfirmasi bersamaan akan menghasilkan bentrok, database hanya boleh menerima satu.
+
+### 10.3 Constraint dan strategi implementasi
+
+- Pilihan yang disarankan adalah PostgreSQL range type (`tstzrange`) dan exclusion constraint GiST pada kombinasi resource dan rentang waktu yang diblokir, dengan filter status `confirmed`.
+- Periksa kebutuhan extension `btree_gist` pada Supabase dan pastikan migration dapat diterapkan pada environment lokal/test.
+- Representasi rentang yang dipakai constraint harus mencakup semantik buffer yang disepakati; jangan hanya memeriksa rentang asli bila buffer merupakan aturan bisnis.
+- Jangan mengandalkan query `SELECT` untuk mencari slot kosong diikuti `INSERT` saja—dua request bersamaan dapat lolos cek yang sama.
+- Tangani exclusion violation (misalnya SQLSTATE `23P01`) dengan hasil yang aman dan pesan “slot tidak lagi tersedia” atau padanan yang jelas.
+- Tes harus mencakup overlap, batas interval tepat, buffer, booking pending, resource berbeda, input waktu invalid, serta dua upaya konfirmasi bersamaan.
+
+### 10.4 Jalur publik dan anti-abuse
+
+DEC-006/DEC-017 perlu mengunci implementasi tepat sebelum booking dibuat:
+
+- Jalur publik hanya menerima field yang dibutuhkan dan tidak menyediakan `SELECT` publik atas data booking.
+- Usulan jalur: Supabase Edge Function sebagai entry point publik, dengan operasi database internal yang hanya dapat dipanggil oleh jalur tepercaya. RPC internal tidak diberi `EXECUTE` ke `anon` jika hal itu memungkinkan bypass proteksi.
+- Validasi aturan bisnis tetap dilakukan ulang pada lapisan database/internal; validasi Edge Function saja tidak cukup.
+- MVP memerlukan perlindungan spam sederhana yang bisa diverifikasi, misalnya honeypot plus pembatasan permintaan yang layak pada jalur publik bila tersedia. Cloudflare Turnstile boleh dipakai bila disetujui atau risiko pilot membutuhkannya, tetapi integrasi pihak ketiga tidak menjadi kewajiban diam-diam dari PRD.
+- Jika Edge Function menggunakan secret berhak tinggi, validasi input wajib ketat karena service role melewati RLS. Secret hanya berada di server-side environment.
+- Respons publik tidak boleh memuat nama, kontak, waktu lengkap, atau detail booking pengguna lain.
+
+---
+
+## 11. Jalur kritis: POS checkout atomik
+
+### 11.1 Alur checkout
+
+1. Owner memilih item aktif dan kuantitas dari katalog.
+2. Frontend boleh menampilkan estimasi subtotal, tetapi estimasi itu bukan sumber kebenaran.
+3. Client mengirim daftar ID item, kuantitas, metode pembayaran (`cash`, `transfer`, `qris`), dan `client_request_id` unik untuk aksi checkout.
+4. Satu operasi database tepercaya memvalidasi Owner, memuat item aktif dan harga resmi, menghitung total, menyimpan order, snapshots `order_items`, serta satu catatan payment lunas secara atomik.
+5. Database menghasilkan/memastikan nomor transaksi unik dan mengembalikan detail hasil tersimpan.
+6. Frontend menampilkan hasil dari respons server. Jika terjadi network timeout, retry menggunakan `client_request_id` yang sama.
+
+### 11.2 Aturan wajib
+
+- Gunakan RPC/fungsi database untuk checkout multi-record atau jalur server tepercaya lain yang menghasilkan transaksi atomik.
+- Client tidak boleh menentukan total resmi, harga snapshot, status final, owner ID, atau timestamp pembayaran yang dipercaya tanpa validasi.
+- Tolak item nonaktif, kuantitas tidak valid, payload kosong/tidak valid, dan metode pembayaran di luar enum yang diizinkan.
+- Simpan snapshot nama dan harga pada detail transaksi. Perubahan katalog tidak mengubah transaksi yang sudah selesai.
+- Retry dengan `client_request_id` yang sama dan payload identik mengembalikan transaksi yang sudah dibuat atau hasil ekuivalen tanpa membuat penjualan baru.
+- ID sama dengan payload berbeda harus ditolak sebagai konflik, bukan dipakai untuk mengganti transaksi lama.
+- Order, order items, dan payment harus commit bersama atau rollback bersama.
+- Transaksi yang selesai dibayar tidak dapat diedit atau dihapus melalui dashboard pada MVP. Tidak ada flow refund/void/koreksi; jelaskan keterbatasan ini pada UI/dokumentasi operasional.
+- Jangan menambahkan diskon, pajak, pembulatan khusus, DP, stok, atau payment gateway pada checkout MVP.
+
+### 11.3 Keamanan fungsi database
+
+- Fungsi tidak aman secara otomatis hanya karena berjalan di PostgreSQL.
+- Gunakan privilege serendah mungkin dan `SECURITY INVOKER` bila sesuai.
+- Jika `SECURITY DEFINER` diperlukan, batasi `EXECUTE`, gunakan `search_path` aman/kosong, referensikan objek dengan nama schema yang eksplisit, dan periksa seluruh input serta otorisasi di fungsi.
+- Tinjau grants tabel dan function bersama RLS. Jangan mengekspos service-role key ke browser.
+
+---
+
+## 12. Storage media dan content safety
+
+- Gunakan Supabase Storage hanya untuk logo, hero, dan gambar produk/konten yang diperlukan oleh template.
+- Batasi jenis dan ukuran file; validasi sisi client untuk UX dan server/storage policy untuk enforcement.
+- Tetapkan apakah objek publik atau private sebelum membuat bucket/policy. Media yang memang tampil pada website dapat disajikan publik, tetapi operasi upload/update/delete tetap hanya untuk Owner.
+- Jangan menyimpan file yang dapat mengeksekusi script atau menerima HTML/SVG aktif tanpa kebijakan dan sanitasi yang jelas.
+- Field konten tidak boleh mengeksekusi JavaScript. Hindari raw HTML; bila teks kaya dibutuhkan, izinkan subset markup yang eksplisit dan sanitasi sebelum render.
+- Tambahkan alt text pada gambar yang memerlukan deskripsi aksesibilitas.
+- Jangan membangun media manager lengkap, crop editor, atau workflow aset lanjutan pada MVP.
+
+---
+
+## 13. Laporan dan query data
+
+- Laporan awal menghitung penjualan POS yang berhasil dan lunas; tidak ada akuntansi accrual, DP, refund, atau adjustment.
+- Metrik minimum: total penjualan per periode, jumlah transaksi, total per metode pembayaran, dan jumlah booking per status. Item terlaris boleh disertakan bila sederhana dan hasilnya dapat direkonsiliasi.
+- Semua definisi metrik harus mengikuti `PRD.md` serta dituliskan di `DATABASE.md` sebelum laporan dianggap final.
+- Filter tanggal menggunakan zona waktu bisnis `Asia/Jakarta`, lalu konversi batas waktu dengan benar ke `timestamptz`.
+- Buat index berdasarkan query aktual yang penting (mis. status/tanggal booking, waktu order, item/order foreign keys); jangan menambah index spekulatif tanpa kebutuhan.
+- Pengujian laporan harus menggunakan fixture yang hasil hitung manualnya diketahui.
+
+---
+
+## 14. Migration, generated types, dan database testing
+
+### 14.1 Migration workflow
+
+- Simpan schema, foreign keys, check/unique/exclusion constraints, indexes, RLS policies, grants, functions, dan perubahan Storage policy yang dikelola SQL dalam migrations.
+- Jalankan migration pada Supabase lokal atau environment test terpisah lebih dahulu.
+- Jangan reset/drop/truncate atau menjalankan migration destruktif pada production tanpa review, backup/recovery plan yang sesuai, dan persetujuan eksplisit.
+- Setelah schema berubah, regenerate TypeScript database types dan jalankan semua tes yang terkait.
+- `DATABASE.md` menjelaskan keputusan dan invariant; migration files tetap sumber kebenaran schema yang dieksekusi.
+
+### 14.2 Generated TypeScript types
+
+- Baseline script: `npm run db:types`, dengan command Supabase CLI yang disepakati di `package.json`.
+- Hasil schema disimpan di `src/types/database.ts` jika struktur itu tetap dipakai saat scaffold.
+- Jangan menulis ulang tipe tabel/function secara manual jika bisa dihasilkan dari schema.
+- Perlakukan nominal `bigint` dengan representasi yang aman (umumnya string di batas TypeScript/JSON); jangan membuat asumsi bahwa nominal dapat diproses sebagai `number` tanpa pemeriksaan rentang.
+- Verifikasi command `db:types` dan jenis status yang dihasilkan pada versi Supabase CLI saat implementasi; jangan menambahkan CI check untuk script yang belum berfungsi.
+
+### 14.3 Tes wajib untuk database dan security
+
+Minimal buktikan:
+
+- akses anonim hanya membaca field publik yang diperlukan;
+- pengunjung tidak dapat membaca/mengubah booking internal, transaksi, atau laporan;
+- user non-Owner tidak dapat memanggil operasi Owner (signup publik tidak menghasilkan akun);
+- validasi status awal dan transisi booking;
+- exclusion constraint menghentikan bentrok, termasuk buffer dan request bersamaan;
+- harga/total dari client tidak dipercaya;
+- checkout atomik dan idempotency bekerja pada retry;
+- snapshot item/harga tidak berubah ketika katalog diedit;
+- transaksi nonaktif/invalid tidak dapat dijual;
+- laporan cocok dengan fixture yang dihitung manual.
+
+Gunakan pgTAP/`supabase test db` jika sesuai dengan versi/tooling proyek. Tes konkurensi dapat membutuhkan integration test atau skrip yang menjalankan request bersamaan terhadap database test; jangan menganggap tes SQL sekuensial telah membuktikan konkurensi.
+
+---
+
+## 15. Environment, deployment, dan secrets
+
+### 15.1 Lingkungan
+
+| Lingkungan | Frontend | Supabase | Aturan |
+|---|---|---|---|
+| Local | `vite dev` | Supabase lokal via CLI jika tersedia | Data sintetis; `.env.local` tidak di-commit |
+| Preview/Staging | Cloudflare preview atau deployment non-production yang disetujui | Proyek Supabase staging terpisah | Tidak boleh menggunakan database production |
+| Production | Cloudflare Workers Static Assets | Proyek Supabase production | Deploy hanya setelah persetujuan rilis |
+
+Hosting/domain dan batas paket provider harus diverifikasi pada saat implementasi; dokumentasi ini bukan janji harga/limit yang tetap.
+
+### 15.2 Environment variables
+
+Nama baseline yang dipakai frontend:
+
+```dotenv
+VITE_SUPABASE_URL=
+VITE_SUPABASE_PUBLISHABLE_KEY=
+```
+
+Tambahkan public site key Turnstile hanya jika integrasinya disetujui. Site key publik boleh berada pada frontend; secret key hanya berada di environment server/Edge Function.
+
+- Semua variable `VITE_*` dianggap bisa dilihat di browser.
+- Jangan pernah menaruh `service_role`, secret Supabase, password database, atau secret integrasi pada `VITE_*`.
+- `.env.example` berisi placeholder saja.
+- Jika secret terpapar, rotasi secret; menghapus teks dari file saja tidak cukup.
+
+### 15.3 Build dan release
+
+- Gunakan command build/typecheck/lint/test yang benar-benar tersedia di `package.json`.
+- Uji route publik, dashboard, login/logout, 404, asset/media, serta koneksi ke environment yang tepat pada preview.
+- Deploy production memerlukan persetujuan eksplisit Owner.
+- Simpan referensi deployment terakhir yang telah diverifikasi untuk rollback frontend.
+- Perbaikan schema production dilakukan melalui migration lanjutan dan prosedur recovery yang disetujui; rollback frontend tidak membatalkan perubahan database.
+- Jangan menyatakan rilis selesai hanya karena website bisa dibuka.
+
+---
+
+## 16. Risiko arsitektur dan trade-off yang diterima
+
+| Risiko / trade-off | Konsekuensi | Penanganan MVP |
+|---|---|---|
+| Vite SPA dan konten dinamis | SEO tidak setara dengan SSR/prerender pada semua crawler | Metadata dasar; jangan klaim SEO lanjutan; kaji kebutuhan lanjutan secara terpisah |
+| Custom UI/UX melalui kode | Setiap desain klien dapat menambah jam implementasi | Gunakan komponen/tokens; scope custom design disetujui per kebutuhan; backend tetap sama |
+| Pending tidak memblokir slot | Beberapa request dapat memilih slot yang sama sebelum Owner meninjau | Dashboard pending; constraint mencegah dua konfirmasi yang berbenturan |
+| Tidak ada void/refund | Kesalahan transaksi tidak bisa dikoreksi melalui UI MVP | Tinjau keranjang sebelum checkout; tampilkan keterbatasan; jangan edit/hapus transaksi selesai |
+| Single Owner | Tidak ada operasional multipengguna | Sengaja dibatasi untuk menghemat waktu; Staff dapat menjadi fase lanjutan |
+| Form publik rentan spam | Potensi request palsu | Validasi tepercaya dan perlindungan sederhana; evaluasi CAPTCHA/rate limit jika penggunaan nyata memerlukannya |
+| Scope creep | Timeline satu bulan mudah terlewati | Fitur deferred tidak masuk tanpa keputusan dan trade-off tertulis |
+
+---
+
+## 17. Teknologi dan kapabilitas di luar baseline
+
+Hal berikut bukan bagian MVP kecuali ada keputusan scope baru yang disetujui:
+
+- FastAPI atau backend terpisah di luar Supabase;
+- Zustand atau global state library lain;
+- React Hook Form;
+- payment gateway/SDK pembayaran;
+- inventory/BOM, supplier, purchase order, POS offline;
+- page builder drag-and-drop atau editor HTML/CSS bebas;
+- multi-tenant, SaaS billing, dan multi-bahasa;
+- SSR/prerender lanjutan, pipeline build otomatis untuk setiap perubahan CMS;
+- error tracking pihak ketiga dan analitik lanjutan.
+
+---
+
+## 18. Referensi dan kewajiban verifikasi
+
+Dokumentasi resmi harus diperiksa sesuai versi tool yang benar-benar dipakai, khususnya:
+
+- Supabase Database Migrations: https://supabase.com/docs/guides/local-development/database-migrations
+- Supabase Row Level Security: https://supabase.com/docs/guides/database/postgres/row-level-security
+- Supabase Database Functions: https://supabase.com/docs/guides/database/functions
+- PostgreSQL Range Types: https://www.postgresql.org/docs/current/rangetypes.html
+- PostgreSQL Constraints: https://www.postgresql.org/docs/current/ddl-constraints.html
+- Tailwind CSS v4: https://tailwindcss.com/docs
+- React Router: https://reactrouter.com/
+- Cloudflare Workers Static Assets: https://developers.cloudflare.com/workers/static-assets/
+
+URL di atas adalah titik awal, bukan bukti bahwa implementasi aktual sudah memenuhi persyaratan. Catat versi dan hasil verifikasi saat task terkait dikerjakan.
+
+---
+
+## 19. Gate sebelum implementasi fitur
+
+Sebelum memulai task fitur yang relevan, pastikan:
+
+- [ ] `PRD.md` yang direvisi telah ditinjau dan scope template/custom UI/UX dipahami.
+- [ ] Owner-only auth dan tidak adanya Staff pada MVP konsisten di `SECURITY.md`.
+- [ ] Routing dan SEO dasar tidak bergantung pada prerender/SSR lanjutan.
+- [ ] Jalur public booking, anti-abuse, dan pemanggilan RPC/function internal telah disetujui.
+- [ ] Strategi buffer booking jelas serta dapat ditegakkan oleh constraint database.
+- [ ] Checkout menggunakan IDR integer, paid-in-full, satu metode manual, atomic writes, snapshots, dan idempotency.
+- [ ] Tabel, RLS, grants, Storage policies, dan RPC/function permissions telah dipetakan di `SECURITY.md`/`DATABASE.md`.
+- [ ] Scripts migration, generated types, build, typecheck, lint, dan test yang direncanakan tersedia atau dicatat sebagai task setup.
+- [ ] `AGENTS.md` dan `TASK.md` membatasi scope kerja AI dan mencatat bukti verifikasi.
+
+**Tidak boleh** memperlakukan butir checklist sebagai hasil yang sudah tercapai tanpa memeriksa repository dan hasil command sebenarnya.

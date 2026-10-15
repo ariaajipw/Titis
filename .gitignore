@@ -11,9 +11,28 @@ build/
 .env
 .env.local
 .env.*.local
+.env.production
+.env.development
+.env.staging
+
+# Supabase Local
+.supabase/
+supabase/.temp/
+
+# Test Coverage
+coverage/
+
+# Build Cache
+.turbo/
 
 # IDE & OS
 .DS_Store
+Thumbs.db
 .vscode/
 .idea/
 *.log
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

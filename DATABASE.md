@@ -1,418 +1,547 @@
 # DATABASE — Rancangan Data TITIS
 
-> **Status:** **Draft rancangan (Phase 0)**. Belum ada migration; belum ada tabel yang direalisasikan. Seluruh nama tabel/kolom/tipe di bawah adalah **usulan konseptual**.
-> **Sumber kebenaran untuk:** penjelasan entitas, relasi, status, invariants, dan alasan desain.
-> **Bukan sumber kebenaran schema:** definisi yang dieksekusi adalah `supabase/migrations/*.sql`. Bila dokumen ini berbeda dari migration, hentikan pekerjaan terkait dan selesaikan konflik (`TITIS_MASTER_BUILD_GUIDE_FINAL.md` §3.2). Setelah migration ada, dokumen ini diperbarui agar menjelaskan schema yang **direalisasikan** (TITIS-013 dst.).
-> **Tinjauan:** `TASK.md` → TITIS-004.
-> **Label:** `OPEN-xxx` merujuk `PRD.md` §8; `DEC-xxx` merujuk `ARCHITECTURE.md` §3; `INV-xxx` adalah invariant di §8 dan menjadi rujukan test di `TESTING.md`. Kebijakan akses (RLS) **tidak** diulang di sini; lihat `SECURITY.md` §5.
+> **Status:** Draft rancangan Phase 0. Ini model konseptual, bukan schema yang sudah diterapkan. Keputusan yang masih `Proposed` di `ARCHITECTURE.md` belum menjadi izin implementasi.
+>
+> **Baseline yang dipakai:** `PRD.md`, `TITIS_MASTER_BUILD_GUIDE_FINAL.md`, dan `ARCHITECTURE.md` revisi 2026-10-15.
+>
+> **Sumber kebenaran untuk:** entitas konseptual, relasi, status, aturan integritas data, dan alasan desain.
+>
+> **Bukan sumber kebenaran schema aktif:** schema yang dieksekusi ditentukan oleh `supabase/migrations/*.sql`. Bila dokumen berbeda dari migration, hentikan pekerjaan terkait dan selesaikan konflik sebelum melanjutkan.
+>
+> **Task review:** `TASK.md` → TITIS-007. Migration fondasi: `TASK.md` → TITIS-104; katalog dan resource direncanakan pada Phase 2; booking dan POS berada pada fase berikutnya sesuai `TASK.md`.
 
 ---
 
-## 1. Cara membaca dokumen ini
+## 1. Tujuan, batas, dan aturan penggunaan
 
-- Satu instalasi = satu bisnis (PRD A-1). Tidak ada kolom `business_id` pada tabel operasional; singleton `business_settings` mewakili bisnis tersebut. Bila scope berubah menjadi multi-bisnis, seluruh rancangan ini harus ditinjau ulang.
-- Kolom bertanda **(kondisional)** hanya ada bila OPEN terkait memutuskannya masuk scope.
-- Tipe ditulis konseptual (mis. `uuid`, `text`, `timestamptz`, `bigint`); tipe final ditentukan di migration.
+1. Satu instalasi TITIS mewakili **satu bisnis dan satu akun Owner**. Tidak ada `business_id` pada tabel operasional, multi-tenant, Staff, atau permission matrix dalam MVP.
+2. Model data mendukung company profile template, custom UI/UX melalui kode, CMS sederhana, katalog tunggal untuk website publik dan POS, booking anti-bentrok, POS lunas, serta laporan dasar.
+3. Semua entitas dan kolom di dokumen ini masih usulan. Nama, tipe, constraint, index, grants, RLS, dan function final ditentukan setelah keputusan arsitektur yang relevan diterima dan diuji.
+4. Jangan membuat semua tabel lebih awal hanya karena tercantum di dokumen. Buat migration sesuai task aktif dan dependency-nya.
+5. Perubahan schema hanya melalui migration file di Git. Database production tidak boleh diubah manual tanpa migration yang direview dan proses rilis yang disetujui.
+6. `SECURITY.md` menjadi sumber rincian threat model, RLS, grants, dan akses. Model tabel di sini tidak menggantikan review izin.
+7. ID task hanya didefinisikan di `TASK.md`. Jangan menambahkan ID task baru ke dokumen ini.
 
-## 2. Konvensi umum (Usulan)
+### 1.1 Keputusan yang membatasi rancangan
 
-| Topik | Konvensi |
+Rancangan ini mengikuti baseline PRD/arsitektur terbaru:
+
+- satu akun Owner; tanpa Staff dan tanpa signup publik;
+- konten tersimpan langsung berlaku di website; tidak ada workflow draft/publish kompleks;
+- katalog produk/layanan yang sama digunakan website publik dan POS;
+- booking baru selalu `pending`; hanya `confirmed` yang memblokir resource;
+- booking menggunakan zona waktu `Asia/Jakarta`, slot mulai 60 menit, durasi kelipatan 60 menit maksimal 4 jam, buffer 15 menit, dan horizon 30 hari;
+- POS hanya mencatat checkout lunas dengan metode manual tunai, transfer, atau QRIS;
+- nominal uang berupa integer rupiah; tidak ada floating-point, diskon, pajak tambahan, pembulatan khusus, DP, refund, void, stok, atau edit/hapus transaksi selesai pada MVP;
+- data kontak pengunjung direncanakan disimpan maksimal 12 bulan kecuali ada kebutuhan hukum yang sah; otomatisasi penghapusan bukan syarat MVP.
+
+### 1.2 Keputusan arsitektur yang belum boleh diasumsikan selesai
+
+Sebelum implementasi terkait dimulai, periksa status aktual di `ARCHITECTURE.md`:
+
+| Keputusan | Status pada arsitektur revisi 2026-10-15 | Dampak pada rancangan data |
+|---|---|---|
+| DEC-006 — jalur write booking publik | Proposed | Grants, RPC/function internal, dan jalur booking publik belum boleh dikunci untuk implementasi. |
+| DEC-009 — representasi uang | Proposed | Baseline PRD/arsitektur adalah IDR integer rupiah, tetapi keputusan ini harus diterima sebelum schema POS dibekukan. |
+| DEC-011 — SEO publik | Proposed | Metadata dasar diperlukan; prerender/SSR lanjutan bukan kebutuhan schema MVP. |
+| DEC-013 — tooling testing | Proposed | Test database dan strategi verifikasi final perlu disetujui sebelum release gate terkait. |
+| DEC-016 — autentikasi Owner | Proposed | Pola bootstrap Owner dan hubungan identitas Auth dengan profil belum boleh dianggap final. |
+| DEC-017 — proteksi spam booking | Proposed | Anti-abuse final memengaruhi jalur publik; Turnstile tidak wajib kecuali disetujui/dibutuhkan. |
+| DEC-020 — template versus custom UI/UX | Proposed | CMS hanya menyimpan konten terstruktur; desain/layout tetap berasal dari kode. |
+| DEC-021 — domain data/katalog | Proposed | Nama tabel dan bentuk katalog dalam dokumen ini tetap konseptual sampai keputusan diterima. |
+
+Status di tabel ini mencerminkan salinan `ARCHITECTURE.md` yang diberikan untuk penyusunan dokumen. Periksa kembali file repository sebelum bertindak.
+
+---
+
+## 2. Konvensi umum
+
+| Topik | Konvensi rancangan |
 |---|---|
-| Penamaan | Tabel dan kolom `snake_case`; tabel jamak (`bookings`); foreign key `<entitas>_id`. |
-| Primary key | `uuid` (dibuat server) untuk entitas operasional; `profiles.id` = `auth.users.id`. |
-| Jejak waktu | Semua tabel operasional punya `created_at timestamptz not null default now()`; yang dapat berubah punya `updated_at`. |
-| Pelaku | Kolom `created_by` / `decided_by` / `recorded_by` mengacu `profiles.id` pada aksi staf. |
-| Penghapusan | Data keuangan dan audit **tidak pernah di-hard-delete** (§8, INV-PAY-04, INV-AUD-01). Entitas master (resource, katalog) dinonaktifkan dengan `is_active = false`, bukan dihapus, bila pernah direferensikan. |
-| Nilai terbatas | Himpunan nilai (status, role, metode) memakai `text` + `CHECK` (lebih mudah dimigrasi daripada enum native). Keputusan akhir di DEC-009/DEC-010 bila perlu. |
-| RLS | Setiap tabel yang dapat diakses client wajib RLS aktif (INV-ACC-03). Rinciannya di `SECURITY.md`. |
-| Migration | Satu perubahan logis per file; penamaan mengikuti `supabase migration new <nama>` (timestamp otomatis). Lihat §11. |
+| Penamaan | `snake_case`; tabel jamak jika mewakili koleksi, misalnya `bookings` dan `products`. |
+| Primary key | `uuid` untuk entitas operasional, dibuat di sisi database/server. Tabel singleton memakai primary key boolean dengan `CHECK`. |
+| Foreign key | Didefinisikan eksplisit. Hindari `ON DELETE CASCADE` untuk data transaksi atau booking tanpa alasan yang direview. |
+| Timestamp | Simpan kejadian sebagai `timestamptz`; nilai dibuat server/database. Tabel mutable memiliki `updated_at`. |
+| Pelaku | Kolom `created_by`, `updated_by`, atau `decided_by` merujuk identitas Owner yang telah diverifikasi. Jangan menerima ID pelaku yang dipercaya dari browser. |
+| Nilai terbatas | Gunakan `text` dengan `CHECK` atau validasi database yang setara, kecuali pilihan tipe lain disetujui secara eksplisit. |
+| Master data yang pernah direferensikan | Nonaktifkan melalui `is_active = false`; jangan hard-delete jika ada riwayat yang bergantung padanya. |
+| Konten fleksibel | JSONB hanya untuk bentuk terstruktur dengan schema yang diketahui. Tidak menerima HTML/script bebas atau object arbitrer untuk dirender. |
+| Data uang | Integer rupiah; tidak menggunakan `real`, `double precision`, atau aritmetika uang final di JavaScript `number`. |
+| RLS | Setiap tabel yang diekspos ke client harus mempunyai RLS aktif dan policy teruji. Grants, views, RPC/function, Edge Function, dan Storage ditinjau bersama. |
+| Migration | Satu perubahan logis per migration; nama dan command final mengikuti versi Supabase CLI yang benar-benar digunakan. |
 
-## 3. Konvensi data
+---
+
+## 3. Waktu, uang, identifier publik, dan retensi
 
 ### 3.1 Identifier publik
 
-Pengunjung tidak boleh menebak atau menghitung ID internal. Rujukan yang diberikan kepada pengunjung (mis. setelah booking) memakai `reference_code` acak yang tidak berurutan, bukan `id`.
+Pengunjung tidak menerima UUID internal sebagai kode referensi yang dapat digunakan untuk mencari data. Booking yang berhasil diajukan dapat menerima `reference_code` acak dengan entropi memadai dan indeks unique. Kode tersebut hanya sebagai referensi komunikasi; kode itu **bukan** otorisasi untuk membaca detail booking atau mengubah status.
 
 ### 3.2 Waktu dan zona waktu
 
-- Semua instant disimpan sebagai `timestamptz` (UTC secara internal). Tidak ada `timestamp without time zone` untuk waktu kejadian.
-- Zona waktu bisnis disimpan di `business_settings.timezone` (nama IANA). Batas “hari”, “minggu”, “bulan” pada laporan dan jam operasional dihitung di zona ini (OPEN-013).
-- Tanggal laporan **tidak** dihitung dengan memotong UTC; selalu konversi ke zona bisnis terlebih dahulu (TEST-RPT-02, TEST-BKG-10).
+- Waktu kejadian disimpan sebagai `timestamptz`; jangan memakai `timestamp without time zone` untuk waktu booking, keputusan, order, atau pembayaran.
+- Zona waktu bisnis MVP adalah `Asia/Jakarta`.
+- Untuk laporan per hari/periode, batas tanggal dihitung pada zona bisnis lalu dikonversi dengan benar ke instant; jangan sekadar memotong timestamp UTC.
+- Jam operasional merupakan jam lokal bisnis. Saat validasi booking, tanggal/waktu lokal, slot, horizon, durasi, serta jam buka divalidasi di lapisan tepercaya.
+- Implementasi harus menentukan cara menangani perubahan jam operasional untuk booking yang sudah ada. Jangan mengubah booking historis diam-diam ketika Owner mengedit jam buka.
 
-### 3.3 Status
+### 3.3 Uang
 
-Semua status adalah `text` + `CHECK` dan hanya berubah melalui jalur yang ditetapkan di §6 (RPC/trigger), bukan lewat update kolom bebas oleh client (INV-BKG-06).
+- Mata uang MVP: **Rupiah (IDR)**. Satu instalasi tidak mengonfigurasi multi-currency.
+- Harga dan total disimpan sebagai integer rupiah dengan tipe database yang cukup, misalnya `bigint`.
+- `bigint` bisa melampaui rentang aman JavaScript `number`; di boundary TypeScript/JSON nominal perlu diperlakukan sebagai string atau dikonversi melalui fungsi aman.
+- Tidak ada diskon, pajak tambahan, basis points, DP/pelunasan, refund, void, atau pembulatan khusus pada MVP. Jangan menyediakan kolom untuk alur yang tidak masuk scope hanya untuk mengakomodasi rancangan lama.
+- DEC-009 berstatus `Proposed` pada arsitektur yang diberikan; jangan memfinalkan migration uang sebelum status keputusan tersebut ditangani.
 
-### 3.4 Uang
+### 3.4 Retensi dan data pribadi
 
-- **Tidak ada floating-point** untuk uang (INV-POS-05).
-- Usulan (DEC-009): `bigint` yang menyimpan jumlah dalam **satuan terkecil yang dipakai bisnis**; jumlah desimal ditentukan `business_settings.currency_decimals` (mis. `0` untuk rupiah utuh, `2` untuk mata uang bersen). Mata uang di `business_settings.currency_code`. Satu mata uang per instalasi.
-- Tarif pajak dan persen diskon disimpan sebagai bilangan bulat **basis points** (1% = 100 bp), bukan desimal.
-- Aturan pembulatan (per baris vs per total; arah pembulatan) adalah OPEN-010 dan harus diimplementasikan di satu tempat tepercaya.
+- Nama dan kontak pemesan merupakan data pribadi. Data tersebut tidak ditampilkan pada endpoint publik dan hanya boleh dibaca melalui akses Owner yang sah.
+- Kebijakan produk yang direncanakan adalah retensi data kontak booking maksimal 12 bulan kecuali ada alasan hukum yang sah untuk menyimpan lebih lama.
+- Penghapusan terjadwal otomatis bukan syarat MVP. Sebelum penggunaan nyata, prosedur operasional untuk meninjau dan menangani data yang melewati masa retensi perlu ditetapkan; jangan mengklaim retensi otomatis sudah diterapkan hanya karena periode tertulis di dokumen.
+- Data transaksi tidak dihapus otomatis. Transaksi selesai bersifat immutable melalui aplikasi MVP.
 
-## 4. Entitas (Usulan)
+---
 
-### 4.1 Identitas dan pengaturan
+## 4. Entitas konseptual
 
-**`profiles`** — satu baris per akun admin (Owner/Staff).
+Nama/kolom berikut adalah model awal. Migration final harus disesuaikan dengan keputusan yang diterima, `SECURITY.md`, serta tes yang tersedia.
 
-| Kolom | Tipe | Catatan |
+### 4.1 Identitas Owner
+
+**`owner_profiles`** — penghubung antara satu akun Owner yang dibuat melalui prosedur bootstrap terkontrol dan profil internal aplikasi. Tidak ada kolom `role`, karena Staff/role matrix tidak termasuk MVP.
+
+| Kolom konseptual | Tipe | Catatan |
 |---|---|---|
-| `id` | uuid PK | = `auth.users.id` |
-| `display_name` | text | |
-| `role` | text | `owner` \| `staff`. **Tidak dapat diubah oleh client** (INV-ACC-01/02); perubahan hanya lewat jalur istimewa. |
-| `is_active` | boolean | `false` = akses dicabut (AC-AUTH-03.2) |
-| `created_at`, `updated_at` | timestamptz | |
+| `singleton` | boolean PK, default `true`, `CHECK (singleton)` | Membatasi tabel menjadi satu baris. |
+| `user_id` | uuid unique, FK ke `auth.users.id` | Akun Auth Owner yang disetujui; tidak pernah diisi berdasarkan input publik. |
+| `display_name` | text | Nama untuk dashboard. |
+| `is_active` | boolean | Mengizinkan pencabutan akses tanpa menghapus transaksi atau konten. |
+| `created_at`, `updated_at` | timestamptz | Dikelola database. |
 
-**`business_settings`** — singleton (INV-ACC-05).
+Aturan bootstrap akun pertama dan mekanisme penggantian/pemulihan Owner harus ditetapkan pada keputusan auth (DEC-016) dan `SECURITY.md`. Tabel ini bukan cara untuk mengizinkan pengunjung mendaftar atau menetapkan dirinya sebagai Owner.
 
-| Kolom | Tipe | Catatan |
+### 4.2 Profil bisnis
+
+**`business_profile`** — satu baris profil untuk satu instalasi.
+
+| Kolom konseptual | Tipe | Catatan |
 |---|---|---|
-| `id` | boolean PK default true, `CHECK (id)` | menjamin satu baris |
-| `business_name`, `tagline`, `description` | text | field publik |
-| `address`, `phone`, `email`, `social_links` (jsonb) | | field publik (OPEN-006) |
-| `opening_hours_display` | text/jsonb | tampilan jam buka (informasi, bukan aturan booking) |
-| `timezone` | text | nama IANA (OPEN-013) |
-| `currency_code`, `currency_decimals` | text, smallint | OPEN-013 |
-| `default_tax_rate_bp` | integer | **(kondisional)** OPEN-010 |
-| `updated_at`, `updated_by` | | |
+| `singleton` | boolean PK, default `true`, `CHECK (singleton)` | Menjamin paling banyak satu baris profil. Setup harus memastikan baris awal tersedia. |
+| `business_name` | text not null | Nama bisnis. |
+| `tagline`, `description` | text nullable | Konten publik. |
+| `address`, `phone`, `email`, `whatsapp` | text nullable | Informasi kontak yang sengaja dipublikasikan. |
+| `social_links` | jsonb nullable | Object dengan key/format yang diizinkan; URL divalidasi. |
+| `timezone` | text not null, default `Asia/Jakarta` | Nilai efektif MVP harus `Asia/Jakarta`; Owner tidak boleh mengubahnya menjadi zona lain kecuali scope berubah. |
+| `logo_asset_id`, `hero_asset_id` | uuid nullable, FK ke `media_assets.id` | Referensi media opsional. |
+| `updated_at`, `updated_by` | timestamptz, uuid nullable | Pelaku harus merupakan Owner yang sah. |
 
-### 4.2 Konten publik (CMS)
+Jam operasional booking tidak boleh hanya disimpan sebagai teks tampilan pada `business_profile`. Sumber jam yang dipakai validasi booking adalah `operating_hours` (§4.6), sehingga informasi publik dan logika booking dapat disajikan dari sumber yang konsisten. Bila tampilan jam buka memakai teks khusus, jangan jadikan teks itu sumber validasi.
 
-**`pages`**
+### 4.3 Konten publik (CMS)
 
-| Kolom | Tipe | Catatan |
+**`page_content`** — konten terstruktur untuk rute/halaman publik yang dikelola Owner. Halaman dan layout berasal dari kode; tabel ini tidak membuat page builder.
+
+| Kolom konseptual | Tipe | Catatan |
 |---|---|---|
-| `id` | uuid PK | |
-| `slug` | text unique | URL halaman |
-| `title` | text | |
-| `status` | text | `draft` \| `published` (OPEN-006) |
-| `meta_title`, `meta_description` | text | OPEN-015 |
-| `published_at` | timestamptz | |
-| `updated_at`, `updated_by` | | |
+| `id` | uuid PK | Kunci internal. |
+| `page_key` | text unique | Key terbatas, misalnya `home`, `about`, `services`, `rooms`, `booking`, `contact`. Key yang benar harus mengikuti rute final di arsitektur. |
+| `content` | jsonb not null | Field/section terstruktur sesuai schema yang dikenal; bukan HTML/script bebas. |
+| `meta_title`, `meta_description` | text nullable | Metadata dasar; bukan pipeline SEO/prerender. |
+| `updated_at` | timestamptz | Dikelola database. |
+| `updated_by` | uuid nullable, FK ke `owner_profiles.user_id` | Owner yang menyimpan perubahan. |
 
-**`page_sections`**
+Perubahan yang disimpan langsung berlaku pada website. Tidak ada status `draft/published`, jadwal publikasi, versi konten, atau workflow approval kompleks dalam MVP.
 
-| Kolom | Tipe | Catatan |
+Aturan validasi untuk `content` harus dibatasi oleh `page_key` dan jenis section yang diizinkan: field, panjang teks, URL, visibilitas section, dan referensi media. JSONB yang valid secara sintaks belum tentu konten yang valid untuk dirender. Konten CMS tidak boleh menjalankan JavaScript, menerima script, atau menjadi HTML mentah yang langsung dimasukkan ke DOM.
+
+### 4.4 Media
+
+**`media_assets`** — metadata file gambar minimum untuk logo, hero, dan gambar katalog/konten.
+
+| Kolom konseptual | Tipe | Catatan |
 |---|---|---|
-| `id` | uuid PK | |
-| `page_id` | uuid FK → `pages` | `ON DELETE CASCADE` hanya untuk konten CMS |
-| `section_key` | text | jenis seksi (hero, teks, daftar, ...) |
-| `position` | integer | urutan |
-| `content` | jsonb | **terstruktur dan terbatas** (bukan HTML bebas); skema field per `section_key` di `ARCHITECTURE.md` (DEC-014) |
+| `id` | uuid PK | ID internal. |
+| `storage_path` | text unique not null | Path objek Storage; bukan credential atau URL bertanda tangan yang disimpan sebagai data permanen. |
+| `alt_text` | text nullable | Deskripsi aksesibilitas jika gambar bermakna. |
+| `mime_type` | text not null | Tipe yang diizinkan, diperiksa terhadap file aktual. |
+| `size_bytes` | bigint not null | Harus positif dan tidak melewati batas yang disepakati. |
+| `uploaded_by` | uuid FK ke `owner_profiles.user_id` | Owner yang sah. |
+| `created_at` | timestamptz | Waktu unggah. |
 
-**`media_assets`** *(kondisional, OPEN-006)*
+Bucket, akses publik/private, batas tipe dan ukuran, serta izin upload/update/delete ditetapkan melalui `SECURITY.md` dan implementasi Storage. Validasi MIME di browser saja tidak cukup. Jangan menerima file aktif yang tidak dibutuhkan atau mengizinkan upload publik.
 
-| Kolom | Tipe | Catatan |
+### 4.5 Katalog produk/layanan
+
+**`products`** — satu-satunya sumber data produk/layanan untuk website publik dan POS. Harga tidak boleh disalin ke `page_content` sebagai sumber kedua.
+
+| Kolom konseptual | Tipe | Catatan |
 |---|---|---|
-| `id` | uuid PK | |
-| `storage_path` | text unique | lokasi di storage |
-| `alt_text` | text | AC-CMS-03.2 |
-| `mime_type`, `size_bytes` | text, bigint | batas tipe/ukuran (AC-CMS-03.1) |
-| `uploaded_by` | uuid FK → `profiles` | |
+| `id` | uuid PK | ID katalog. |
+| `name` | text not null | Nama item. |
+| `description` | text nullable | Deskripsi yang aman untuk publik. |
+| `kind` | text not null | `product` atau `service`, dibatasi dengan `CHECK`. |
+| `unit_price` | bigint not null | Harga integer IDR; tidak memakai floating-point. Batas nominal final ditentukan di migration. |
+| `is_active` | boolean not null default `true` | Item nonaktif tidak dapat dijual atau ditampilkan. |
+| `is_publicly_listed` | boolean not null default `true` | Kontrol tampilan publik; bukan pengganti `is_active`. |
+| `image_asset_id` | uuid nullable, FK ke `media_assets.id` | Gambar opsional. |
+| `sort_order` | integer not null default `0` | Urutan tampilan. |
+| `created_at`, `updated_at` | timestamptz | Dikelola database. |
+| `created_by`, `updated_by` | uuid nullable, FK ke `owner_profiles.user_id` | Owner yang sah. |
 
-### 4.3 Booking
+Aturan: katalog publik hanya menampilkan field publik dari item yang aktif dan dipublikasikan; POS hanya menjual item aktif. Item yang pernah direferensikan dalam `order_items` dinonaktifkan, bukan dihapus. Jika daftar kategori benar-benar dibutuhkan, tambahkan sebagai perubahan scope/desain yang disetujui; kategori bukan prasyarat schema MVP.
 
-**`resources`**
+### 4.6 Resource dan jam operasional
 
-| Kolom | Tipe | Catatan |
+**`resources`** — ruang/fasilitas yang dapat dipesan.
+
+| Kolom konseptual | Tipe | Catatan |
 |---|---|---|
-| `id` | uuid PK | |
-| `name`, `description` | text | |
-| `capacity` | integer | `CHECK (capacity > 0)` |
-| `is_active` | boolean | nonaktif ⇒ tidak dapat dipesan |
-| `min_duration_minutes`, `max_duration_minutes`, `buffer_minutes` | integer | **(kondisional)** OPEN-007 |
-| `sort_order` | integer | |
+| `id` | uuid PK | ID resource. |
+| `name` | text not null | Nama ruang/fasilitas. |
+| `description` | text nullable | Deskripsi publik bila dipakai. |
+| `is_active` | boolean not null default `true` | Resource nonaktif tidak menerima booking baru. |
+| `image_asset_id` | uuid nullable, FK ke `media_assets.id` | Opsional. |
+| `sort_order` | integer not null default `0` | Urutan tampilan. |
+| `created_at`, `updated_at` | timestamptz | Dikelola database. |
+| `created_by`, `updated_by` | uuid nullable, FK ke `owner_profiles.user_id` | Owner yang sah. |
 
-**`operating_hours`** *(kondisional, OPEN-007)* — aturan jam yang dipakai validasi booking.
+Kapasitas resource tidak dimasukkan sebagai invariant sampai requirement kapasitas disetujui secara eksplisit. `party_size` tetap dicatat pada booking. Jangan mengklaim validasi kapasitas diterapkan bila aturan tersebut belum disepakati dan diuji.
 
-| Kolom | Tipe | Catatan |
+**`operating_hours`** — aturan jam lokal untuk validasi booking.
+
+| Kolom konseptual | Tipe | Catatan |
 |---|---|---|
-| `id` | uuid PK | |
-| `resource_id` | uuid FK, nullable | `NULL` = berlaku untuk seluruh bisnis |
-| `weekday` | smallint | 0–6 |
-| `opens_at`, `closes_at` | time | dalam zona waktu bisnis |
+| `id` | uuid PK | ID baris jam operasional. |
+| `resource_id` | uuid nullable, FK ke `resources.id` | `NULL` berarti jam tingkat bisnis; nilai non-NULL berarti jam khusus resource. |
+| `weekday` | smallint not null | Hari lokal, rentang 0–6 dengan pemetaan hari yang didokumentasikan dan diuji. |
+| `opens_at`, `closes_at` | time | Jam lokal `Asia/Jakarta`; rentang harus valid dan tidak kosong. |
+| `created_at`, `updated_at` | timestamptz | Dikelola database. |
+| `updated_by` | uuid nullable, FK ke `owner_profiles.user_id` | Owner yang sah. |
 
-**`bookings`**
+Sebelum migration, tetapkan satu aturan konsisten untuk hari tutup, beberapa interval dalam satu hari, prioritas jam khusus resource versus jam bisnis, dan apakah interval lintas tengah malam diizinkan. Rancangan default yang paling sederhana adalah paling banyak satu interval per hari untuk masing-masing cakupan; hari tanpa baris berarti tutup. Jangan menerapkan asumsi precedence yang berbeda di UI dan server.
 
-| Kolom | Tipe | Catatan |
+### 4.7 Booking
+
+**`bookings`** — permintaan reservasi pengunjung tanpa akun.
+
+| Kolom konseptual | Tipe | Catatan |
 |---|---|---|
-| `id` | uuid PK | |
-| `reference_code` | text unique | rujukan acak untuk pengunjung (§3.1) |
-| `resource_id` | uuid FK → `resources` | INV-BKG-02 |
-| `requester_name`, `requester_contact` | text | data pribadi; tidak dibuka ke publik (THR-10) |
-| `party_size` | integer | `CHECK (party_size > 0)` |
-| `starts_at`, `ends_at` | timestamptz | `CHECK (ends_at > starts_at)` (INV-BKG-03) |
-| `notes` | text | catatan pengunjung |
-| `status` | text | lihat §6.1; default ditetapkan sistem (INV-BKG-01) |
-| `decided_by`, `decided_at`, `decision_note` | uuid, timestamptz, text | INV-BKG-07 |
-| `created_at`, `updated_at` | timestamptz | |
+| `id` | uuid PK | ID internal; tidak dipakai sebagai otorisasi publik. |
+| `reference_code` | text unique not null | Kode acak untuk komunikasi dengan pengunjung. |
+| `resource_id` | uuid not null, FK ke `resources.id` | Resource yang diminta. |
+| `requester_name`, `requester_contact` | text not null | Data pribadi, tidak dipublikasikan. Validasi format dan panjang diperlukan. |
+| `party_size` | integer not null | Harus lebih besar dari nol. Validasi kapasitas hanya jika requirement kapasitas disetujui. |
+| `starts_at`, `ends_at` | timestamptz not null | Instant booking; `ends_at > starts_at`. |
+| `notes` | text nullable | Catatan opsional; panjang dibatasi dan tidak dipercaya sebagai markup. |
+| `status` | text not null | Status awal dipaksakan sistem, bukan diterima dari payload pengunjung. |
+| `decided_by` | uuid nullable, FK ke `owner_profiles.user_id` | Owner yang memutuskan status. |
+| `decided_at` | timestamptz nullable | Waktu keputusan terakhir yang relevan. |
+| `decision_note` | text nullable | Catatan internal opsional; tidak ditampilkan ke pengunjung. |
+| `created_at`, `updated_at` | timestamptz | Dikelola database. |
+| `blocking_starts_at`, `blocking_ends_at` | timestamptz (kolom internal turunan, bila dipakai untuk exclusion constraint) | Nilai dikelola trigger/database, tidak dapat diubah client. Rentang blocking mencakup buffer 15 menit. |
 
-### 4.4 Katalog, POS, dan pembayaran
+`blocking_starts_at` dan `blocking_ends_at` adalah detail implementasi yang disarankan untuk menerapkan buffer pada exclusion constraint. Bila dipilih, keduanya harus selalu dihitung ulang dari rentang booking aktual oleh jalur tepercaya; jangan izinkan client menulisnya. Alternatif implementasi harus membuktikan invariant anti-bentrok dan buffer dengan tes concurrency nyata.
 
-**`catalog_categories`** *(opsional)* — `id`, `name`, `sort_order`.
+Status MVP yang direncanakan:
 
-**`catalog_items`**
+- `pending` — ditetapkan sistem saat booking dibuat;
+- `confirmed` — diputuskan Owner; mulai memblokir resource;
+- `rejected` — ditolak Owner; status akhir;
+- `cancelled` — dibatalkan Owner; status akhir.
 
-| Kolom | Tipe | Catatan |
+`expired`, `completed`, `no_show`, pembatalan mandiri pengunjung, dan reschedule mandiri bukan bagian baseline MVP kecuali PRD diperbarui. Owner boleh membatalkan booking pending atau confirmed sesuai alur yang telah disetujui. Transisi selain yang diizinkan harus ditolak oleh jalur tepercaya/database.
+
+### 4.8 Order POS
+
+**`orders`** — transaksi POS yang sudah berhasil checkout dan lunas. Karena MVP tidak mempunyai void, refund, atau edit transaksi selesai, baris `orders` merepresentasikan transaksi final yang berhasil dibuat.
+
+| Kolom konseptual | Tipe | Catatan |
 |---|---|---|
-| `id` | uuid PK | |
-| `category_id` | uuid FK, nullable | |
-| `name`, `description` | text | |
-| `kind` | text | `product` \| `service` |
-| `unit_price` | bigint | `CHECK (unit_price >= 0)`; satuan §3.4 |
-| `is_active` | boolean | nonaktif ⇒ tidak dapat dijual |
-| `is_publicly_listed` | boolean | tampil di public website (OPEN-006) |
-| `sort_order` | integer | |
+| `id` | uuid PK | ID internal. |
+| `order_number` | text unique not null | Dibuat dan dijamin unik oleh database, bukan browser. |
+| `client_request_id` | uuid unique not null | Idempotency key untuk satu niat checkout. |
+| `total_amount` | bigint not null | Total final yang dihitung dari katalog di database/server. |
+| `completed_at` | timestamptz not null | Waktu transaksi berhasil/lunas, ditetapkan server/database. Menjadi tanggal acuan penjualan. |
+| `created_by` | uuid not null, FK ke `owner_profiles.user_id` | Owner yang menjalankan checkout. |
+| `created_at` | timestamptz not null | Waktu pencatatan. |
 
-**`orders`** — satu transaksi POS.
+Tidak diperlukan kolom `status` `active/void`, kolom diskon/pajak/pembulatan, DP, atau refund untuk model MVP. Bila kelak ada kebutuhan koreksi transaksi, itu adalah perubahan scope dan desain ledger/audit baru, bukan alasan untuk menyelundupkan kolom lama ke schema awal.
 
-| Kolom | Tipe | Catatan |
+### 4.9 Detail item transaksi
+
+**`order_items`** — snapshot item saat checkout agar riwayat tidak mengikuti perubahan katalog berikutnya.
+
+| Kolom konseptual | Tipe | Catatan |
 |---|---|---|
-| `id` | uuid PK | |
-| `order_number` | text unique | dihasilkan database (INV-POS-07); format OPEN-010 |
-| `client_request_id` | uuid unique | kunci idempotency (INV-POS-04) |
-| `status` | text | `active` \| `void` (§6.2) |
-| `booking_id` | uuid FK, nullable | kaitan booking (OPEN-011) |
-| `customer_name` | text, nullable | |
-| `subtotal_amount`, `discount_amount`, `tax_amount`, `rounding_amount`, `total_amount` | bigint | dihitung server; `total = subtotal − discount + tax + rounding` (INV-POS-02) |
-| `discount_reason` | text, nullable | wajib bila diskon > 0 (usulan) |
-| `created_by` | uuid FK → `profiles` | |
-| `voided_at`, `voided_by`, `void_reason` | | terisi saat void (OPEN-010) |
-| `created_at` | timestamptz | |
+| `id` | uuid PK | ID baris. |
+| `order_id` | uuid not null, FK ke `orders.id` | Transaksi pemilik item. Penghapusan order selesai tidak diizinkan. |
+| `product_id` | uuid not null, FK ke `products.id` | Referensi sumber. Product yang pernah terjual dinonaktifkan, bukan dihapus. |
+| `item_name_snapshot` | text not null | Nama saat checkout. |
+| `unit_price_snapshot` | bigint not null | Harga resmi saat checkout dalam integer rupiah. |
+| `quantity` | integer not null | Harus integer positif dan dibatasi rentang yang masuk akal. |
+| `line_total_amount` | bigint not null | Hasil `unit_price_snapshot × quantity`, dihitung di sisi tepercaya. |
 
-**`order_items`**
+Harga snapshot dan total baris tidak boleh dipercaya dari input browser. RPC checkout memuat harga resmi dari `products`, menolak product nonaktif, memvalidasi kuantitas, lalu menghitung semua nilai akhir.
 
-| Kolom | Tipe | Catatan |
+### 4.10 Payment
+
+**`payments`** — satu catatan pembayaran lunas untuk satu order. Pembayaran bukan ledger multi-tahap pada MVP.
+
+| Kolom konseptual | Tipe | Catatan |
 |---|---|---|
-| `id` | uuid PK | |
-| `order_id` | uuid FK → `orders` | |
-| `catalog_item_id` | uuid FK, nullable | rujukan asal; **bukan** sumber nama/harga riwayat |
-| `item_name_snapshot` | text | INV-POS-01 |
-| `unit_price_snapshot` | bigint | INV-POS-01 |
-| `quantity` | integer | `CHECK (quantity > 0)` |
-| `line_total_amount` | bigint | `unit_price_snapshot × quantity` |
+| `id` | uuid PK | ID pembayaran. |
+| `order_id` | uuid unique not null, FK ke `orders.id` | Memastikan satu catatan pembayaran per order MVP. |
+| `amount` | bigint not null | Sama dengan `orders.total_amount`; divalidasi oleh fungsi checkout. |
+| `method` | text not null | Salah satu `cash`, `transfer`, `qris`; dibatasi dengan `CHECK`. |
+| `paid_at` | timestamptz not null | Waktu pembayaran manual dicatat sebagai lunas. |
+| `recorded_by` | uuid not null, FK ke `owner_profiles.user_id` | Owner yang menjalankan checkout. |
+| `created_at` | timestamptz not null | Waktu pencatatan. |
 
-**`payments`** — buku catatan pembayaran, **append-only** secara bisnis (INV-PAY-04).
+Tidak ada `kind=refund`, `purpose=deposit/settlement`, `status=voided`, atau `refund_of_payment_id`. Model tersebut berasal dari alur DP/refund/void lama dan tidak sesuai dengan POS lunas MVP. Baris payment hanya dibuat dalam transaksi database yang sama dengan order dan itemnya.
 
-| Kolom | Tipe | Catatan |
-|---|---|---|
-| `id` | uuid PK | |
-| `order_id` | uuid FK → `orders` | INV-PAY-01 |
-| `client_request_id` | uuid unique | idempotency (TEST-PAY-06) |
-| `kind` | text | `payment` \| `refund` |
-| `purpose` | text, nullable | `deposit` \| `settlement` \| `full` — hanya label; tidak memengaruhi cara hitung |
-| `amount` | bigint | `CHECK (amount > 0)`; arah ditentukan `kind` |
-| `method` | text | himpunan metode OPEN-010 |
-| `paid_at` | timestamptz | waktu uang diterima/dikembalikan |
-| `status` | text | `recorded` \| `voided` (§6.3) |
-| `refund_of_payment_id` | uuid FK, nullable | wajib bila `kind = refund` |
-| `recorded_by` | uuid FK → `profiles` | |
-| `note`, `created_at` | | |
+---
 
-### 4.5 Audit
-
-**`audit_log`** — append-only (INV-AUD-01).
-
-| Kolom | Tipe | Catatan |
-|---|---|---|
-| `id` | uuid PK | |
-| `occurred_at` | timestamptz | |
-| `actor_id`, `actor_role` | uuid, text | `NULL` bila aksi anonim melalui jalur publik |
-| `action` | text | mis. `booking.confirm`, `payment.void`, `role.change` |
-| `entity_type`, `entity_id` | text, uuid | |
-| `details` | jsonb | **dibersihkan**: tanpa token/secret/data sensitif (`SECURITY.md` §8.2) |
-
-## 5. Diagram relasi
+## 5. Relasi konseptual
 
 ```mermaid
 erDiagram
-    profiles ||--o{ audit_log : "actor"
-    profiles |o--o{ bookings : "decided_by"
-    resources ||--o{ bookings : "dipesan"
-    resources |o--o{ operating_hours : "jam operasional"
-    bookings |o--o{ orders : "terkait (opsional)"
-    orders ||--|{ order_items : "berisi"
-    orders ||--o{ payments : "dibayar"
-    payments |o--o{ payments : "refund_of"
-    catalog_categories |o--o{ catalog_items : "mengelompokkan"
-    catalog_items |o--o{ order_items : "sumber snapshot"
-    pages ||--o{ page_sections : "berisi"
-    media_assets |o--o{ page_sections : "dipakai"
+    owner_profiles |o--o{ page_content : updates
+    owner_profiles |o--o{ products : maintains
+    owner_profiles |o--o{ resources : maintains
+    owner_profiles |o--o{ bookings : decides
+    owner_profiles ||--o{ orders : checks_out
+    owner_profiles ||--o{ payments : records
+    media_assets ||--o{ products : illustrates
+    media_assets ||--o{ resources : illustrates
+    media_assets ||--o{ business_profile : references
+    resources ||--o{ operating_hours : defines
+    resources ||--o{ bookings : reserved_for
+    orders ||--|{ order_items : contains
+    products ||--o{ order_items : source_of_snapshot
+    orders ||--|| payments : paid_by
 ```
 
-`business_settings` adalah singleton tanpa relasi FK.
+`business_profile` merupakan singleton. `page_content` merujuk key halaman yang dikenali aplikasi, bukan URL arbitrary yang dapat membuat route atau komponen baru. Bentuk relasi pada diagram bersifat konseptual; constraint final ditetapkan dalam migrations.
 
-## 6. Status dan transisi (Usulan)
+---
 
-Himpunan status dan transisi final ditentukan OPEN-008 (booking) dan OPEN-010/011 (order/payment). Transisi di luar tabel di bawah **harus ditolak oleh database** (INV-BKG-06).
+## 6. Status, transisi, dan aturan penulisan
 
 ### 6.1 Booking
 
-| Dari | Ke | Oleh | Syarat |
+| Dari | Ke | Pelaku | Aturan |
 |---|---|---|---|
-| *(baru)* | `pending` | sistem | Ditetapkan sistem saat permintaan masuk; tidak dapat diisi pemanggil (INV-BKG-01) |
-| `pending` | `confirmed` | Owner/Staff berwenang (OPEN-002) | Tidak bentrok dengan booking `confirmed` lain (INV-BKG-04) |
-| `pending` | `rejected` | Owner/Staff berwenang | Alasan opsional |
-| `pending` | `expired` | sistem | Bila ada aturan kedaluwarsa (OPEN-008) |
-| `pending` / `confirmed` | `cancelled` | Owner/Staff berwenang (pengunjung: OPEN-008) | |
-| `confirmed` | `completed` | — | **Belum diputuskan** (OPEN-008): apakah status ini ada |
+| Baru | `pending` | Jalur publik tepercaya | Sistem menetapkan status; client tidak dapat mengirim `confirmed` atau status lain. |
+| `pending` | `confirmed` | Owner | Validasi ulang resource, jam, horizon, durasi, buffer, dan overlap pada saat konfirmasi. |
+| `pending` | `rejected` | Owner | Status akhir; catatan keputusan opsional. |
+| `pending` | `cancelled` | Owner | Status akhir. |
+| `confirmed` | `cancelled` | Owner | Status akhir; resource tidak lagi diblokir setelah pembaruan status atomik. |
 
-`rejected`, `expired`, `cancelled` adalah status akhir. Status baru (mis. `no_show`) hanya boleh ditambah melalui OPEN-008.
+Transisi lain harus ditolak. Tidak ada pengunjung yang dapat mengubah status atau membaca daftar booking internal. DEC-006 masih `Proposed`; jalur implementasi publik harus disetujui sebelum migration/function final.
 
-### 6.2 Order
+### 6.2 Order, order item, dan payment
 
-| Dari | Ke | Oleh | Syarat |
+- Satu checkout sukses menghasilkan satu `orders`, satu atau lebih `order_items`, dan tepat satu `payments`.
+- Ketiganya dibuat dalam **satu transaksi database**. Jika satu langkah gagal, tidak boleh ada order/item/payment parsial.
+- Harga resmi, nama snapshot, total per baris, total order, nomor transaksi, waktu selesai, dan identitas Owner ditentukan atau divalidasi pada lapisan tepercaya.
+- Setelah checkout selesai, transaksi dan itemnya immutable melalui jalur aplikasi MVP. Tidak ada edit/delete, void, refund, atau koreksi di UI MVP.
+- Metode pembayaran dibatasi pada `cash`, `transfer`, `qris`. Pencatatan menyatakan pembayaran manual sudah diterima; MVP tidak mengintegrasikan payment gateway.
+
+### 6.3 Idempotency checkout
+
+`orders.client_request_id` memiliki unique constraint. Client membuat UUID satu kali ketika Owner memulai niat checkout dan menggunakan UUID yang sama jika terjadi timeout atau retry.
+
+- Request ID sama dengan payload yang sama harus mengembalikan transaksi sebelumnya atau hasil yang ekuivalen, bukan membuat transaksi kedua.
+- Request ID sama dengan payload berbeda harus ditolak sebagai konflik; transaksi lama tidak boleh ditimpa.
+- Perbandingan payload harus memperhitungkan product ID, kuantitas, dan metode pembayaran yang dinormalisasi. Duplicate product ID dalam satu payload harus ditangani secara deterministik—ditolak atau digabungkan—dan perilaku tersebut harus ditetapkan serta diuji.
+- Penanganan unique violation/concurrent retry dilakukan di fungsi checkout, bukan dengan mengandalkan state UI.
+
+---
+
+## 7. Invariants database yang wajib dibuktikan
+
+Semua invariant pada tabel ini adalah persyaratan desain, bukan klaim bahwa migration atau test sudah ada. ID test formal ditautkan setelah `TESTING.md` revisi diselaraskan; jangan menggunakan daftar TEST-* lama yang mengasumsikan Staff, DP, refund, atau void tanpa meninjaunya.
+
+| ID | Invariant | Enforcement yang direncanakan |
+|---|---|---|
+| INV-ACC-01 | Hanya satu akun Owner terdaftar dalam profil aplikasi; role tidak dipilih dari input publik. | Singleton/unique constraint, bootstrap terkontrol, Auth dan policy Owner-only. |
+| INV-ACC-02 | Pengunjung anonim tidak dapat mengubah profil bisnis, konten, katalog, resource, atau data internal. | RLS, grants, function permissions, Storage policy, dan tes direct-access negatif. |
+| INV-ACC-03 | Setiap tabel client-facing memakai RLS dan privilege yang sesuai. | Migration plus pemeriksaan policy/grants; review tabel, view, RPC/function, Edge Function dan Storage. |
+| INV-ACC-04 | Profil bisnis hanya memiliki satu baris. | Primary key boolean singleton dengan `CHECK`. |
+| INV-CMS-01 | Konten CMS terstruktur dan tidak menjalankan script/HTML arbitrary. | Validasi schema berdasarkan `page_key`/section, sanitasi bila diperlukan, renderer allow-list. |
+| INV-CAT-01 | Website publik dan POS menggunakan satu sumber katalog. | Hanya `products` menjadi sumber nama/deskripsi/harga/status; tidak menyimpan salinan harga di konten halaman. |
+| INV-CAT-02 | Product nonaktif tidak ditampilkan dan tidak dapat dijual. | Filter publik dan validasi ulang di fungsi checkout. |
+| INV-BKG-01 | Status awal booking ditetapkan sistem sebagai `pending`. | Jalur publik terbatas + function/trigger tepercaya; input status dari client ditolak/diabaikan. |
+| INV-BKG-02 | Resource untuk booking ada dan aktif. | FK + validasi tepercaya ketika membuat dan mengonfirmasi booking. |
+| INV-BKG-03 | Rentang waktu valid; `ends_at > starts_at`. | `CHECK` constraint dan validasi server. |
+| INV-BKG-04 | Slot mulai, durasi, horizon, zona waktu, dan jam operasional sesuai aturan MVP. | Validasi tepercaya dengan jam bisnis `Asia/Jakarta`; tes batas waktu. |
+| INV-BKG-05 | Hanya booking `confirmed` memblokir waktu; rentang setengah-terbuka `[start, end)` memperhitungkan buffer 15 menit. | Kolom blocking turunan yang dipelihara database + exclusion constraint atau strategi setara yang terbukti. |
+| INV-BKG-06 | Dua konfirmasi yang overlap tidak bisa sama-sama berhasil. | PostgreSQL exclusion constraint/concurrency-safe database enforcement; bukan hanya `SELECT` pra-periksa. |
+| INV-BKG-07 | Transisi status booking hanya mengikuti lifecycle yang disetujui dan dilakukan Owner. | Fungsi/RPC tepercaya, izin minimum, pemeriksaan transisi, tes negatif. |
+| INV-POS-01 | Uang disimpan sebagai integer rupiah tanpa floating-point. | Tipe integer (`bigint` bila diperlukan) dan review migrasi/TypeScript boundary. |
+| INV-POS-02 | Harga, snapshot, jumlah baris, dan total dihitung dari katalog di lapisan tepercaya. | Fungsi checkout membaca harga resmi, memvalidasi kuantitas dan menghitung semua total di database. |
+| INV-POS-03 | Order, item, dan payment tersimpan seluruhnya atau tidak sama sekali. | Satu transaksi database/RPC dan tes kegagalan di tengah proses. |
+| INV-POS-04 | Satu checkout menghasilkan satu order unik dan satu payment lunas. | Unique order number, unique `client_request_id`, unique `payments.order_id`, dan otorisasi function. |
+| INV-POS-05 | Retry dengan request ID dan payload sama tidak menciptakan transaksi kedua; payload berbeda ditolak. | Unique constraint dan pemeriksaan payload di fungsi checkout. |
+| INV-POS-06 | Snapshot histori tidak berubah saat katalog diedit/nonaktif. | Snapshot disalin saat checkout; transaksi tidak dapat diedit/dihapus; master yang direferensikan tidak hard-delete. |
+| INV-POS-07 | Pembayaran metode manual sesuai daftar dan nilainya sama dengan total order. | `CHECK` metode + validasi jumlah pada fungsi checkout; satu payment per order. |
+| INV-RPT-01 | Laporan cocok dengan transaksi dasar dan fixture hitung manual. | Query/view tepercaya; filter tanggal di zona `Asia/Jakarta`; test rekonsiliasi. |
+| INV-PRIV-01 | Data kontak booking tidak tersedia untuk pengunjung melalui query/API publik. | RLS/grants + jalur publik yang hanya mengembalikan respons aman dan reference code. |
+
+### 7.1 Strategi anti-bentrok booking
+
+Pemeriksaan slot di UI atau query `SELECT` sebelum insert tidak menjamin keselamatan terhadap request bersamaan. Arah rancangan yang disarankan:
+
+1. Gunakan PostgreSQL range `tstzrange` dengan rentang setengah-terbuka `[start, end)` dan exclusion constraint GiST berdasarkan `resource_id` serta rentang yang memblokir.
+2. Hanya row dengan status `confirmed` masuk predikat constraint; `pending`, `rejected`, dan `cancelled` tidak memblokir.
+3. Buffer MVP adalah 15 menit setelah akhir booking. Rentang blocking yang dipertimbangkan adalah `[starts_at, ends_at + 15 menit)`. Uji bahwa booking kedua tepat di dalam buffer ditolak dan booking setelah buffer boleh diterima.
+4. Jangan mengandalkan ekspresi `timestamptz + interval` langsung dalam generated column/constraint jika PostgreSQL menganggapnya tidak immutable. Jika memilih kolom `blocking_starts_at`/`blocking_ends_at`, pelihara keduanya melalui trigger tepercaya dan cegah update dari client.
+5. Periksa apakah `btree_gist` tersedia/dapat dipakai di environment target. Tangani exclusion violation, misalnya SQLSTATE `23P01`, menjadi pesan aman “slot tidak lagi tersedia”.
+6. Tes mencakup overlap, interval berurutan tepat, buffer, resource berbeda, status pending, input waktu invalid, perubahan jam, dan dua konfirmasi konkuren yang sesungguhnya.
+
+DEC-007 berstatus `Accepted*` pada tabel keputusan arsitektur, tetapi detail buffer harus konsisten antara constraint, trigger/function, dan tes sebelum implementasi booking dianggap siap.
+
+### 7.2 Strategi checkout atomik
+
+- Fungsi checkout memverifikasi sesi/identitas Owner dan method pembayaran yang diperbolehkan.
+- Ia menerima product ID, kuantitas, metode, dan `client_request_id`; bukan harga atau total sebagai sumber kebenaran.
+- Ia memuat product aktif dan harga resmi, menghitung snapshot dan total, membuat order, item, serta payment dalam satu transaksi.
+- Nomor transaksi dibangkitkan di database dengan unique constraint agar aman terhadap checkout bersamaan.
+- Fungsi mengembalikan hasil transaksi tersimpan. Frontend hanya menampilkan hasil ini dan tidak menyimpulkan keberhasilan berdasarkan state lokal.
+- Retry tidak boleh mengulang penjualan. Jika payload berbeda memakai request ID yang sama, fungsi membalas konflik dengan aman.
+- Grants untuk memanggil fungsi, penggunaan `SECURITY INVOKER` atau kebutuhan `SECURITY DEFINER`, `search_path`, schema qualification dan validasi otorisasi harus ditinjau sesuai `ARCHITECTURE.md` dan `SECURITY.md`.
+
+---
+
+## 8. Sumber laporan dan definisi metrik MVP
+
+Laporan MVP adalah laporan operasional, bukan buku besar akuntansi. Definisi final harus diselaraskan dengan PRD dan direkonsiliasi dengan fixture kecil yang hitungannya diketahui.
+
+| Metrik | Definisi rancangan | Sumber | Tanggal acuan |
 |---|---|---|---|
-| *(baru)* | `active` | checkout | Atomik (INV-POS-03) |
-| `active` | `void` | Owner (Staff: OPEN-010) | Alasan wajib; jejak audit; perlakuan pembayaran terkait ditentukan OPEN-011 |
+| Total penjualan | Jumlah `orders.total_amount` untuk checkout sukses dalam periode. | `orders` | `completed_at`, dikonversi ke `Asia/Jakarta` |
+| Jumlah transaksi | Hitung order checkout sukses dalam periode. | `orders` | `completed_at` |
+| Penjualan per metode | Jumlah pembayaran/order menurut metode pembayaran yang tercatat. | `payments` join `orders` | Tanggal order/checkout sesuai satu definisi konsisten |
+| Booking menurut status | Hitung booking menurut status yang berlaku. Definisikan apakah filter periode berdasarkan `starts_at` atau `created_at` pada UI/fixture; gunakan satu aturan yang jelas. | `bookings` | Periode yang dipilih dan didokumentasikan |
+| Item terlaris (opsional) | Jumlah kuantitas dari snapshot order item. Tidak diperlukan bila memperlambat core MVP. | `order_items` join `orders` | `completed_at` |
 
-Status pembayaran order (`unpaid`, `partial`, `paid`, `overpaid`) **diturunkan** dari jumlah pembayaran, bukan kolom tersimpan, agar tidak bisa menyimpang dari ledger (INV-PAY-02).
+Aturan:
 
-### 6.3 Payment
+- Setiap order pada model ini sudah lunas; jangan menghitung DP dan pelunasan sebagai penjualan terpisah karena model tersebut tidak ada dalam MVP.
+- Tidak ada status `void` atau refund untuk dikeluarkan dari laporan MVP. Jika scope transaksi kelak berubah, definisi laporan dan test fixture harus ditinjau ulang.
+- Semua rentang tanggal ditafsirkan menurut `Asia/Jakarta`, termasuk perubahan tanggal lokal ketika dikonversi ke UTC.
+- Laporan hanya tersedia untuk Owner yang terautentikasi melalui jalur yang aksesnya diperiksa.
+- Jangan menambah agregasi, chart, item terlaris, atau analitik lanjutan bila definisinya belum diuji atau akan mengancam penyelesaian alur inti.
 
-| Dari | Ke | Oleh | Syarat |
-|---|---|---|---|
-| *(baru)* | `recorded` | Owner/Staff berwenang (OPEN-004) | Idempotent (INV-PAY-01) |
-| `recorded` | `voided` | jalur istimewa (OPEN-004/011) | Baris tidak dihapus; nominal/relasi tidak berubah; masuk audit |
+---
 
-Refund dicatat sebagai baris baru `kind = refund` yang merujuk `refund_of_payment_id`; ia **tidak** mengubah baris asli.
+## 9. Storage, CMS safety, dan akses data
 
-## 7. Desain konkurensi dan idempotency (Usulan)
+Detail policy final berada di `SECURITY.md`; butir berikut adalah kontrak data yang perlu dijaga:
 
-### 7.1 Anti-bentrok booking (DEC-007)
+- Profil bisnis dan konten hanya dapat diubah oleh Owner yang sah.
+- Website publik hanya membaca field yang ditetapkan public. Jangan mengekspos seluruh row internal sekadar agar dapat mengambil nama/konten publik.
+- Public booking menerima field minimum yang diperlukan dan tidak memberi akses SELECT ke bookings lain. Jangan memakai `reference_code` sebagai otorisasi.
+- Data kontak, catatan internal booking, order, item, payment, dan laporan tidak boleh dikirim ke bundle publik atau API anonim.
+- Semua nilai status, identitas pelaku, total, snapshot, waktu pembayaran, dan ID internal sensitif tidak dipercaya hanya karena dikirim dari frontend.
+- Media upload hanya untuk Owner; bucket dan object access harus sesuai apakah objek publik (misalnya gambar website) atau private. Operasi upload/update/delete tidak menjadi publik hanya karena URL gambar dapat diakses website.
+- JSONB tidak boleh dirender langsung sebagai markup tak tepercaya. Gunakan schema yang dikenal dan renderer allow-list; sanitasi subset rich text jika suatu saat disetujui.
+- Secret tidak disimpan di tabel konten, `VITE_*`, seed, fixture, atau log. Semua nilai `VITE_*` dianggap dapat dilihat browser.
 
-Pemeriksaan overlap di UI atau query sebelum insert **tidak cukup** terhadap dua permintaan bersamaan (INV-BKG-05). Usulan: *exclusion constraint* PostgreSQL pada booking berstatus `confirmed`.
-
-```sql
--- ILUSTRASI konsep, BUKAN migration. Definisi final ada di supabase/migrations/.
-create extension if not exists btree_gist;
-
-alter table bookings
-  add constraint bookings_no_overlap_confirmed
-  exclude using gist (
-    resource_id with =,
-    tstzrange(starts_at, ends_at, '[)') with &&
-  )
-  where (status = 'confirmed');
-```
-
-Konsekuensi yang harus diputuskan di OPEN-009 dan diverifikasi saat TITIS-031:
-
-- Rentang `[mulai, selesai)` memperbolehkan booking berurutan tanpa jeda (selesai = mulai berikutnya). Bila bisnis ingin buffer, jangan menambah interval langsung dalam ekspresi constraint (aritmetika interval pada `timestamptz` tidak berstatus *immutable* dan tidak dapat dipakai di sana; verifikasi di versi PostgreSQL yang dipakai). Gunakan kolom turunan yang diisi trigger/RPC.
-- Pelanggaran constraint menghasilkan error `23P01` (exclusion violation) yang diterjemahkan RPC menjadi pesan yang dapat ditindaklanjuti (AC-BKG-04.4).
-- Bila `pending` ikut memblokir (OPEN-009), predikat `where` dan keadaan transisi harus disesuaikan.
-
-### 7.2 Idempotency checkout dan pembayaran (DEC-008)
-
-`orders.client_request_id` dan `payments.client_request_id` memakai `UNIQUE`. Klien membuat UUID sekali per upaya niat pengguna dan mengirimnya ulang saat retry; RPC mengembalikan baris yang sama alih-alih membuat baru (INV-POS-04).
-
-### 7.3 Nomor transaksi
-
-`order_number` dihasilkan di database (sequence/counter per aturan OPEN-010), bukan di browser, agar unik dan aman konkuren (INV-POS-07).
-
-## 8. Invariants
-
-Setiap invariant harus ditegakkan di **database/lapisan tepercaya** (constraint, FK, trigger, RPC, RLS), bukan hanya UI. Kolom “Test” merujuk `TESTING.md`.
-
-### 8.1 Access control
-
-| ID | Invariant | Mekanisme (Usulan) | Test |
-|---|---|---|---|
-| INV-ACC-01 | Role dan keterikatan bisnis tidak dapat diubah lewat update field biasa oleh pengguna tidak berwenang. | Kolom `role` tidak termasuk yang dapat di-update client; perubahan lewat jalur istimewa. | TEST-RLS-05 |
-| INV-ACC-02 | Staff tidak dapat menaikkan role dirinya. | Sama dengan INV-ACC-01 + policy/trigger penolak. | TEST-RLS-05 |
-| INV-ACC-03 | Setiap tabel yang dapat diakses client memiliki RLS aktif dan policy yang teruji. | Migration + pemeriksaan katalog sistem di test. | TEST-RLS-01 |
-| INV-ACC-04 | Semua jalur akses (tabel, view, RPC, Edge Function) menegakkan kontrol yang setara. | View `security_invoker`, grant eksplisit function, review jalur. | TEST-RLS-06 |
-| INV-ACC-05 | Hanya ada satu baris `business_settings`. | `PRIMARY KEY` boolean + `CHECK`. | TEST-DB-05 |
-
-### 8.2 Booking
-
-| ID | Invariant | Mekanisme (Usulan) | Test |
-|---|---|---|---|
-| INV-BKG-01 | Status awal ditetapkan sistem. | Default/RPC memaksa `pending`; input pemanggil diabaikan. | TEST-BKG-01 |
-| INV-BKG-02 | Resource valid, ada, dan aktif. | FK + validasi RPC. | TEST-BKG-03 |
-| INV-BKG-03 | Rentang waktu valid dan zona waktu konsisten. | `CHECK (ends_at > starts_at)`, `timestamptz`, validasi jam/lead time di RPC. | TEST-BKG-03, TEST-BKG-10 |
-| INV-BKG-04 | Booking `confirmed` pada resource sama tidak overlap. | Exclusion constraint (§7.1). | TEST-BKG-04, TEST-BKG-05 |
-| INV-BKG-05 | Pemeriksaan overlap aman terhadap permintaan bersamaan. | Constraint di database, bukan query pra-periksa. | TEST-BKG-06 |
-| INV-BKG-06 | Status hanya berubah sesuai transisi yang diizinkan. | Trigger/RPC penjaga transisi (§6.1). | TEST-BKG-07 |
-| INV-BKG-07 | Konfirmasi/penolakan mencatat pelaku dan waktu. | Kolom `decided_by/at` diisi RPC; audit. | TEST-BKG-12 |
-
-### 8.3 POS dan pembayaran
-
-| ID | Invariant | Mekanisme (Usulan) | Test |
-|---|---|---|---|
-| INV-POS-01 | Item transaksi menyimpan snapshot nama dan harga. | Kolom snapshot diisi RPC dari katalog saat checkout. | TEST-POS-02 |
-| INV-POS-02 | Total dihitung di lapisan tepercaya dan konsisten (`total = subtotal − diskon + pajak + pembulatan`). | RPC checkout + `CHECK` konsistensi. | TEST-POS-01, TEST-POS-05 |
-| INV-POS-03 | Checkout atomik atau memiliki desain pemulihan yang jelas. | Satu transaksi database (RPC). | TEST-POS-03 |
-| INV-POS-04 | Retry/double-submit tidak membuat transaksi ganda. | `UNIQUE (client_request_id)`. | TEST-POS-04 |
-| INV-POS-05 | Uang tidak memakai floating-point. | Tipe `bigint`; larangan `float`/`numeric` tanpa skala di review. | TEST-POS-06 |
-| INV-POS-06 | Constraint, FK, dan unique dipakai bila tepat. | Review migration + test negatif. | TEST-DB-02 |
-| INV-POS-07 | Nomor transaksi unik, aman konkuren. | Sequence/counter + `UNIQUE`. | TEST-POS-09 |
-| INV-PAY-01 | Pembayaran memiliki relasi, nominal > 0, waktu, metode, status. | `NOT NULL`, `CHECK`, FK. | TEST-PAY-01 |
-| INV-PAY-02 | Jumlah pembayaran bersih tidak melebihi total kecuali aturan kelebihan bayar mengizinkan (OPEN-011). | Validasi RPC; status bayar diturunkan. | TEST-PAY-02, TEST-PAY-03 |
-| INV-PAY-03 | DP, pelunasan, void, dan refund tidak terhitung dua kali. | Penjualan dari `orders`; kas dari `payments` (§9). | TEST-PAY-02, TEST-RPT-03 |
-| INV-PAY-04 | Pembayaran append-only; koreksi lewat catatan pembalik; tanpa hard delete. | Tanpa grant/policy `DELETE`; trigger penjaga kolom. | TEST-PAY-04 |
-
-### 8.4 Laporan dan audit
-
-| ID | Invariant | Mekanisme (Usulan) | Test |
-|---|---|---|---|
-| INV-RPT-01 | Angka laporan dapat direkonsiliasi dengan baris transaksi/pembayaran. | Metrik dari view/RPC yang menghitung dari tabel dasar (§9). | TEST-RPT-01, TEST-RPT-05 |
-| INV-AUD-01 | Audit log append-only; aksi sensitif tercatat. | Tanpa `UPDATE/DELETE`; trigger penolak. | TEST-DB-06 |
-
-## 9. Katalog metrik laporan (Usulan — OPEN-012)
-
-Aturan inti yang mencegah penghitungan ganda:
-
-1. **Penjualan** diakui dari `orders` aktif pada tanggal order (zona bisnis). **DP dan pelunasan bukan penjualan**; keduanya pembayaran atas order yang sama.
-2. **Penerimaan kas** dihitung dari `payments` pada tanggal `paid_at` (zona bisnis).
-3. Order `void` dikeluarkan dari penjualan. Nasib pembayaran pada order void (refund atau dicatat hangus) ditentukan OPEN-011 dan harus eksplisit.
-4. Refund mengurangi penerimaan kas pada tanggal refund, tidak mengubah penjualan kecuali disertai void/koreksi.
-
-| ID | Metrik | Definisi (Usulan) | Sumber | Tanggal acuan |
-|---|---|---|---|---|
-| MET-01 | Penjualan kotor | Σ `subtotal_amount` order `active` | `orders` | tanggal order |
-| MET-02 | Diskon | Σ `discount_amount` order `active` | `orders` | tanggal order |
-| MET-03 | Penjualan bersih | MET-01 − MET-02 | `orders` | tanggal order |
-| MET-04 | Pajak | Σ `tax_amount` order `active` | `orders` | tanggal order |
-| MET-05 | Total tagihan | Σ `total_amount` order `active` | `orders` | tanggal order |
-| MET-06 | Penerimaan kas | Σ `amount` payment `kind=payment`, `status=recorded` | `payments` | `paid_at` |
-| MET-07 | Refund | Σ `amount` payment `kind=refund`, `status=recorded` | `payments` | `paid_at` |
-| MET-08 | Penerimaan bersih | MET-06 − MET-07 | `payments` | `paid_at` |
-| MET-09 | Saldo belum dibayar | Σ (`total_amount` − pembayaran bersih) order `active`, per akhir periode | `orders`, `payments` | akhir periode |
-| MET-10 | Jumlah transaksi | Count order `active` | `orders` | tanggal order |
-| MET-11 | Rata-rata nilai transaksi | MET-05 / MET-10 | `orders` | tanggal order |
-| MET-12 | Item terlaris | Σ `quantity` per `item_name_snapshot` | `order_items` | tanggal order |
-| MET-13 | Booking menurut status | Count `bookings` per `status` | `bookings` | `starts_at` |
-
-Contoh hitung manual untuk rekonsiliasi ada di `TESTING.md` §8. Bila definisi berubah, perbarui tabel ini **dan** fixture test.
+---
 
 ## 10. Seed dan data uji
 
-- Data demo **sintetis**; tanpa data pelanggan asli.
-- `supabase/seed.sql` dapat dijalankan ulang (idempoten) dan tidak bergantung pada ID production.
-- **Tidak ada password atau secret di seed.** Akun uji (Owner/Staff) dibuat oleh skrip lokal yang membangkitkan kredensial acak saat dijalankan dan tidak menyimpannya di Git.
-- Fixture edge case disiapkan sengaja: waktu bertabrakan, pembayaran parsial, transaksi gagal, record tanpa izin, nilai batas (`TESTING.md` §8).
+- Semua seed dan fixture menggunakan data sintetis, bukan data pelanggan asli.
+- Seed perlu idempoten bila dipakai berulang, tidak bergantung pada UUID production, dan tidak berisi password, token, publishable key yang sensitif, atau secret lain.
+- Pembuatan akun Owner untuk test dilakukan melalui prosedur environment lokal/test yang aman. Jangan commit credential tetap.
+- Fixture minimal mencakup: konten belum terisi; product aktif dan nonaktif; resource aktif dan nonaktif; booking di luar jam, booking pending, confirmed overlap, buffer dan batas slot; request konfirmasi konkuren; checkout beberapa item; perubahan katalog sesudah checkout; idempotency retry; akses anonim yang ditolak; serta perhitungan laporan yang dapat diverifikasi manual.
+- Fixture dengan booking dan transaksi harus meliputi boundary tanggal pada `Asia/Jakarta`.
 
-## 11. Migration dan tipe
+---
 
-- Alur lokal (verifikasi sintaks CLI pada versi yang dipakai): `supabase migration new <nama>` → tulis SQL → `supabase db reset` (hanya lokal) → `supabase test db`.
-- Sebelum menerapkan: tinjau SQL, dampak data, rollback/recovery, dan apakah destruktif. Migration yang menghapus/memindahkan/mengubah makna data memerlukan persetujuan (`AGENTS.md` §3.2).
-- Perubahan data lama memerlukan strategi backfill/kompatibilitas; jangan hanya menambah kolom lalu mengasumsikan data lama valid.
-- Tipe TypeScript yang dihasilkan dari schema disinkronkan setelah migration (DEC-010; TEST-DB-04). Tidak ada tipe buatan tangan yang menyimpang dari database.
-- Referensi alur: https://supabase.com/docs/guides/local-development/database-migrations
+## 11. Migration dan generated types
 
-## 12. Retensi, ekspor, dan backup
+### 11.1 Migration workflow
 
-Retensi data, ekspor, dan strategi backup/pemulihan ditentukan OPEN-013 dan dirinci pada TITIS-076. Sampai itu diputuskan, tidak ada data yang dihapus otomatis.
+1. Tinjau status keputusan terkait di `ARCHITECTURE.md`, dependensi task di `TASK.md`, serta izin di `SECURITY.md` sebelum mengubah schema.
+2. Buat migration untuk perubahan logis yang kecil dan jelas. Simpan tabel, FK, constraint, index, RLS, grants, trigger, function/RPC, dan Storage policies yang dikelola SQL dalam migrations.
+3. Jalankan migration di Supabase lokal atau environment test yang aman terlebih dahulu. Command final harus diverifikasi terhadap versi CLI aktual; jangan mengasumsikan command berfungsi berdasarkan dokumentasi lama.
+4. Uji penerapan ulang dari basis bersih. Jangan reset, drop, truncate, atau melakukan migrasi destruktif pada production tanpa review, rencana pemulihan/backup, dan persetujuan eksplisit.
+5. Setelah perubahan schema, perbarui dokumentasi ini, sinkronkan generated database types, dan jalankan tes terkait.
+6. File migration adalah schema source of truth. Markdown menjelaskan alasan dan invariant; ia tidak menggantikan SQL yang benar-benar diterapkan.
 
-## 13. Pertanyaan desain yang bergantung keputusan
+### 11.2 Generated TypeScript types
 
-| Pertanyaan | Opsi | Terikat |
+Arsitektur menetapkan Supabase CLI type generation sebagai baseline (DEC-010). Rencana command `npm run db:types` dan lokasi `src/types/database.ts` harus diverifikasi pada scaffold; jangan mengklaim script tersedia sebelum memeriksa `package.json` dan menjalankannya.
+
+- Generated file mengikuti schema yang aktif, bukan rancangan konseptual.
+- Jangan mengedit tipe hasil generate secara manual untuk menyamarkan ketidaksesuaian schema.
+- Nominal `bigint` diperlakukan secara aman ketika melewati batas TypeScript/JSON; lakukan format rupiah secara terpisah dari aritmetika uang final.
+- Bila generator mengeluarkan tipe yang berbeda dari asumsi, selidiki sumbernya, perbarui adapter/kontrak, dan jalankan type-check.
+
+### 11.3 Referensi dokumentasi
+
+Gunakan dokumentasi versi aktual dari:
+
+- Supabase Database Migrations: https://supabase.com/docs/guides/local-development/database-migrations
+- Supabase Row Level Security: https://supabase.com/docs/guides/database/postgres/row-level-security
+- Supabase Database Functions: https://supabase.com/docs/guides/database/functions
+- PostgreSQL Range Types: https://www.postgresql.org/docs/current/rangetypes.html
+- PostgreSQL Constraints: https://www.postgresql.org/docs/current/ddl-constraints.html
+
+URL tersebut adalah titik awal untuk verifikasi, bukan bukti bahwa migration aktual telah lulus.
+
+---
+
+## 12. Blocker sebelum schema final
+
+Butir berikut harus diselesaikan pada task yang sesuai sebelum migration terkait dibekukan. Menuliskannya di sini tidak berarti keputusan telah diterima.
+
+| Butir | Yang harus dikunci | Terkait |
 |---|---|---|
-| Di mana DP booking dicatat? | A: order dibuat saat booking dikonfirmasi dan pembayaran menempel ke order (usulan). B: `payments` menempel langsung ke booking (`booking_id` XOR `order_id`). | OPEN-011 |
-| Apakah `completed` ada pada booking? | Ya / Tidak | OPEN-008 |
-| Apakah `pending` memblokir slot? | Ya / Tidak | OPEN-009 |
-| Apakah buffer antar-booking ada? | Ya (kolom turunan) / Tidak | OPEN-007 |
-| Void order yang sudah dibayar | Wajib refund / dicatat hangus / dilarang | OPEN-011 |
-| Pajak: per baris atau per total? | Per baris / per total | OPEN-010 |
+| D-01 | Persetujuan DEC-009 dan kontrak uang final; baseline saat ini IDR integer rupiah, tanpa diskon/pajak khusus. | TITIS-004, TITIS-302; sebelum migration POS |
+| D-02 | Prosedur bootstrap, pemulihan, dan mapping akun Owner; tidak ada signup publik. | DEC-016, TITIS-104/TITIS-107 |
+| D-03 | Jalur publik booking dan grants/function internal; tidak ada akses publik yang membypass validasi. | DEC-006, TITIS-203 |
+| D-04 | Konfirmasi bahwa model katalog tunggal `products` sesuai DEC-021. | TITIS-004, TITIS-213 |
+| D-05 | Semantik jam operasional: hari tutup, interval harian, jam bisnis versus override resource, dan interval yang melewati tengah malam. | TITIS-215 dan TITIS-201 |
+| D-06 | Pilihan teknis enforcement buffer 15 menit pada exclusion constraint dan bukti request bersamaan. | DEC-007, TITIS-202 |
+| D-07 | Bentuk JSONB yang diizinkan per halaman/section dan metadata yang bisa diedit Owner. | DEC-014, DEC-020, TITIS-104/TITIS-109 |
+| D-08 | Policy RLS/grants/Storage untuk semua tabel/jalur yang dipakai MVP. | `SECURITY.md`, TITIS-008/TITIS-108/TITIS-401 |
+| D-09 | Katalog kasus uji formal dan fixture direvisi agar tidak membawa asumsi Staff, DP, refund, void, atau multi-currency dari rancangan lama. | DEC-013, `TESTING.md`, TITIS-010/TITIS-310/TITIS-403 |
+
+---
+
+## 13. Yang sengaja tidak dimodelkan pada MVP
+
+Jangan menambahkan tabel/kolom/alur berikut kecuali scope berubah secara eksplisit dan dampaknya disetujui:
+
+- Staff, role matrix, dan permission per user;
+- multi-tenant `business_id` atau SaaS billing;
+- payment gateway, webhook, DP, cicilan/pelunasan bertahap, refund, void, payment correction ledger;
+- diskon, kupon, pajak tambahan, pembulatan khusus, atau multi-currency;
+- inventaris/stok, resep/BOM, supplier, purchase order, atau POS offline;
+- status booking tambahan seperti `expired`, `completed`, `no_show`, atau pembatalan/reschedule mandiri pengunjung;
+- CMS page builder, raw HTML, script dari database, versi konten/draft workflow kompleks;
+- audit ledger keuangan atau event history kompleks yang belum menjadi requirement MVP;
+- SEO SSR/prerender dinamis atau build pipeline karena perubahan konten.
+
+Jika kebutuhan baru muncul, ubah PRD lebih dahulu, periksa keputusan arsitektur dan security, perbarui task serta tes, kemudian desain migration. Jangan menggunakan skema lama sebagai alasan untuk membesarkan MVP baru.
+
+---
+
+## 14. Checklist review rancangan
+
+- [ ] `DATABASE.md` sudah ditinjau terhadap PRD/Architecture revisi 2026-10-15 melalui TITIS-007.
+- [ ] Tidak ada asumsi Staff, DP/pelunasan, payment gateway, refund/void, diskon/pajak khusus, inventaris, atau multi-currency yang masih diperlakukan sebagai MVP.
+- [ ] Katalog produk/layanan merupakan satu-satunya sumber harga publik/POS.
+- [ ] Identitas Owner dan bootstrap-nya tidak mengizinkan signup atau penetapan role oleh client.
+- [ ] CMS memakai konten terstruktur dan tidak merender script/HTML bebas.
+- [ ] Booking mencatat waktu dan data minimum; status awal dipaksakan sistem; buffer dan exclusion strategy dijelaskan.
+- [ ] Checkout lunas bersifat atomik dan idempotent; snapshot item/harga tersimpan; transaksi selesai tidak dapat diedit/hapus.
+- [ ] Definisi laporan menggunakan transaksi tersimpan dan zona waktu `Asia/Jakarta`.
+- [ ] Retensi data pribadi, migration workflow, generated types, RLS/grants, dan tes terkait memiliki rujukan yang benar.
+- [ ] Semua keputusan `Proposed` yang membatasi schema ditangani sebelum migration terkait dimulai.
+
+**Status hasil review:** belum dinyatakan `Done` hanya berdasarkan pembuatan dokumen. Isi acceptance criteria dan evidence aktual harus dicatat pada `TASK.md` → TITIS-007 setelah review lintas dokumen dan verifikasi dilakukan.

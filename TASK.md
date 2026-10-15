@@ -1,756 +1,1391 @@
 # TITIS — TASK.md
 
-> **Fungsi:** daftar pekerjaan aktual TITIS — status per task, dependensi, acceptance criteria, bukti verifikasi, blocker, dan task berikutnya.
+> **Fungsi:** daftar pekerjaan aktual TITIS: status, dependensi, acceptance criteria, verifikasi, bukti, blocker, dan task berikutnya.
 >
-> **Bukan untuk:** mengulang isi `PRD.md`, `ARCHITECTURE.md`, `DESIGN.md`, `DATABASE.md`, `SECURITY.md`, atau `TESTING.md`. Rujuk dokumen itu; jangan menyalin isinya ke sini.
+> **Sumber kebenaran:** `PRD.md` untuk requirement produk; `ARCHITECTURE.md` untuk struktur dan pilihan teknis; `DESIGN.md` untuk visual; `DATABASE.md` untuk model/invariant database; `SECURITY.md` untuk izin dan threat model; `TESTING.md` untuk prosedur uji; `TITIS_MASTER_BUILD_GUIDE_FINAL.md` untuk fase dan gate; migration SQL untuk schema yang benar-benar diterapkan.
 >
-> **Roadmap tingkat tinggi:** `TITIS_MASTER_BUILD_GUIDE_FINAL.md` (bagian 7). Detail pekerjaan harian hidup di file ini.
+> **Baseline yang dipakai:** revisi `PRD.md`, `TITIS_MASTER_BUILD_GUIDE_FINAL.md`, dan `ARCHITECTURE.md` tanggal **2026-10-15**. Scope MVP adalah satu instalasi untuk satu bisnis, company profile template/custom melalui kode, CMS, katalog bersama, booking anti-bentrok, POS lunas dengan pembayaran manual, dan laporan dasar.
+>
+> **Batas laporan:** file acuan dipakai sebagai sumber penyusunan dokumen ini; repository, working tree, dan commit aktif tidak diperiksa dalam pembuatan salinan ini. Status dan evidence historis yang dipertahankan berasal dari `TASK.md` sebelumnya dan belum dianggap sebagai verifikasi baru pada 2026-10-15. Perbarui status aktual setelah memeriksa repository.
 
 ---
 
 ## 1. Status Saat Ini
 
 ```text
-Fase aktif          : PHASE 0 — Product Contract & Architecture
-Task aktif          : Tidak ada
-Task berikutnya     : TITIS-002 (PRD) — gerbang bagi sebagian besar task Phase 0; TITIS-001, 011, dan 013 dapat dikerjakan paralel
-Blocker             : Tidak ada blocker teknis. Menunggu peninjauan pemilik atas dokumen Phase 0
-Commit terverifikasi: Belum diverifikasi (isi setelah repository diperiksa)
-Tanggal update      : 2026-10-10
+Fase aktif          : PHASE 0 — Scope dan Persiapan
+Task aktif          : TITIS-002 (persetujuan PRD revisi), TITIS-003 (konfirmasi keputusan produk), TITIS-004/006 (review arsitektur dan keputusan SEO)
+Task berikutnya     : TITIS-007, TITIS-008, TITIS-009, TITIS-010; kemudian TITIS-012 dan gate TITIS-014
+Blocker             : PRD revisi 2026-10-15 belum tercatat disetujui eksplisit; sejumlah DEC di ARCHITECTURE.md masih Proposed; dokumen DATABASE/SECURITY/DESIGN/TESTING perlu direview terhadap scope Owner-only dan POS lunas
+Commit terverifikasi: Belum diverifikasi; repository tidak diperiksa saat dokumen ini disusun
+Tanggal update      : 2026-10-15
 ```
 
-Ganti blok ini hanya setelah kondisinya diverifikasi di repository. Jangan biarkan ia menjadi laporan progres palsu.
+Perbarui blok ini hanya berdasarkan pemeriksaan repository dan keputusan pemilik yang benar-benar tercatat. Jangan menganggap file telah disetujui hanya karena sudah ada atau karena AI menyatakan selesai.
 
 ---
 
 ## 2. Cara Memakai File Ini
 
-1. Pilih **satu** task berstatus `Ready` (atau `Review` bila tugasnya meninjau dokumen). Baca dependensinya.
-2. Pastikan git working tree bersih atau perubahan sebelumnya sudah dipahami.
-3. Untuk task yang menyentuh banyak file, database, keamanan, atau arsitektur: minta rencana dahulu, baru implementasi.
-4. Kerjakan hanya scope task. Hal di luar scope dicatat di bagian 8 (Parking Lot), bukan dikerjakan.
-5. Periksa diff, jalankan verifikasi yang **benar-benar tersedia**, lalu isi bagian `Evidence` dengan hasil aktual.
-6. Ubah status hanya setelah syarat statusnya terpenuhi (bagian 3).
-7. Perbarui dokumen sumber kebenaran bila behavior atau keputusan berubah; catat keputusan sulit dibalik sebagai `DEC-XXX`.
+1. Baca `TITIS_MASTER_BUILD_GUIDE_FINAL.md`, `AGENTS.md`, task terpilih, dan dokumen domain yang relevan. Periksa `git status` terlebih dahulu.
+2. Kerjakan satu task terbatas dalam satu waktu. Untuk perubahan multi-file, database, keamanan, atau arsitektur, minta rencana sebelum implementasi.
+3. Jangan menambah dependency, mengubah stack/scope/schema/permission/deployment, melakukan operasi remote, push, atau deploy tanpa persetujuan yang disyaratkan di `AGENTS.md` dan guide.
+4. Jalankan hanya command yang benar-benar tersedia dan sesuai `package.json`/konfigurasi aktual. Jangan menciptakan bukti atau mengklaim tes lulus tanpa eksekusi.
+5. Tinjau diff, catat file dan hasil aktual di `Evidence`, lalu ubah status sesuai definisi di bagian 3.
+6. Bila requirement atau dokumen bertentangan, hentikan pekerjaan yang terdampak dan catat blocker di task ini. Perbarui sumber kebenaran yang benar, bukan menyalin seluruh spesifikasi ke sini.
 
-Aturan yang tidak boleh dilanggar ada di `TITIS_MASTER_BUILD_GUIDE_FINAL.md` (bagian 0.3) dan `AGENTS.md`. Singkatnya: satu agent penulis aktif dalam satu waktu, tidak ada perubahan scope/stack/dependency/skema/akses/deployment tanpa persetujuan pemilik, tidak ada secret di frontend atau Git, dan task belum selesai tanpa bukti.
+### 2.1 Scope MVP yang mengikat
+
+- Satu instalasi untuk satu bisnis dan **satu akun Owner**; tidak ada Staff atau permission matrix pada MVP.
+- Company profile memiliki satu template dasar; developer boleh membuat custom UI/UX melalui kode dan design tokens. Bukan page builder visual atau editor HTML/CSS bebas.
+- CMS mengubah konten yang ditentukan dan media dasar; konten tidak boleh menjalankan script/HTML bebas.
+- Website publik dan POS memakai **satu katalog** produk/layanan.
+- Booking publik selalu dibuat dengan status `pending`; hanya Owner memutuskan status. Hanya booking `confirmed` yang memblokir waktu; anti-bentrok wajib ditegakkan database.
+- POS hanya checkout **lunas**. Metode manual: tunai, transfer, QRIS. Harga/total dihitung oleh database/server; item menyimpan snapshot; checkout atomik dan idempotent.
+- Mata uang IDR, zona waktu bisnis `Asia/Jakarta`, UI/konten MVP Bahasa Indonesia.
+- DP/pelunasan bertahap, payment gateway, void/refund, edit transaksi selesai, inventaris/stok, POS offline, multi-tenant, Staff, multi-bahasa, page builder, dan SEO SSR/prerender lanjutan tidak masuk MVP tanpa persetujuan perubahan scope.
+
+### 2.2 Status keputusan dan task
+
+Status DEC harus mengikuti `ARCHITECTURE.md`: `Proposed`, `Open`, `Accepted`, `Rejected`, atau `Superseded`. `Proposed` tidak mengizinkan implementasi pada area yang terpengaruh. Status task: `Blocked`, `Ready`, `In Progress`, `Review`, `Done`, `Deferred`.
+
+**Stabilitas ID:** ID yang sudah digunakan tidak boleh diganti hanya karena susunan fase direvisi. Karena roadmap 2026-10-15 menyusun ulang fase dibanding versi terdahulu, kolom `Phase` menjadi acuan fase pelaksanaan; nomor ID lama dipertahankan demi keterlacakan. Task baru harus memakai nomor yang belum pernah dipakai, tidak menomori ulang task yang ada, dan dicatat di file ini saja.
 
 ---
 
-## 3. Status Task
+## 3. Status Task dan Definition of Done
 
 | Status | Arti |
 |---|---|
-| `Blocked` | Belum bisa dimulai: keputusan atau dependensi belum selesai. |
-| `Ready` | Requirement, scope, dan dependensi cukup jelas untuk dikerjakan. |
+| `Blocked` | Belum boleh dimulai karena keputusan, dependensi, atau akses belum tersedia. |
+| `Ready` | Scope dan dependensi cukup jelas untuk mulai dikerjakan. |
 | `In Progress` | Sedang dikerjakan. |
-| `Review` | Hasil sudah ada, menunggu pemeriksaan atau tes. Untuk dokumen Phase 0: file sudah dibuat, menunggu tinjauan pemilik. Tinjauan boleh berjalan sebelum dependensinya `Done`, tetapi task tidak boleh ditutup (`Done`) sebelum semua dependensinya `Done`. |
-| `Done` | Acceptance criteria lulus dan bukti dicatat. |
-| `Deferred` | Ditunda secara sengaja, bukan lupa. |
+| `Review` | Dokumen/hasil tersedia dan menunggu tinjauan. Task tidak boleh menjadi `Done` jika dependensinya belum `Done`. |
+| `Done` | Acceptance criteria terpenuhi dan bukti aktual dicatat. |
+| `Deferred` | Sengaja ditunda dengan alasan dan syarat untuk dipertimbangkan lagi. |
 
-`Done` tidak boleh dipakai hanya karena file sudah ada atau AI sudah menghasilkan kode.
+Task hanya boleh `Done` bila seluruh butir yang relevan terpenuhi:
 
-### Definition of Done (ringkas, selengkapnya di `TITIS_MASTER_BUILD_GUIDE_FINAL.md` §10.2)
-
-- [ ] Perilaku sesuai acceptance criteria dan tetap dalam scope.
+- [ ] Acceptance criteria terpenuhi, tanpa perluasan scope yang tidak disetujui.
 - [ ] Validasi dan error state yang relevan ditangani.
-- [ ] Test relevan ditambahkan/diperbarui **dan dijalankan**.
-- [ ] Type-check/lint/build yang relevan lulus, atau kegagalannya dicatat jelas.
-- [ ] Dampak security, permission, dan integritas data diperiksa.
-- [ ] Diff ditinjau: tanpa secret, debug code, dependency, atau perubahan tak terkait.
-- [ ] Dokumentasi dan tipe diperbarui bila kontrak berubah.
-- [ ] Evidence tercatat di task ini.
+- [ ] Tes terkait ditambahkan/diperbarui dan benar-benar dijalankan.
+- [ ] Type-check, lint, build, atau command relevan dijalankan; hasil gagal/belum dijalankan dijelaskan jujur.
+- [ ] Security, izin, integritas data, dan kemungkinan akses langsung diperiksa jika relevan.
+- [ ] Diff ditinjau untuk secret, debug code, dependency, migrations, dan perubahan tak terkait.
+- [ ] Dokumentasi/tipenya diperbarui bila kontrak berubah.
+- [ ] Evidence mencantumkan hasil aktual, bukan niat/rencana.
 
 ---
 
-## 4. Format Task
+## 4. PHASE 0 — Scope dan Persiapan
 
-Format ini menyederhanakan template di guide (§13.2). Isi minimum tetap ada: scope, kriteria, dependensi, tes, bukti, dan status.
+**Tujuan:** keputusan yang memengaruhi scope, data, keamanan, booking, checkout, dan laporan diselesaikan sebelum implementasi fitur.
 
-```markdown
-## [TITIS-XXX] Judul
-- Status: Ready | Phase: N | Depends on: [ID atau None]
-- Scope: ...
-- Out of scope: ...
+**Exit criteria:** PRD revisi disetujui; decision `Proposed` yang memblokir implementasi sudah `Accepted` atau secara eksplisit `Deferred` dengan owner/alasan/dampak; `DATABASE.md`, `SECURITY.md`, `DESIGN.md`, dan `TESTING.md` konsisten; gate TITIS-014 disetujui Owner.
 
-### Acceptance criteria
-- [ ] ...
+### [TITIS-001] Tinjau AGENTS.md terhadap guide terbaru
+- **Status:** Review | **Phase:** 0 | **Depends on:** None
+- **Scope:** tinjau aturan agen terhadap `TITIS_MASTER_BUILD_GUIDE_FINAL.md` revisi 2026-10-15 dan baseline Owner-only.
+- **Out of scope:** menggandakan PRD/roadmap atau membuat `CLAUDE.md` tanpa kebutuhan.
 
-### Verification
-- [ ] ...
+#### Acceptance criteria
+- [ ] Agen diwajibkan membaca guide, `AGENTS.md`, `TASK.md`, dan dokumen domain relevan sebelum bertindak.
+- [ ] Satu agent penulis aktif; agent lain hanya review read-only.
+- [ ] Tidak ada perubahan scope, stack, dependency, skema, permission, migration remote, push, atau deploy tanpa izin yang disyaratkan.
+- [ ] Tidak membuka/menyalin/mencetak secret; tidak melakukan operasi destruktif terhadap production; diff dan hasil verifikasi wajib diperiksa sebelum laporan selesai.
+- [ ] Scope MVP terbaru tercermin: satu Owner, tanpa Staff, transaksi lunas, tidak ada DP/void/refund/stok/page builder/SEO lanjutan.
+- [ ] Kosakata status keputusan dan task konsisten dengan dokumen acuan; rujukan ID task yang ada valid.
+- [ ] Batas penegakan teknis per alat (OpenCode, Cursor, Codex, Claude Code, bila dipakai) terdokumentasi atau keterbatasannya dinyatakan.
 
-### Evidence
-- Hasil aktual / file / migration / commit / blocker: _belum ada_
-```
+#### Verification
+- [ ] Baca ulang `AGENTS.md` terhadap checklist di atas.
+- [ ] Minta agent merangkum batas dan langkah kerja tanpa mengubah file.
 
-Task Phase 0 dan Phase 1 ditulis lengkap. Task Phase 2–4 ditulis ringkas dan **di-expand menjadi format lengkap saat fasenya aktif**, karena detailnya bergantung pada keputusan Phase 0–1.
+#### Evidence
+- Review historis 2026-10-11 pada `TASK.md` lama menyatakan aturan minimum saat itu sudah diperiksa. Review tersebut belum mencakup guide dan scope yang direvisi 2026-10-15. Bukti review terbaru: _belum ada_.
 
-Penomoran ID: `TITIS-0xx` Phase 0, `-1xx` Phase 1, `-2xx` Phase 2, `-3xx` Phase 3, `-4xx` Phase 4, `-9xx` Parking Lot. ID hanya dibuat dan dinomori di file ini; dokumen lain (PRD, ARCHITECTURE, AGENTS, guide) hanya merujuknya. Bila menambah task, pakai nomor berikutnya yang belum terpakai; jangan menomori ulang task yang sudah dirujuk.
+### [TITIS-002] Tinjau dan setujui PRD.md revisi 2026-10-15
+- **Status:** Review | **Phase:** 0 | **Depends on:** None
+- **Scope:** periksa PRD terbaru dan dapatkan persetujuan eksplisit Owner atas baseline MVP.
+- **Out of scope:** memilih detail implementasi teknis yang menjadi tanggung jawab `ARCHITECTURE.md`, `DATABASE.md`, dan `SECURITY.md`.
+
+#### Acceptance criteria
+- [ ] Model satu instalasi/satu bisnis dan satu akun Owner disetujui.
+- [ ] Perbedaan custom UI/UX melalui kode versus page builder dashboard dipahami dan disetujui.
+- [ ] Scope CMS, katalog bersama, booking, POS lunas, laporan dasar, bahasa, mata uang, dan zona waktu sesuai PRD revisi.
+- [ ] Fitur out-of-scope/deferred tidak diam-diam dimasukkan ke MVP.
+- [ ] Acceptance criteria PRD dapat ditelusuri ke task dan pengujian.
+- [ ] Persetujuan pemilik tercatat dengan tanggal dan revisi dokumen yang disetujui.
+
+#### Verification
+- [ ] Tinjauan Owner terhadap `PRD.md` revisi 2026-10-15.
+
+#### Evidence
+- Header PRD yang diberikan menyatakan baseline scope untuk ditinjau/disetujui. Persetujuan eksplisit atas revisi tersebut: _belum tercatat dalam sumber yang diberikan_.
+
+### [TITIS-003] Finalisasi keputusan produk yang memengaruhi MVP
+- **Status:** Ready | **Phase:** 0 | **Depends on:** TITIS-002
+- **Scope:** pastikan semua keputusan produk yang diperlukan untuk arsitektur dan acceptance criteria selaras dengan PRD revisi. Jangan merujuk daftar `OPEN-001..021` lama sebagai register aktif kecuali daftar itu masih benar-benar ada di repository.
+- **Out of scope:** implementasi dan pemilihan teknis yang khusus dimiliki oleh DEC di `ARCHITECTURE.md`.
+
+#### Acceptance criteria
+- [ ] Satu Owner, tanpa signup publik, tanpa Staff, dikonfirmasi.
+- [ ] Template dasar dan custom UI/UX berbasis kode dikonfirmasi; tidak ada page builder atau eksekusi kode dari CMS.
+- [ ] Booking: field minimum, status awal `pending`, Owner-only status decision, resource/jam operasi, slot 60 menit, durasi kelipatan 60 menit maks. 4 jam, buffer 15 menit, horizon 30 hari, `Asia/Jakarta`, hanya `confirmed` yang memblokir, dan pesan privasi tercatat.
+- [ ] POS: IDR, item aktif, checkout lunas, tunai/transfer/QRIS, snapshot harga/nama, nomor transaksi unik, atomik dan idempotent; tidak ada diskon/pajak khusus/DP/void/refund/stok.
+- [ ] Laporan minimum, definisi penjualan dan zona waktu sesuai PRD; hasil harus bisa direkonsiliasi dengan fixture.
+- [ ] Data kontak dan kebijakan retensi sesuai PRD; otomatisasi penghapusan bukan syarat MVP.
+- [ ] Setiap perubahan terhadap baseline PRD dicatat dan disetujui Owner; tidak ada asumsi produk kritis yang diserahkan ke AI.
+
+#### Verification
+- [ ] Review bersama PRD dan rangkuman keputusan Owner; tandai butir deferred secara eksplisit di sumber kebenaran.
+
+#### Evidence
+- PRD revisi menjelaskan aturan utama, tetapi persetujuan eksplisit atas revisi terbaru masih menunggu TITIS-002. Hasil final: _belum ada_.
+
+### [TITIS-004] Tinjau dan kunci ARCHITECTURE.md
+- **Status:** Review | **Phase:** 0 | **Depends on:** TITIS-002, TITIS-003, TITIS-005, TITIS-006
+- **Scope:** cek arsitektur terhadap PRD dan guide terbaru; pastikan keputusan yang membatasi implementasi disetujui, diberi alasan, atau ditunda secara eksplisit.
+- **Out of scope:** scaffold atau implementasi fitur.
+
+#### Acceptance criteria
+- [ ] Baseline Vite + React + TypeScript, Tailwind v4, React Router v7, TanStack Query, native HTML + Valibot, Supabase, npm, Node 24 baseline, dan lockfile dipahami; kompatibilitas/versi final tetap diverifikasi saat scaffold.
+- [ ] Batas frontend/server, RLS/grants, Auth Owner-only, migration, generated types, error handling, dan secret dijelaskan.
+- [ ] DEC-006, DEC-009, DEC-011, DEC-013, DEC-016, DEC-017, DEC-020, dan DEC-021 tidak dianggap disetujui selama statusnya masih `Proposed`.
+- [ ] Semua decision yang menjadi prasyarat task terkait `Accepted` atau sengaja `Deferred` dengan persetujuan Owner dan dampak yang dicatat.
+- [ ] Tidak ada keputusan lama yang bertentangan dengan scope baru, termasuk Staff, DP/pelunasan, refund/void, inventaris, Turnstile wajib, atau prerender wajib.
+- [ ] Rujukan dokumen dan ID task yang ada cocok; tidak ada task ID baru di luar `TASK.md`.
+- [ ] Owner menyetujui versi arsitektur yang dijadikan baseline implementasi.
+
+#### Verification
+- [ ] Cross-check PRD, guide, `DATABASE.md`, `SECURITY.md`, `DESIGN.md`, dan `TESTING.md`.
+- [ ] Verifikasi dokumentasi resmi terhadap versi aktual saat task scaffold/implementasi terkait dimulai.
+
+#### Evidence
+- `ARCHITECTURE.md` yang ditempel berstatus Draft Phase 0 dan memuat DEC-006, 009, 011, 013, 016, 017, 020, 021 sebagai `Proposed`. Karena itu arsitektur belum bisa dianggap terkunci. Review dan persetujuan Owner: _belum ada_.
+
+### [TITIS-005] Pastikan keputusan hosting dan environment
+- **Status:** Done | **Phase:** 0 | **Depends on:** TITIS-002
+- **Scope:** pertahankan/verifikasi arah Cloudflare Workers Static Assets + Supabase; dokumentasikan pemisahan local/preview/production dan hal yang masih terbuka, termasuk domain final.
+- **Out of scope:** deploy aktual; deployment final ditangani pada Phase 4.
+
+#### Acceptance criteria
+- [x] Arah hosting, pembagian frontend/backend, environment, secret, fallback SPA, dan prosedur rilis/rollback tercatat dalam arsitektur.
+- [x] Domain final tidak diasumsikan sudah diputuskan; boleh tetap terbuka selama tidak menjadi blocker environment yang sedang dikerjakan.
+- [x] Informasi provider yang berubah-ubah wajib diverifikasi ulang saat implementasi, bukan dianggap berlaku selamanya dari catatan lama.
+
+#### Verification
+- [x] Evidence historis yang tercantum pada `TASK.md` lama menyatakan verifikasi provider tanggal 2026-10-11 dan penerimaan Owner.
+
+#### Evidence
+- Evidence historis: DEC-012 pernah dicatat `Accepted` dengan Cloudflare Workers Static Assets untuk frontend Vite dan Supabase sebagai backend terpisah. Environment local/preview/production dan catatan verifikasi provider ada pada evidence versi sebelumnya. Bukti tersebut dibawa sebagai riwayat; verifikasi provider ulang diperlukan sebelum deployment aktual. Domain final masih terbuka sesuai arsitektur 2026-10-15.
+
+### [TITIS-006] Putuskan strategi SEO publik MVP
+- **Status:** Review | **Phase:** 0 | **Depends on:** TITIS-002
+- **Scope:** kunci DEC-011 sesuai PRD; MVP memakai metadata/struktur dasar, bukan kewajiban SSR/prerender.
+- **Out of scope:** implementasi metadata dan halaman publik, dikerjakan di Phase 2.
+
+#### Acceptance criteria
+- [ ] DEC-011 di `ARCHITECTURE.md` mendapatkan keputusan Owner dan status diperbarui.
+- [ ] Halaman publik yang masuk MVP jelas: Beranda, Tentang, Produk/Layanan, Ruang/Fasilitas jika relevan, Booking, Kontak, dan 404.
+- [ ] SEO MVP mencakup judul/deskripsi dasar, URL konsisten, struktur heading, dan internal links yang wajar.
+- [ ] Prerender/SSR dinamis tidak menjadi syarat MVP; trade-off Vite SPA didokumentasikan secara jujur.
+- [ ] Dampak pada routing, build, hosting, dan klaim SEO untuk pengguna diketahui.
+
+#### Verification
+- [ ] Tinjauan Owner atas DEC-011 dan konsistensinya dengan PRD.
+
+#### Evidence
+- `ARCHITECTURE.md` revisi 2026-10-15 memberi status DEC-011 `Proposed`. Keputusan Owner: _belum tercatat_.
+
+### [TITIS-007] Tinjau DATABASE.md terhadap scope Owner-only dan POS lunas
+- **Status:** Review | **Phase:** 0 | **Depends on:** TITIS-003, TITIS-004
+- **Scope:** periksa entitas, relasi, status, retensi, dan invariants terhadap PRD/Architecture revisi.
+- **Out of scope:** menulis atau menerapkan migration SQL.
+
+#### Acceptance criteria
+- [ ] Model tidak mewajibkan tabel/relasi Staff atau permission matrix.
+- [ ] Company profile, content, katalog, resource, booking, order, order items, dan payment dijelaskan sesuai urutan implementasi.
+- [ ] Katalog menjadi satu-satunya sumber data produk/layanan publik dan POS.
+- [ ] Invariants booking mencakup pending/confirmed, resource, slot/durasi, buffer, rentang setengah-terbuka, horizon, timezone, concurrency, dan status awal yang ditetapkan sistem.
+- [ ] Invariants POS mencakup IDR integer yang aman, item aktif, validasi harga/total di server/database, snapshot, nomor transaksi unik, checkout atomik, idempotency, serta transaksi lunas yang tidak dapat diedit/dihapus.
+- [ ] Tidak ada model DP/pelunasan, refund/void, diskon/pajak khusus, atau inventaris sebagai requirement MVP.
+- [ ] Data pribadi dan retensi mengikuti PRD; migration files disebut sebagai sumber kebenaran schema.
+- [ ] Sumber laporan dan definisi metrik sesuai PRD; fixture rekonsiliasi dapat dibuat.
+
+#### Verification
+- [ ] Cross-check dengan PRD, ARCHITECTURE, SECURITY, dan TESTING.
+
+#### Evidence
+- Evidence historis 2026-10-11 menandai review DATABASE selesai untuk scope sebelumnya. Karena PRD dan ARCHITECTURE diubah 2026-10-15, review lama tidak mencukupi untuk menyatakan task ini `Done`. Hasil review terbaru: _belum ada_.
+
+### [TITIS-008] Tinjau SECURITY.md untuk akses Owner-only
+- **Status:** Review | **Phase:** 0 | **Depends on:** TITIS-002, TITIS-004, TITIS-007
+- **Scope:** selaraskan threat model, matriks izin, tabel/function/grants, Storage, dan jalur publik dengan satu akun Owner.
+- **Out of scope:** menulis policy RLS final atau SQL migrations.
+
+#### Acceptance criteria
+- [ ] Model akses hanya mencakup anonymous dan Owner untuk MVP; Staff dihapus dari matriks aktif atau ditandai jelas sebagai di luar scope.
+- [ ] Untuk setiap tabel, view, RPC/function, Edge Function, dan Storage bucket yang client-facing tercatat siapa boleh SELECT/INSERT/UPDATE/DELETE/EXECUTE.
+- [ ] Pengunjung hanya dapat membaca field publik yang diperlukan dan mengirim booking melalui jalur terbatas; tidak dapat membaca booking internal, transaksi, payment, laporan, atau mengubah status booking.
+- [ ] Jalur booking publik konsisten dengan DEC-006; tidak ada `EXECUTE` publik yang memungkinkan bypass perlindungan yang direncanakan.
+- [ ] Setup Owner pertama tidak memakai signup publik atau role yang berasal dari input/user metadata yang bisa diubah client.
+- [ ] Semua `VITE_*` diperlakukan publik; service-role/secret tidak boleh di frontend, Git, log, atau prompt.
+- [ ] RLS dan grants/function privileges dievaluasi bersama; aturan akses harus dites lewat direct query/API, bukan hanya menyembunyikan menu UI.
+
+#### Verification
+- [ ] Cross-check seluruh tabel dan jalur yang disebut `DATABASE.md`/`ARCHITECTURE.md`.
+- [ ] Pastikan tidak ada matriks Staff/Owner lama yang masih dianggap berlaku untuk MVP.
+
+#### Evidence
+- Review SECURITY 2026-10-11 pada task lama lulus untuk model Owner/Staff sebelumnya. Scope revisi sekarang Owner-only, sehingga status dikembalikan ke `Review` sampai audit ulang dilakukan. Hasil terbaru: _belum ada_.
+
+### [TITIS-009] Tinjau DESIGN.md dan referensi mockup
+- **Status:** Review | **Phase:** 0 | **Depends on:** TITIS-002, TITIS-004
+- **Scope:** pastikan visual direction mendukung satu template dasar, responsif, serta extension point custom UI/UX melalui kode.
+- **Out of scope:** menyalin generated code dari alat desain ke source proyek.
+
+#### Acceptance criteria
+- [ ] Design tokens warna, tipografi, spacing, radius, border, dan elevation ditetapkan atau nilai yang belum final diberi penanda.
+- [ ] Komponen dasar dan state default, hover, focus, disabled, loading, error, dan empty didefinisikan seperlunya.
+- [ ] Layout mobile/desktop, keyboard/focus, label, dan kontras dasar dibahas.
+- [ ] Template tidak mensyaratkan page builder atau pengaturan tema universal yang diedit Owner.
+- [ ] Mockup yang disetujui benar-benar tersimpan di lokasi referensi yang disebut dalam `DESIGN.md`; jangan mengklaimnya ada sebelum memeriksa file.
+- [ ] Pemilik meninjau dan menyetujui arah desain yang menjadi baseline.
+
+#### Verification
+- [ ] Periksa `DESIGN.md` dan keberadaan referensi desain pada repository.
+- [ ] Tinjauan Owner atas mockup dan tokens.
+
+#### Evidence
+- Status dan evidence dari task lama menyatakan DESIGN masih menunggu tinjauan Owner. Keberadaan mockup/referensi tidak diverifikasi saat menyiapkan dokumen ini.
+
+### [TITIS-010] Tinjau TESTING.md terhadap roadmap yang baru
+- **Status:** Review | **Phase:** 0 | **Depends on:** TITIS-007, TITIS-008
+- **Scope:** selaraskan strategi testing dengan Owner-only, katalog, booking concurrency, checkout lunas, laporan, dan tool baseline terbaru.
+- **Out of scope:** menulis atau menjalankan seluruh test implementasi sebelum aplikasi tersedia.
+
+#### Acceptance criteria
+- [ ] Ada tes UI/validasi form, route/auth Owner, CMS, katalog, media, dan state loading/empty/error.
+- [ ] Ada tes direct access untuk anonymous dan Owner, RLS/grants/function permissions, serta penolakan akses internal.
+- [ ] Ada tes booking invalid input, pending tidak memblokir, overlap/buffer/batas interval, resource berbeda, dan dua konfirmasi bersamaan.
+- [ ] Ada tes checkout untuk harga client yang dimanipulasi, item nonaktif, atomic rollback, snapshot, metode pembayaran, nomor transaksi, dan idempotency/retry.
+- [ ] Ada tes laporan yang bisa direkonsiliasi dengan fixture hitungan manual dan timezone `Asia/Jakarta`.
+- [ ] Strategi default menyesuaikan DEC-013 yang masih `Proposed`; tool E2E/a11y tambahan tidak dipaksakan sebelum keputusan, tetapi tes aturan bisnis kritis tetap wajib.
+- [ ] Dokumen tidak mengklaim tes apa pun sudah lulus jika belum dijalankan; format pencatatan hasil jelas.
+
+#### Verification
+- [ ] Cross-check dengan DATABASE.md dan SECURITY.md, termasuk semua identifier tes/invariant/permission yang benar-benar ada.
+
+#### Evidence
+- `TESTING.md` versi lama pernah direview 2026-10-11 untuk scope yang mencakup Staff dan aturan lama. DEC-013 sekarang `Proposed` dan model produk berubah, sehingga perlu review ulang. Hasil terbaru: _belum ada_.
+
+### [TITIS-011] Tetapkan lisensi dan file LICENSE
+- **Status:** Done | **Phase:** 0 | **Depends on:** None
+- **Scope:** pertahankan keputusan lisensi yang disetujui dan file LICENSE.
+- **Out of scope:** audit lisensi seluruh dependency dan aset, dikerjakan pada hardening release.
+
+#### Acceptance criteria
+- [x] Keputusan MIT, pemegang hak cipta, dan tahun tercatat pada dokumen proyek.
+- [x] File `LICENSE` di root berisi teks MIT lengkap.
+- [x] `README.md` merujuk lisensi dengan benar.
+
+#### Verification
+- [x] Evidence historis mencatat Owner mengonfirmasi LICENSE.
+
+#### Evidence
+- Evidence dari TASK sebelumnya: pada 2026-10-11, `LICENSE` menggunakan MIT dengan Copyright (c) 2026 Aria Aji Perkasa Wibowo, `PRD.md` mencatat keputusan lisensi, dan README diperbarui. Kondisi aktual repository belum diperiksa ulang pada revisi ini.
+
+### [TITIS-012] Audit konsistensi lintas dokumen
+- **Status:** Blocked | **Phase:** 0 | **Depends on:** TITIS-001, TITIS-002, TITIS-003, TITIS-004, TITIS-005, TITIS-006, TITIS-007, TITIS-008, TITIS-009, TITIS-010, TITIS-011
+- **Scope:** audit konflik/rujukan setelah dokumen sumber kebenaran selesai direview. Catat hasil di `REVIEW_KONSISTENSI.md` bila file itu dipilih sebagai artefak audit.
+- **Out of scope:** menulis ulang dokumen yang tidak berkonflik atau mengubah requirement tanpa persetujuan.
+
+#### Acceptance criteria
+- [ ] Tidak ada konflik material yang tersisa; konflik yang belum diselesaikan tercatat sebagai blocker dengan owner.
+- [ ] ID task yang dirujuk di dokumen lain valid dan memiliki arti yang sama pada `TASK.md`; periksa referensi historis yang mungkin belum diperbarui akibat roadmap baru.
+- [ ] Status OPEN/DEC/task konsisten dengan kosakata dokumen yang benar-benar dipakai. Jangan menganggap register `OPEN-001..021` masih aktif jika tidak ada di PRD revisi.
+- [ ] Referensi bagian/file ke `PRD.md`, `ARCHITECTURE.md`, `DESIGN.md`, `DATABASE.md`, `SECURITY.md`, `TESTING.md`, `AGENTS.md`, `README.md`, dan guide valid.
+- [ ] Nama `TITIS_MASTER_BUILD_GUIDE_FINAL.md` konsisten di seluruh rujukan aktif.
+- [ ] README links valid, tidak ada dua checklist granular yang sama, dan tidak ada instruksi yang masih menganggap Staff/DP/void/refund/stok/prerender wajib untuk MVP.
+- [ ] `REVIEW_KONSISTENSI.md` mencatat file, temuan, keputusan/perbaikan, dan blocker.
+
+#### Verification
+- [ ] Baca silang dokumen dari repository aktual; gunakan pencarian exact untuk seluruh ID, nama file, dan rujukan pasal.
+- [ ] Jalankan pemeriksaan link atau command yang memang tersedia; jangan mengarang command.
+
+#### Evidence
+- Belum ada bukti audit lintas dokumen terhadap set dokumen revisi 2026-10-15.
+
+### [TITIS-013] Siapkan repository Git dan aturan kerja
+- **Status:** Done | **Phase:** 0 | **Depends on:** None
+- **Scope:** pertahankan repository, branch/commit convention, `.gitignore`, dan aturan command berisiko.
+- **Out of scope:** scaffold aplikasi.
+
+#### Acceptance criteria
+- [x] Evidence historis menyatakan repository awal, branch, dan `.gitignore` disiapkan.
+- [x] Aturan branch/commit dan larangan secret telah didokumentasikan.
+- [x] `.env` dan file lokal yang sensitif diabaikan Git; `.env.example` hanya placeholder.
+
+#### Verification
+- [x] Evidence historis menyatakan `.env.test` diuji ter-ignore dan pencarian pola secret dilakukan.
+
+#### Evidence
+- Evidence yang dibawa dari TASK sebelumnya: initial commit `7cad1cc`, branch `feat/titis-ai`, remote `origin`, `.gitignore`, `.env.example`, dan pengujian `.env.test` dicatat 2026-10-11. Repository/remote/commit terkini belum diperiksa pada penyusunan file ini; lakukan pengecekan sebelum pekerjaan berikutnya.
+
+### [TITIS-014] Gate PHASE 0 — persetujuan sebelum coding fitur
+- **Status:** Blocked | **Phase:** 0 | **Depends on:** TITIS-001 sampai TITIS-013
+- **Scope:** tinjau checklist Phase 0 pada `TITIS_MASTER_BUILD_GUIDE_FINAL.md` §6 dan gate arsitektur §19.
+- **Out of scope:** implementasi fitur.
+
+#### Acceptance criteria
+- [ ] Seluruh checklist Phase 0 terpenuhi atau ada item `Deferred` dengan owner, alasan, dan dampak yang disetujui.
+- [ ] PRD revisi disetujui eksplisit oleh Owner.
+- [ ] Keputusan yang memengaruhi schema, permission, jalur booking, checkout, laporan, dan SEO tidak dibiarkan `Proposed` untuk task implementasi yang memerlukannya.
+- [ ] Dokumen desain/database/security/testing selaras dengan baseline MVP terbaru.
+- [ ] TITIS-012 tidak menemukan konflik kritis terbuka.
+- [ ] Owner menyetujui mulai PHASE 1 dan tanggal persetujuannya dicatat.
+
+#### Verification
+- [ ] Review bersama berdasarkan repository aktual; perbarui status ringkas bagian 1.
+
+#### Evidence
+- Belum ada; coding fitur Phase 1 tetap diblokir sampai gate ini lulus.
 
 ---
 
-## 5. PHASE 0 — Product Contract & Architecture
+## 5. PHASE 1 — Foundation, Owner Auth, Company Profile dan CMS
 
-**Tujuan:** keputusan penting dibuat sebelum codebase tumbuh.
-**Exit criteria:** tidak ada ambiguitas kritis tentang scope MVP, role, lifecycle booking, alur checkout/pembayaran, sumber perhitungan laporan, atau strategi akses data. Keputusan yang boleh ditunda tercatat jelas.
-**Jangan mulai:** menulis seluruh halaman aplikasi atau membuat schema final berdasarkan asumsi yang belum disetujui.
+**Tujuan:** aplikasi bisa dijalankan; Owner dapat login dan mengubah konten profil minimum; data publik/internal dibatasi dengan benar. Seluruh task di fase ini tetap `Blocked` hingga TITIS-014 `Done`.
 
-Dokumen berikut sudah dibuat sebelum `TASK.md` ada, tetapi isinya **belum diverifikasi terhadap guide**. Karena itu statusnya `Review`, bukan `Done`.
+### [TITIS-101] Scaffold aplikasi dan runtime
+- **Status:** Blocked | **Phase:** 1 | **Depends on:** TITIS-014
+- **Scope:** Vite + React + TypeScript sesuai arsitektur; Node 24 LTS baseline via `.nvmrc`, npm, `package-lock.json`, `.editorconfig`, struktur direktori awal, dan script proyek.
+- **Out of scope:** fitur lengkap, styling final, atau dependency yang belum disetujui.
 
----
+#### Acceptance criteria
+- [ ] Aplikasi berjalan lokal dari setup yang didokumentasikan.
+- [ ] Versi runtime/package dan lockfile konsisten.
+- [ ] Script dev, build, type-check, lint, test, dan command DB yang dipilih tercantum sesuai konfigurasi aktual; jangan menambah nama script yang belum tersedia.
+- [ ] Dependency diverifikasi kompatibilitasnya ke dokumentasi resmi saat scaffold.
 
-## [TITIS-001] Tinjau AGENTS.md (pagar awal agent)
-- Status: Review | Phase: 0 | Depends on: None
-- Scope: periksa `AGENTS.md` terhadap guide §5 Langkah 0 dan §6.4; lengkapi bila ada yang kurang.
-- Out of scope: menggandakan roadmap atau isi PRD; membuat `CLAUDE.md`.
+#### Verification
+- [ ] Jalankan instalasi, dev, serta semua script yang benar-benar tersedia dari working tree/clone bersih.
 
-### Acceptance criteria
-- [ ] Memuat aturan minimal: baca guide dan task sebelum bertindak; jangan perluas scope atau ganti stack/dependency tanpa persetujuan; tidak ada operasi destruktif pada database remote; tidak membuka/menyalin/mencetak secret; tidak push/deploy/migrasi remote tanpa izin eksplisit; periksa diff sebelum menyatakan selesai; laporkan hasil verifikasi aktual; berhenti dan lapor bila dokumen bertentangan atau requirement tidak jelas.
-- [ ] Daftar perubahan yang wajib persetujuan pemilik (guide §6.4) tercermin.
-- [ ] Menyatakan satu agent penulis aktif dalam satu waktu; agent lain hanya review read-only.
-- [ ] Tidak menduplikasi roadmap atau isi PRD.
-- [ ] Kosakata status keputusan selaras dengan guide §13.4 (OPEN: `Decided`; DEC: `Accepted`) dan rujukan ID task valid.
-- [ ] Penegakan teknis aturan (deny-list/ignore per alat) dirujuk ke TITIS-013.
+#### Evidence
+- Belum ada; Phase 1 belum diizinkan dimulai.
 
-### Verification
-- [ ] Baca ulang `AGENTS.md` terhadap daftar di atas.
-- [ ] Uji pemahaman: minta agent meringkas aturan dan batasannya **tanpa mengubah file**.
+### [TITIS-102] Tailwind CSS v4 dan design tokens
+- **Status:** Blocked | **Phase:** 1 | **Depends on:** TITIS-101, TITIS-009
+- **Scope:** konfigurasi Tailwind CSS v4 dengan satu pola dan token semantik sesuai `DESIGN.md`.
+- **Out of scope:** UI library tambahan atau sistem tema/page builder di dashboard.
 
-### Evidence
-- Review read-only 2026-10-11: aturan minimum dan daftar otorisasi pemilik selaras dengan guide; aturan satu penulis, non-duplikasi roadmap/PRD, kosakata OPEN/DEC dan ID TITIS-013, serta rujukan penegakan teknis ke TITIS-013 terverifikasi. Verifikasi referensi panduan kanonis pada `AGENTS.md` memastikan seluruh 6 lokasi menggunakan `TITIS_MASTER_BUILD_GUIDE_FINAL.md`; tidak ditemukan referensi aktif ke `MASTER_BUILD_GUIDE.md` yang masih perlu diperbaiki. `AGENTS.md` tidak diubah karena sudah konsisten.
+#### Acceptance criteria
+- [ ] Token warna, tipografi, spacing, radius, border/elevation sesuai keputusan desain.
+- [ ] Contoh komponen menunjukkan penggunaan token yang konsisten.
+- [ ] Pola CSS tidak mencampur pendekatan konfigurasi yang saling bertentangan.
 
----
+#### Verification
+- [ ] Build lulus; lakukan perbandingan visual ke mockup yang benar-benar tersedia.
 
-## [TITIS-002] Tinjau dan setujui PRD.md
-- Status: Done | Phase: 0 | Depends on: None
-- Scope: periksa `PRD.md` terhadap guide §1 dan §5 Langkah 1; beri label `OPEN` pada requirement yang belum disepakati; setujui scope MVP.
-- Out of scope: keputusan teknis implementasi.
+#### Evidence
+- Belum ada.
 
-### Acceptance criteria
-- [ ] Memuat masalah dan tujuan produk, persona, serta model bisnis referensi (kafe dengan ruang privat, atau penggantinya yang dinyatakan eksplisit).
-- [ ] Scope MVP dan out-of-scope selaras dengan guide §1.2–1.3.
-- [ ] Daftar halaman public website dan dashboard.
-- [ ] User stories dengan acceptance criteria yang bisa diuji.
-- [ ] Role Owner/Staff dan kebutuhan akses tingkat produk.
-- [ ] Alur booking, POS, pembayaran manual, dan laporan.
-- [ ] Definisi metrik bisnis yang akan ditampilkan.
-- [ ] Risiko, asumsi, dependency, dan pertanyaan terbuka; tidak ada asumsi yang diam-diam menjadi requirement final.
-- [ ] Prioritas dan kriteria keberhasilan MVP.
+### [TITIS-103] Lingkungan development Supabase
+- **Status:** Blocked | **Phase:** 1 | **Depends on:** TITIS-101, TITIS-004
+- **Scope:** Supabase CLI/config, proyek development, satu frontend client Supabase, konfigurasi env terpusat, dan `.env.example`.
+- **Out of scope:** tabel/policy fitur booking dan POS; dibuat pada task berikutnya.
 
-### Verification
-- [ ] Pemilik menyatakan scope MVP disetujui (catat tanggal di Evidence).
+#### Acceptance criteria
+- [ ] App dapat terhubung ke environment development yang benar.
+- [ ] Frontend menggunakan hanya URL dan publishable key publik.
+- [ ] `.env.example` memuat nama variabel dan placeholder tanpa nilai secret.
+- [ ] Tidak ada service-role/secret pada `VITE_*`, source, bundle, log, atau file ter-track.
 
-### Evidence
-- Review read-only 2026-10-11: kriteria PRD 1–9 diperiksa terhadap guide; bagian-bagian utama tersedia, tetapi sejumlah kebutuhan masih bersyarat pada OPEN. OPEN-001–021 semuanya berstatus `Open`; persetujuan Owner atas scope belum tercatat. Keputusan tersisa mencakup model referensi (OPEN-016), izin role (OPEN-001–005/010), checkout/DP/laporan (OPEN-010–012), stok per SKU (belum didefinisikan), privasi/retensi pengunjung (OPEN-013/020), SEO (OPEN-015/DEC-011), dan bootstrap Owner (OPEN-018). Cross-check menemukan rujukan PRD/README ke `docs/DATABASE.md`, `docs/SECURITY.md`, dan `docs/TESTING.md` tidak sesuai lokasi file yang ditemukan (root); README menyebut Cloudflare direncanakan sementara OPEN-014/DEC-012 masih `Open`; PRD memetakan OPEN-001 ke TITIS-109 sedangkan TITIS-108 mencantumkan OPEN-001/006 sebagai prasyarat. Perbaikan referensi lintas dokumen telah diterapkan pada 10 file (AGENTS, ARCHITECTURE, DESIGN, PRD, README, DATABASE, TESTING, SECURITY, TASK, dan guide) untuk nama file guide kanonis dan prefix `docs/` pada file Markdown di root. 7 referensi aktif di AGENTS ditahan untuk persetujuan Owner dan sudah dikonfirmasi konsisten. Tidak ada keputusan produk, status, atau acceptance criteria PRD yang diubah. TITIS-002 tetap `Review` sampai Owner menyetujui scope.
-- 2026-10-11: OPEN-001..021 telah diputuskan oleh Owner di `PRD.md` §8 (semua berstatus `Decided` dengan keputusan & tanggal tercatat). TITIS-002 tetap `Review` menunggu persetujuan scope MVP eksplisit.
-- 2026-10-11: Scope MVP disetujui eksplisit oleh Owner sesuai `PRD.md` §3. Semua 9 acceptance criteria PRD terpenuhi; verifikasi pemilik Tercatat.
+#### Verification
+- [ ] Periksa file ter-track dan bundle hasil build untuk pola secret; catat command dan hasil aktual.
 
----
+#### Evidence
+- Belum ada.
 
-## [TITIS-003] Selesaikan atau tandai keputusan produk terbuka
-- Status: Blocked | Phase: 0 | Depends on: TITIS-002
-- Scope: untuk tiap topik di guide §1.5 (pengguna & role, public website/CMS, booking, pencegahan bentrok, POS, pembayaran, laporan, data bisnis, hosting & deployment, SEO), ambil keputusan atau tandai `Deferred` dengan owner dan alasan. Setiap `OPEN-001` s.d. `OPEN-021` di `PRD.md` §8 diberi Status (`Open`/`Decided`/`Deferred`). Topik hosting dan SEO boleh `Deferred` ke TITIS-005 dan TITIS-006.
-- Out of scope: implementasi apa pun. AI agent tidak boleh memilih keputusan ini sendiri.
+### [TITIS-104] Migration fondasi Owner, profil bisnis, dan konten
+- **Status:** Blocked | **Phase:** 1 | **Depends on:** TITIS-103, TITIS-007, TITIS-008
+- **Scope:** migration minimum untuk identitas Owner, `business_profile`, dan model konten yang diperlukan untuk company profile; nama/kolom final mengikuti `DATABASE.md`.
+- **Out of scope:** tabel booking, orders, payments, dan katalog lengkap sebelum task domainnya.
 
-### Acceptance criteria
-- [ ] Setiap topik berstatus `Decided` atau `Deferred` (owner, alasan, batas waktu keputusan).
-- [ ] Kolom Status dan Keputusan & tanggal di `PRD.md` §8 terisi; OPEN untuk role, lifecycle/bentrok booking, checkout/pembayaran, definisi laporan, dan data bisnis tidak `Deferred` melewati gate Phase 0.
-- [ ] Minimal terjawab: kemampuan Staff (konten, konfirmasi booking, diskon, pembayaran, laporan keuangan); lifecycle booking (status, expiry, pembatalan); DP dan pelunasan; definisi metrik; zona waktu dan mata uang.
-- [ ] Keputusan produk dicatat di PRD; keputusan sulit dibalik dicatat sebagai `DEC-XXX`.
+#### Acceptance criteria
+- [ ] Migration tersimpan di Git dan dapat diterapkan dari database development/test bersih.
+- [ ] Foreign key, constraint, index, grants, dan policy sesuai dokumen reviewed.
+- [ ] Tidak ada perubahan schema remote manual di luar workflow migration yang disetujui.
+- [ ] Schema tidak mengasumsikan Staff atau signup publik.
 
-### Verification
-- [ ] Tinjauan pemilik; tidak ada topik tersisa tanpa status.
+#### Verification
+- [ ] Jalankan reset/replay pada environment lokal/test yang aman dan catat output aktual.
 
-### Evidence
-- Hasil aktual / file / commit / blocker: _belum ada_
+#### Evidence
+- Belum ada.
 
----
+### [TITIS-105] Generated database types
+- **Status:** Blocked | **Phase:** 1 | **Depends on:** TITIS-104
+- **Scope:** hasilkan tipe database dengan Supabase CLI, sesuai keputusan DEC-010 dan struktur aktual.
+- **Out of scope:** menulis tipe schema manual yang menyimpang dari migrations.
 
-## [TITIS-004] Tinjau dan kunci ARCHITECTURE.md
-- Status: Review | Phase: 0 | Depends on: TITIS-002, TITIS-003, TITIS-006
-- Scope: periksa `ARCHITECTURE.md` terhadap guide §2, §5 Langkah 2, dan §9.3; kunci keputusan teknis.
-- Out of scope: scaffold proyek.
+#### Acceptance criteria
+- [ ] File generated types dihasilkan dari schema aktual dan dipakai oleh app jika telah diputuskan.
+- [ ] Prosedur regenerasi setelah migration tertulis.
+- [ ] Nilai PostgreSQL `bigint` ditangani dengan representasi aman, tidak diasumsikan selalu aman sebagai JavaScript `number`.
+- [ ] Bila command/version belum berfungsi, blocker dicatat dan CI tidak mengklaim pemeriksaan itu tersedia.
 
-### Acceptance criteria
-- [ ] Stack dan versi baseline ditetapkan setelah dicek ke dokumentasi resmi, bukan ingatan model.
-- [ ] Routing, data fetching/server state (aturan cache, invalidation, loading, error), dan pendekatan validasi form diputuskan.
-- [ ] Batas frontend vs Supabase jelas; sumber auth dan cara role diperiksa dijelaskan.
-- [ ] Kapan cukup SQL/RPC dan kapan perlu Edge Function dinyatakan; pilihan jalur booking publik tercatat.
-- [ ] Strategi migrations, generated types, dan seed ditetapkan.
-- [ ] Rencana struktur modul/folder; tidak ada teknologi dari desain lama (FastAPI, Railway, Zustand, Web3) tanpa alasan tercatat.
-- [ ] DEC yang menjadi prasyarat task Phase 1 (kolom "Prasyarat keputusan") berstatus `Accepted`; DEC lain punya owner dan tenggat (DEC-012 di TITIS-005, DEC-017 sebelum TITIS-203, E2E/a11y pada DEC-013 sebelum TITIS-404).
-- [ ] Rujukan ID task di `ARCHITECTURE.md` cocok dengan `TASK.md`.
+#### Verification
+- [ ] Jalankan command type generation yang benar-benar dikonfigurasi dan type-check.
 
-### Verification
-- [ ] Cross-check dengan PRD; konflik antardokumen diselesaikan menurut guide §3.2.
+#### Evidence
+- Belum ada.
 
-### Evidence
-- Hasil aktual / file / commit / blocker: _belum ada_
+### [TITIS-106] Routing, layout public/admin, dan state dasar
+- **Status:** Blocked | **Phase:** 1 | **Depends on:** TITIS-102, TITIS-101, TITIS-004
+- **Scope:** React Router v7, layout terpisah untuk publik/dashboard, loading/error boundary, dan skeleton rute inti.
+- **Out of scope:** seluruh halaman publik final, form booking, dan POS.
 
----
+#### Acceptance criteria
+- [ ] Public shell dan dashboard shell terpisah.
+- [ ] Route dashboard membutuhkan sesi Owner untuk pengalaman pengguna; kontrol data tetap pada RLS/function.
+- [ ] State loading, empty, error, forbidden, dan not-found dasar tersedia.
+- [ ] Navigasi keyboard dan layout responsif dasar berfungsi.
+- [ ] Refresh rute yang ada tidak menghasilkan error lokal; rute tak dikenal menampilkan 404.
 
-## [TITIS-005] Kunci keputusan deployment dan rencana rilis
-- Status: Blocked | Phase: 0 | Depends on: TITIS-004
-- Scope: putuskan hosting (DEC-012, OPEN-014). Kandidat yang disebut di draf awal file ini: **Cloudflare** (Workers dengan static assets atau Pages — bila dipilih, pilih satu, jangan campur); kandidat lain boleh dievaluasi. Catat juga domain, pemisahan environment (development/staging/production), cara mengelola env var dan secret, penanganan fallback SPA routing, rencana rollback, dan siapa yang menyetujui rilis. Tulis di `ARCHITECTURE.md` (DEC-012) atau dokumen rencana rilis.
-- Out of scope: setup deployment aktual (TITIS-111).
+#### Verification
+- [ ] Tes route/state yang relevan serta cek manual desktop/mobile.
 
-### Acceptance criteria
-- [ ] Keputusan tercatat; `DEC-XXX` dibuat bila sulit dibalik.
-- [ ] Pilihan diverifikasi ke dokumentasi resmi penyedia saat ini terhadap kebutuhan minimum di DEC-012 (fallback SPA, env var saat build, HTTPS dan domain kustom, deploy pratinjau, rollback), opsi SEO (DEC-011), dan mekanisme perlindungan spam (DEC-017).
-- [ ] Batas paket Supabase yang relevan (misalnya jeda proyek saat tidak aktif dan ketersediaan backup) diperiksa dari sumber resmi saat ini dan dicatat, tanpa menyalin angka dari ingatan.
-- [ ] Dinyatakan environment mana yang boleh dipakai untuk demo dan mana yang untuk penggunaan nyata.
+#### Evidence
+- Belum ada.
 
-### Verification
-- [ ] Tinjauan pemilik.
+### [TITIS-107] Autentikasi Owner
+- **Status:** Blocked | **Phase:** 1 | **Depends on:** TITIS-104, TITIS-106
+- **Scope:** login, logout, sesi, expiry, redirect, dan jalur bootstrap Owner sesuai DEC-016 setelah Accepted.
+- **Out of scope:** signup publik, akun Staff, undangan pengguna, dan permission matrix.
 
-### Evidence
-- Hasil aktual / file / commit / blocker: _belum ada_
+#### Acceptance criteria
+- [ ] Owner dapat login/logout dan sesi diperlakukan dengan benar.
+- [ ] Jalur bootstrap akun Owner pertama aman dan didokumentasikan; pengguna tidak dapat memilih/menaikkan role sendiri.
+- [ ] Signup publik tidak diaktifkan.
+- [ ] Dashboard menolak pengguna yang tidak memiliki sesi Owner.
 
----
+#### Verification
+- [ ] Tes login, logout, session expiry, redirect, dan direct access tanpa sesi.
 
-## [TITIS-006] Putuskan strategi SEO untuk public website (SPA Vite)
-- Status: Blocked | Phase: 0 | Depends on: TITIS-002
-- Scope: tentukan kebutuhan indeksasi, metadata, sitemap, dan apakah prerendering atau solusi lain diperlukan.
-- Out of scope: implementasi (TITIS-110).
+#### Evidence
+- Belum ada. Prasyarat DEC-016 `Proposed` sampai disetujui.
 
-### Acceptance criteria
-- [ ] Keputusan tercatat beserta dampaknya pada arsitektur dan hosting.
-- [ ] Halaman publik mana yang perlu terindeks dinyatakan.
-- [ ] Arah SEO tercatat sebagai DEC-011 sebelum routing (DEC-002) diputuskan di TITIS-004.
+### [TITIS-108] Otorisasi data dan RLS untuk profil/konten
+- **Status:** Blocked | **Phase:** 1 | **Depends on:** TITIS-104, TITIS-107, TITIS-008
+- **Scope:** RLS, grants, dan akses untuk semua tabel client-facing fase ini.
+- **Out of scope:** policies booking, transaksi, dan laporan yang belum ada.
 
-### Verification
-- [ ] Tinjauan pemilik.
+#### Acceptance criteria
+- [ ] RLS aktif pada setiap tabel yang diakses client dan grants tidak memberi privilege berlebihan.
+- [ ] Anonymous hanya membaca field yang diperlukan untuk halaman publik.
+- [ ] Anonymous tidak dapat INSERT/UPDATE/DELETE profil/konten atau memperoleh data internal.
+- [ ] Owner dapat melakukan operasi yang diizinkan; role/identity Owner tidak dapat diganti melalui update biasa.
+- [ ] Direct API/query dites; menyembunyikan UI tidak dianggap keamanan.
 
-### Evidence
-- Hasil aktual / file / commit / blocker: _belum ada_
+#### Verification
+- [ ] Uji akses anonymous dan Owner termasuk kasus yang seharusnya ditolak.
 
----
+#### Evidence
+- Belum ada.
 
-## [TITIS-007] Tinjau DATABASE.md
-- Status: Review | Phase: 0 | Depends on: TITIS-003, TITIS-004
-- Scope: periksa rancangan entitas, relasi, status, dan invariants terhadap guide §8.2.
-- Out of scope: menulis migration SQL.
+### [TITIS-109] CMS profil dan konten minimum
+- **Status:** Blocked | **Phase:** 1 | **Depends on:** TITIS-108, TITIS-102
+- **Scope:** form Owner untuk profil bisnis dan field konten dasar sesuai PRD serta skema konten terstruktur.
+- **Out of scope:** editor HTML/CSS bebas, page builder, workflow draft/publish kompleks, dan scripting dari CMS.
 
-### Acceptance criteria
-- [ ] Invariants booking (status awal oleh sistem, rentang waktu dan zona waktu, tidak ada overlap terkonfirmasi, aman terhadap request bersamaan).
-- [ ] Invariants akses (role dan asosiasi bisnis tidak bisa diubah lewat update biasa; Staff tidak bisa menaikkan role sendiri).
-- [ ] Invariants POS dan pembayaran (snapshot harga pada item, total tidak dipercaya dari browser, checkout atomik, DP/pelunasan tidak terhitung dua kali).
-- [ ] Tipe dan unit penyimpanan uang ditetapkan tanpa floating-point.
-- [ ] Dinyatakan bahwa migration files tetap sumber kebenaran schema.
+#### Acceptance criteria
+- [ ] Owner dapat mengubah field yang diizinkan dan menyimpan validasi yang benar.
+- [ ] Perubahan tersimpan dibaca website publik tanpa edit kode.
+- [ ] Input divalidasi; loading, success, empty, dan error state tersedia.
+- [ ] Konten tidak dieksekusi sebagai script dan tidak dirender melalui raw HTML tak tepercaya.
 
-### Verification
-- [ ] Cross-check dengan PRD dan keputusan TITIS-003.
+#### Verification
+- [ ] Uji alur edit → simpan → tampil publik dan tes validasi/state.
 
-### Evidence
-- Hasil aktual / file / commit / blocker: _belum ada_
+#### Evidence
+- Belum ada.
 
----
+### [TITIS-110] Public shell dan tampilan profil minimum
+- **Status:** Blocked | **Phase:** 1 | **Depends on:** TITIS-109, TITIS-106
+- **Scope:** tampilkan profil bisnis/konten minimum di public shell agar hasil CMS terlihat.
+- **Out of scope:** seluruh halaman template, katalog lengkap, resource, booking, dan SEO lanjutan; halaman publik lengkap diselesaikan di Phase 2.
 
-## [TITIS-008] Tinjau SECURITY.md
-- Status: Review | Phase: 0 | Depends on: TITIS-007
-- Scope: periksa terhadap guide §9.
-- Out of scope: menulis policy RLS dalam SQL.
+#### Acceptance criteria
+- [ ] Nama, ringkasan, kontak/jam buka yang sudah disimpan Owner ditampilkan dengan aman.
+- [ ] Data kosong tidak menghasilkan section/placeholder rusak.
+- [ ] Loading/error state dan aksesibilitas dasar tersedia.
 
-### Acceptance criteria
-- [ ] Matriks izin awal untuk anonymous, Staff, dan Owner.
-- [ ] Untuk setiap tabel yang diakses client: siapa boleh SELECT/INSERT/UPDATE/DELETE, dan field sensitif mana yang tidak boleh diubah client.
-- [ ] Jalur booking publik (RPC atau Edge Function) dipilih dengan alasan dan sesuai `ARCHITECTURE.md`.
-- [ ] Kebijakan secret: variabel `VITE_*` dianggap publik; `service_role` dan secret server tidak pernah di frontend.
-- [ ] Security gate (guide §9.5) dinyatakan.
+#### Verification
+- [ ] Cek flow CMS-ke-publik, viewport mobile/desktop, dan direct access anonymous.
 
-### Verification
-- [ ] Cross-check dengan DATABASE.md dan PRD.
+#### Evidence
+- Belum ada.
 
-### Evidence
-- Hasil aktual / file / commit / blocker: _belum ada_
+### [TITIS-111] Deploy MVP ke environment yang disetujui
+- **Status:** Blocked | **Phase:** 4 | **Depends on:** TITIS-411
+- **Scope:** deploy hanya setelah persetujuan rilis eksplisit, dengan Cloudflare Workers Static Assets + environment Supabase yang telah diverifikasi.
+- **Out of scope:** memilih domain produksi tanpa persetujuan; remote migration destruktif; deployment otomatis tanpa gate.
 
----
+#### Acceptance criteria
+- [ ] Build berasal dari commit yang diketahui dan environment values sesuai environment.
+- [ ] Auth redirect, URL publik, fallback SPA, status 404, assets/media, dan secret bundle diverifikasi.
+- [ ] Smoke test alur inti dilakukan; waktu, commit, environment, hasil, dan masalah dicatat.
+- [ ] Rollback frontend dan prosedur pemulihan database telah ditinjau sebelum release.
 
-## [TITIS-009] Tinjau DESIGN.md dan referensi Stitch
-- Status: Review | Phase: 0 | Depends on: TITIS-002
-- Scope: periksa terhadap guide §5 Langkah 3; pastikan mockup yang disetujui tersimpan.
-- Out of scope: menyalin generated code Stitch ke proyek.
+#### Verification
+- [ ] Jalankan smoke test pada deployment yang disetujui; periksa console/network tanpa membocorkan secret.
 
-### Acceptance criteria
-- [ ] Design tokens (warna, tipografi, spacing, radius, border, elevation) tercatat.
-- [ ] Komponen dasar dan state (default, hover, focus, disabled, loading, error, empty) didefinisikan.
-- [ ] Pola layout desktop/tablet/mobile dan standar aksesibilitas (keyboard, fokus, label, kontras).
-- [ ] Mockup public website dan dashboard yang disetujui ada di `docs/design/references/` dan dirujuk dari `DESIGN.md`.
+#### Evidence
+- Belum ada. ID dipertahankan untuk menghindari memutus referensi historis; `Phase` adalah fase pelaksanaan terkini.
 
-### Verification
-- [ ] Tinjauan pemilik terhadap mockup.
+### [TITIS-112] README setup development awal
+- **Status:** Blocked | **Phase:** 1 | **Depends on:** TITIS-101, TITIS-103
+- **Scope:** dokumentasikan prasyarat, setup lokal, env, migration dan script yang sudah tersedia selama fondasi dibangun.
+- **Out of scope:** mengklaim deployment/tes akhir yang belum dijalankan; penutupan dokumentasi release dilakukan di TITIS-409.
 
-### Evidence
-- Hasil aktual / file / commit / blocker: _belum ada_
+#### Acceptance criteria
+- [ ] Setiap command setup yang ditulis sudah dicoba terhadap konfigurasi aktual.
+- [ ] Placeholder env jelas dan tidak mengandung secret.
+- [ ] Hal yang belum tersedia tetap ditandai belum tersedia.
 
----
+#### Verification
+- [ ] Ikuti setup dari sesi/clone bersih semampu yang tersedia dan catat hambatan.
 
-## [TITIS-010] Tinjau TESTING.md
-- Status: Review | Phase: 0 | Depends on: TITIS-007, TITIS-008
-- Scope: periksa strategi tes terhadap guide §10.
-- Out of scope: menulis tes.
+#### Evidence
+- Belum ada.
 
-### Acceptance criteria
-- [ ] Mencakup: type/lint, komponen UI, auth, RLS (anonymous/Owner/Staff), booking publik, concurrency booking, checkout, pembayaran manual, laporan (rekonsiliasi dengan fixture hitungan manual), database/migration, e2e, kualitas UI, build/deploy.
-- [ ] Definition of Done selaras dengan guide §10.2.
-- [ ] Tidak ada klaim tes lulus tanpa hasil aktual.
+### [TITIS-113] CI minimal
+- **Status:** Blocked | **Phase:** 1 | **Depends on:** TITIS-101, TITIS-108
+- **Scope:** GitHub Actions untuk script type-check, lint, test, dan build yang benar-benar tersedia; tool/test DB diperluas kemudian.
+- **Out of scope:** deploy production otomatis dan E2E tambahan sebelum keputusan tool disetujui.
 
-### Verification
-- [ ] Cross-check dengan SECURITY.md dan DATABASE.md.
+#### Acceptance criteria
+- [ ] Workflow hanya memanggil script yang ada dan sudah dicoba lokal.
+- [ ] CI lulus pada commit yang diketahui atau kegagalannya dicatat tanpa menyembunyikan test.
+- [ ] Tidak ada secret pada workflow/log dan tidak ada deploy production.
+- [ ] Push branch uji dilakukan hanya dengan izin eksplisit sesuai `AGENTS.md`.
 
-### Evidence
-- Hasil aktual / file / commit / blocker: _belum ada_
+#### Verification
+- [ ] Jalankan command yang sama secara lokal dan bandingkan dengan CI.
 
----
+#### Evidence
+- Belum ada. DEC-013 tetap `Proposed` sampai keputusan Owner.
 
-## [TITIS-011] Putuskan lisensi dan buat file LICENSE
-- Status: Ready | Phase: 0 | Depends on: None
-- Scope: pemilik memutuskan lisensi akhir (baseline guide: MIT), nama pemegang hak cipta, dan tahun; buat `LICENSE` di root.
-- Out of scope: audit lisensi dependency (TITIS-407).
+### [TITIS-114] Exit review PHASE 1
+- **Status:** Blocked | **Phase:** 1 | **Depends on:** TITIS-101 sampai TITIS-110, TITIS-112, TITIS-113
+- **Scope:** buktikan fondasi aplikasi, Owner Auth, CMS profil, public shell, RLS, dan migration repeatable.
+- **Out of scope:** menyatakan katalog/booking/POS selesai.
 
-### Acceptance criteria
-- [ ] Keputusan tercatat (`DEC-XXX`).
-- [ ] `OPEN-017` di `PRD.md` §8 berstatus `Decided`.
-- [ ] `LICENSE` ada di root dengan nama dan tahun yang benar.
-- [ ] Bagian Lisensi di `README.md` diperbarui sesuai keputusan.
-- [ ] Repo referensi lain hanya dipelajari alurnya; tidak ada kode berlisensi AGPL atau lisensi lain yang disalin tanpa evaluasi.
+#### Acceptance criteria
+- [ ] Owner dapat login, mengubah profil/konten, dan melihat perubahan di website.
+- [ ] Anonymous tidak dapat memodifikasi atau membaca data internal; tes direct access tersedia.
+- [ ] Migration dapat direproduksi dan build dasar berjalan.
+- [ ] Owner menyetujui lanjut ke Phase 2.
 
-### Verification
-- [ ] Baca isi `LICENSE`; pemilik mengonfirmasi.
+#### Verification
+- [ ] Rangkuman bukti task Phase 1 dan perbarui bagian 1.
 
-### Evidence
-- Hasil aktual / file / commit / blocker: _belum ada_
-
----
-
-## [TITIS-012] Cek konsistensi lintas dokumen
-- Status: Blocked | Phase: 0 | Depends on: TITIS-001, 002, 003, 004, 005, 006, 007, 008, 009, 010
-- Scope: cari konflik stack, role, status, dan istilah antardokumen (guide §3.2); pastikan nama file konsisten.
-- Out of scope: menulis ulang dokumen yang tidak konflik.
-
-### Acceptance criteria
-- [ ] Tidak ada konflik tersisa, atau konflik tercatat sebagai blocker dengan owner.
-- [ ] Setiap ID task yang dirujuk di PRD, ARCHITECTURE, AGENTS, dan guide ada di `TASK.md` dengan arti yang sama.
-- [ ] Kosakata status konsisten: OPEN (`Open`/`Decided`/`Deferred`), DEC (`Proposed`/`Open`/`Accepted`/`Rejected`/`Superseded`), task (`Blocked`/`Ready`/`In Progress`/`Review`/`Done`/`Deferred`).
-- [ ] Rujukan pasal ke `DATABASE.md`, `SECURITY.md`, `TESTING.md`, dan `DESIGN.md` dari PRD/ARCHITECTURE/AGENTS valid (daftar rujukan ada di `REVIEW_KONSISTENSI.md`).
-- [ ] Nama file guide konsisten dengan semua rujukan (`TITIS_MASTER_BUILD_GUIDE_FINAL.md` dirujuk di guide, prompt template, dan README; sesuaikan nama file atau rujukannya).
-- [ ] Tautan di `README.md` valid; tidak ada dua checklist granular yang sama.
-
-### Verification
-- [ ] Baca silang seluruh dokumen; catat temuan dan perbaikannya.
-
-### Evidence
-- Hasil aktual / file / commit / blocker: _belum ada_
+#### Evidence
+- Belum ada.
 
 ---
 
-## [TITIS-013] Siapkan repository Git dan aturan kerja
-- Status: Ready | Phase: 0 | Depends on: None
-- Scope: inisialisasi repo, remote GitHub, konvensi branch dan commit, `.gitignore` awal. Putuskan dan catat visibilitas repo selama pengembangan (private atau public).
-- Out of scope: scaffold aplikasi.
+## 6. PHASE 2 — Template, Customization Seam, Katalog dan Resource
 
-### Acceptance criteria
-- [ ] Repo memiliki commit awal berisi dokumen proyek.
-- [ ] `.gitignore` mengecualikan `.env` dan `.env.*` yang berisi nilai lokal, `node_modules/`, build output, cache, dan log, tanpa mengecualikan file contoh yang aman.
-- [ ] Aturan branch dan commit tertulis (di `AGENTS.md` atau dokumen yang dirujuknya).
-- [ ] Agent bekerja di branch fitur (tidak di `main`); proteksi branch `main` dipertimbangkan pada repo remote.
-- [ ] Penegakan teknis disiapkan atau keterbatasannya dicatat: ignore/deny-list untuk `.env*` dan konfirmasi untuk command berisiko (`AGENTS.md` §6) pada konfigurasi tiap alat yang dipakai (OpenCode, Cursor, Codex CLI, Claude Code).
-- [ ] Tidak ada secret di repo.
+**Tujuan:** template company profile lengkap dapat digunakan/dikustomisasi melalui kode; gambar minimum, katalog bersama, resource, dan jam operasional dapat dikelola Owner. Task berikut tetap `Blocked` sampai TITIS-114 `Done`.
 
-### Verification
-- [ ] `git status` bersih setelah commit awal.
-- [ ] Buat file `.env` dummy dan pastikan Git mengabaikannya.
+### [TITIS-211] Halaman template publik dan SEO dasar
+- **Status:** Blocked | **Phase:** 2 | **Depends on:** TITIS-114, TITIS-006, TITIS-009
+- **Scope:** Beranda, Tentang, Produk/Layanan, Ruang/Fasilitas bila relevan, Booking (penjelasan/form akan aktif pada Phase 3), Kontak, dan 404.
+- **Out of scope:** SSR/prerender dinamis, SEO lanjutan, atau klaim indeksasi yang tidak diuji.
 
-### Evidence
-- Hasil aktual / file / commit / blocker: _belum ada_
+#### Acceptance criteria
+- [ ] Halaman inti sesuai PRD, responsif, dan menggunakan konten profil yang disimpan Owner.
+- [ ] Metadata dasar, URL konsisten, heading, internal links, dan 404 sesuai keputusan DEC-011.
+- [ ] Item katalog nanti ditampilkan dari satu sumber katalog, bukan harga duplikat dalam konten.
+- [ ] Bila section fasilitas opsional tidak relevan/kosong, halaman tetap layak.
 
----
+#### Verification
+- [ ] Responsive check mobile/desktop; periksa metadata dan hasil build yang nyata.
 
-## [TITIS-014] Gate: checklist sebelum coding pertama
-- Status: Blocked | Phase: 0 | Depends on: TITIS-001 sampai TITIS-013
-- Scope: tinjau seluruh checklist guide §16 (kontrak produk, teknis, desain/testing, workflow).
-- Out of scope: implementasi fitur.
+#### Evidence
+- Belum ada.
 
-### Acceptance criteria
-- [ ] Setiap item §16 tercentang, atau tercatat sebagai blocker/`Deferred` dengan owner.
-- [ ] Exit criteria PHASE 0 (guide §7) terpenuhi.
-- [ ] Pemilik menyetujui masuk ke PHASE 1.
+### [TITIS-212] Media minimum: logo, hero, dan gambar katalog
+- **Status:** Blocked | **Phase:** 2 | **Depends on:** TITIS-108, TITIS-009
+- **Scope:** Storage bucket/policy dan alur upload/pilih media seperlunya.
+- **Out of scope:** media manager lengkap, crop editor kompleks, file aktif yang dapat mengeksekusi script.
 
-### Verification
-- [ ] Tinjauan bersama; catat tanggal dan hasil. Perbarui status ringkas di bagian 1.
+#### Acceptance criteria
+- [ ] Tipe dan ukuran file dibatasi; enforcement tidak hanya pada client.
+- [ ] Upload/update/delete hanya Owner; akses baca media sesuai kebutuhan publik/private.
+- [ ] Alt text dan fallback gambar diatur seperlunya.
+- [ ] Tidak menerima SVG/HTML aktif atau format berisiko tanpa kebijakan/sanitasi yang jelas.
 
-### Evidence
-- Hasil aktual / file / commit / blocker: _belum ada_
+#### Verification
+- [ ] Tes ukuran/tipe yang diizinkan/ditolak dan policy Storage sesuai setup.
 
----
+#### Evidence
+- Belum ada.
 
-## 6. PHASE 1 — Foundation, Auth, Public Website & CMS
+### [TITIS-213] Migration katalog produk/layanan
+- **Status:** Blocked | **Phase:** 2 | **Depends on:** TITIS-104, TITIS-105, TITIS-007, TITIS-008
+- **Scope:** tabel katalog minimum sesuai `DATABASE.md`; harga IDR integer dan status aktif/nonaktif.
+- **Out of scope:** inventaris, stok, variasi kompleks, supplier, dan purchase order.
 
-**Tujuan:** fondasi aplikasi dapat dijalankan dan konten bisnis publik dapat dikelola dengan izin yang benar.
-**Exit criteria:** Owner yang berwenang dapat login, mengelola konten MVP, melihat perubahan pada public website, dan pengguna tanpa izin tidak dapat mengakses/mengubah data admin. Migration dapat direproduksi dan test terkait lulus.
+#### Acceptance criteria
+- [ ] Migration menerapkan model katalog yang disetujui dan bisa di-replay dari basis bersih.
+- [ ] Harga menggunakan tipe uang aman tanpa floating-point.
+- [ ] Public read hanya field publik dari item aktif; operasi mutasi hanya Owner.
+- [ ] Tidak ada sumber harga paralel pada konten halaman publik.
 
-Semua task Phase 1 `Blocked` sampai TITIS-014 selesai. Perintah verifikasi memakai **script yang benar-benar ada di `package.json`**; jangan menulis atau mengklaim command yang belum dicoba.
+#### Verification
+- [ ] Jalankan migration dan tes akses anonymous/Owner.
 
----
+#### Evidence
+- Belum ada. Prasyarat DEC-009 dan DEC-021 harus `Accepted` sebelum schema katalog dikunci.
 
-## [TITIS-101] Scaffold aplikasi dan runtime
-- Status: Blocked | Phase: 1 | Depends on: TITIS-014
-- Scope: buat proyek sesuai `ARCHITECTURE.md`; package manager dan runtime mengikuti DEC-015 (usulan: npm dan `.nvmrc`; periksa jadwal rilis Node.js terbaru sebelum mengunci versi); tambah `.editorconfig`.
-- Out of scope: fitur, styling final.
-- Prasyarat keputusan: DEC-001, DEC-013, DEC-015, DEC-018 berstatus `Accepted`.
+### [TITIS-214] CRUD katalog pada dashboard Owner
+- **Status:** Blocked | **Phase:** 2 | **Depends on:** TITIS-213, TITIS-108, TITIS-212
+- **Scope:** tambah, edit, dan nonaktifkan produk/layanan.
+- **Out of scope:** POS checkout, stok, dan transaksi.
 
-### Acceptance criteria
-- [ ] Aplikasi dasar berjalan lokal.
-- [ ] Versi runtime dan package manager tercatat; lockfile di-commit.
-- [ ] Script untuk dev, build, type-check, lint, dan test tersedia dan dicatat apa adanya.
+#### Acceptance criteria
+- [ ] Owner dapat mengelola nama, deskripsi, harga, gambar opsional, dan status aktif.
+- [ ] Validasi dan state loading/empty/error jelas.
+- [ ] Item nonaktif tidak ditampilkan di public catalog dan nantinya tidak dapat dijual.
+- [ ] Anonymous tidak dapat membuat/mengubah item lewat UI ataupun API langsung.
 
-### Verification
-- [ ] Clone bersih, instal, jalankan setiap script; catat hasil aktual.
+#### Verification
+- [ ] Tes CRUD, validasi, media, state, serta direct access.
 
-### Evidence
-- Hasil aktual / file / commit / blocker: _belum ada_
+#### Evidence
+- Belum ada.
 
----
+### [TITIS-215] Migration resource dan jam operasional
+- **Status:** Blocked | **Phase:** 2 | **Depends on:** TITIS-213, TITIS-007
+- **Scope:** schema resource/jam operasional sesuai model booking pada `DATABASE.md`; tetapkan timezone `Asia/Jakarta` dan status aktif.
+- **Out of scope:** booking publik, konfirmasi, dan constraint overlap yang dikerjakan Phase 3.
 
-## [TITIS-102] Tailwind CSS v4 dan design tokens
-- Status: Blocked | Phase: 1 | Depends on: TITIS-101, TITIS-009
-- Scope: konfigurasi Tailwind v4 dengan satu pola konsisten; terapkan tokens dari `DESIGN.md`.
-- Out of scope: library UI tambahan tanpa persetujuan.
-- Prasyarat keputusan: DEC-004 berstatus `Accepted`.
+#### Acceptance criteria
+- [ ] Resource dan jam buka terdefinisi dengan tipe/constraint yang konsisten.
+- [ ] Data aktif yang boleh dipublikasikan tidak mengekspos data internal.
+- [ ] Migration bisa diterapkan ulang; belum membuat asumsi terhadap status booking yang belum final.
 
-### Acceptance criteria
-- [ ] Tokens (warna, tipografi, spacing, radius) terkonfigurasi sesuai `DESIGN.md`.
-- [ ] Contoh komponen dasar menampilkan tokens dengan benar.
+#### Verification
+- [ ] Terapkan migration pada environment lokal/test dan uji batas nilai.
 
-### Verification
-- [ ] Build lulus; cek visual terhadap referensi di `docs/design/references/`.
+#### Evidence
+- Belum ada.
 
-### Evidence
-- Hasil aktual / file / commit / blocker: _belum ada_
+### [TITIS-216] Owner mengelola resource dan jam operasional
+- **Status:** Blocked | **Phase:** 2 | **Depends on:** TITIS-215, TITIS-108
+- **Scope:** UI dasar untuk menambah/mengubah/menonaktifkan resource dan menetapkan jam operasional.
+- **Out of scope:** editor kebijakan booking kompleks atau pengubahan slot/buffer/horizon yang ditetapkan sebagai konfigurasi proyek.
 
----
+#### Acceptance criteria
+- [ ] Owner dapat mengelola resource/jam buka yang diperbolehkan.
+- [ ] Perubahan divalidasi dan state loading/error tersedia.
+- [ ] Public view hanya menampilkan resource/field yang diizinkan.
+- [ ] Anonymous tidak dapat mengubah konfigurasi lewat akses langsung.
 
-## [TITIS-103] Lingkungan development Supabase
-- Status: Blocked | Phase: 1 | Depends on: TITIS-101, TITIS-004
-- Scope: siapkan Supabase CLI dan `config.toml`, proyek development, klien Supabase di frontend, dan `.env.example`.
-- Out of scope: tabel dan policy (TITIS-104, 108).
-- Prasyarat keputusan: DEC-016 berstatus `Accepted` (nama kunci publik mengikuti DEC-016).
+#### Verification
+- [ ] Tes CRUD dan akses langsung anonymous/Owner.
 
-### Acceptance criteria
-- [ ] Aplikasi terhubung ke Supabase development.
-- [ ] `.env.example` hanya berisi nama variabel dan placeholder kosong; nama sesuai klien yang benar-benar dipakai.
-- [ ] Tidak ada `service_role` atau secret lain di variabel `VITE_*`, source, atau file yang di-commit; `.env` diabaikan Git.
+#### Evidence
+- Belum ada.
 
-### Verification
-- [ ] Periksa source dan file yang ter-track untuk secret; catat hasilnya.
+### [TITIS-217] Integrasi katalog publik dari satu sumber
+- **Status:** Blocked | **Phase:** 2 | **Depends on:** TITIS-211, TITIS-214
+- **Scope:** tampilkan item aktif dari katalog yang sama dengan yang nanti dipakai POS.
+- **Out of scope:** keranjang atau checkout.
 
-### Evidence
-- Hasil aktual / file / commit / blocker: _belum ada_
+#### Acceptance criteria
+- [ ] Public website hanya menampilkan item aktif dan field yang diizinkan.
+- [ ] Nama/harga bukan salinan independen di `page_content`.
+- [ ] Perubahan katalog muncul setelah invalidasi/cache yang benar.
 
----
+#### Verification
+- [ ] Uji perubahan Owner sampai tampil publik, termasuk menonaktifkan item.
 
-## [TITIS-104] Migration awal
-- Status: Blocked | Phase: 1 | Depends on: TITIS-103, TITIS-007
-- Scope: tabel fondasi sesuai `DATABASE.md` yang dibutuhkan Phase 1 saja (profil/role, konten situs, pengaturan).
-- Out of scope: tabel booking, POS, dan pembayaran.
-- Prasyarat keputusan: DEC-009 dan DEC-016 berstatus `Accepted`; OPEN-013 berstatus `Decided`.
+#### Evidence
+- Belum ada.
 
-### Acceptance criteria
-- [ ] Migration ada di Git dan berjalan dari basis bersih.
-- [ ] Constraint dan foreign key sesuai `DATABASE.md`.
-- [ ] Tidak ada perubahan manual pada database remote di luar migration.
+### [TITIS-218] Verifikasi customization seam template
+- **Status:** Blocked | **Phase:** 2 | **Depends on:** TITIS-102, TITIS-211
+- **Scope:** pastikan developer bisa mengganti layout/section/token melalui kode tanpa mengubah backend/CMS/domain flow.
+- **Out of scope:** membuat theme builder di dashboard atau mengerjakan desain custom klien tertentu di luar MVP.
 
-### Verification
-- [ ] Reset database development lalu terapkan ulang seluruh migration; catat hasil.
+#### Acceptance criteria
+- [ ] Komponen/section dan tokens cukup terstruktur untuk ditukar/ditata ulang lewat kode.
+- [ ] Data layer, model CMS, katalog, dan booking tidak terikat ke satu susunan visual.
+- [ ] Konten rutin tetap dapat diperbarui Owner tanpa edit kode.
 
-### Evidence
-- Hasil aktual / file / commit / blocker: _belum ada_
+#### Verification
+- [ ] Review struktur kode dan demonstrasikan satu perubahan presentasi tanpa perubahan schema.
 
----
+#### Evidence
+- Belum ada. DEC-020 harus `Accepted` sebelum dinyatakan sebagai kontrak final.
 
-## [TITIS-105] Generated database types (bila dipakai)
-- Status: Blocked | Phase: 1 | Depends on: TITIS-104
-- Scope: hasilkan tipe dari skema bila `ARCHITECTURE.md` memutuskan memakainya; tulis prosedur sinkronisasi.
-- Out of scope: tipe buatan tangan yang menyimpang dari database.
-- Prasyarat keputusan: DEC-010 berstatus `Accepted`.
+### [TITIS-219] Responsive dan accessibility check template
+- **Status:** Blocked | **Phase:** 2 | **Depends on:** TITIS-211, TITIS-212, TITIS-214, TITIS-216
+- **Scope:** cek halaman inti pada mobile/desktop, keyboard/focus, label, kontras, gambar, dan empty state.
+- **Out of scope:** audit sertifikasi aksesibilitas atau library audit tambahan yang belum disetujui.
 
-### Acceptance criteria
-- [ ] Tipe dihasilkan dari skema yang berlaku dan dipakai di klien.
-- [ ] Prosedur memperbarui tipe setelah migration tertulis.
-- [ ] Task ini `Deferred` bila arsitektur memutuskan tidak memakai tipe hasil generate.
+#### Acceptance criteria
+- [ ] Konten inti tidak terpotong pada viewport yang ditargetkan.
+- [ ] Link/form dapat dipakai keyboard; focus terlihat; label dan error message jelas.
+- [ ] Gambar memiliki fallback dan alt yang sesuai.
+- [ ] Section opsional/kosong tidak rusak.
 
-### Verification
-- [ ] Type-check lulus setelah sinkronisasi.
+#### Verification
+- [ ] Manual checks; alat otomatis hanya bila sudah tersedia/disetujui.
 
-### Evidence
-- Hasil aktual / file / commit / blocker: _belum ada_
+#### Evidence
+- Belum ada.
 
----
+### [TITIS-220] Exit review PHASE 2
+- **Status:** Blocked | **Phase:** 2 | **Depends on:** TITIS-211 sampai TITIS-219
+- **Scope:** pastikan template, customization seam, media, katalog, resource, dan jam operasional siap menjadi dasar booking/POS.
 
-## [TITIS-106] Routing, layout public/admin, dan state dasar
-- Status: Blocked | Phase: 1 | Depends on: TITIS-102, TITIS-004
-- Scope: layout public dan admin terpisah yang berbagi design system; rute sesuai `ARCHITECTURE.md`.
-- Out of scope: konten dan fitur halaman.
-- Prasyarat keputusan: DEC-002, DEC-005, DEC-011, DEC-019 berstatus `Accepted`.
+#### Acceptance criteria
+- [ ] Halaman inti public tersedia dengan SEO dasar yang disepakati.
+- [ ] Owner mengelola konten, katalog, media, resource, dan jam operasional.
+- [ ] Public site dan POS menggunakan satu katalog sumber data.
+- [ ] Tes akses memastikan operasi admin hanya Owner.
+- [ ] Owner menyetujui lanjut ke PHASE 3.
 
-### Acceptance criteria
-- [ ] Layout public dan admin berjalan; halaman not-found tersedia.
-- [ ] State loading, empty, error, dan permission-denied tersedia.
-- [ ] Navigasi dapat dipakai dengan keyboard; layout responsif.
-- [ ] Refresh pada rute dalam tidak menghasilkan error (secara lokal).
+#### Verification
+- [ ] Ringkas bukti task Phase 2; perbarui status bagian 1.
 
-### Verification
-- [ ] Cek manual desktop dan viewport mobile; test komponen untuk state.
-
-### Evidence
-- Hasil aktual / file / commit / blocker: _belum ada_
-
----
-
-## [TITIS-107] Autentikasi Owner/Staff
-- Status: Blocked | Phase: 1 | Depends on: TITIS-104, TITIS-106
-- Scope: login, logout, session; jalur pembuatan akun Owner pertama dan Staff sesuai keputusan produk.
-- Out of scope: otorisasi data (TITIS-108).
-- Prasyarat keputusan: DEC-003 dan DEC-016 berstatus `Accepted`; OPEN-018 berstatus `Decided`.
-
-### Acceptance criteria
-- [ ] Login, logout, dan session expiry berfungsi.
-- [ ] Akun Owner pertama dibuat lewat jalur aman yang terdokumentasi; pendaftar tidak dapat memilih role sendiri.
-- [ ] Halaman admin menolak pengguna tanpa sesi.
-
-### Verification
-- [ ] Cek manual dan test untuk alur login/logout/redirect.
-
-### Evidence
-- Hasil aktual / file / commit / blocker: _belum ada_
+#### Evidence
+- Belum ada.
 
 ---
 
-## [TITIS-108] Otorisasi data dan RLS (profil, konten)
-- Status: Blocked | Phase: 1 | Depends on: TITIS-104, TITIS-107, TITIS-008
-- Scope: RLS dan policy untuk semua tabel yang diakses client di Phase 1, sesuai matriks `SECURITY.md`.
-- Out of scope: policy untuk booking dan POS.
-- Prasyarat keputusan: DEC-016 berstatus `Accepted`; OPEN-001 dan OPEN-006 berstatus `Decided`.
+## 7. PHASE 3 — Booking dan Anti-Bentrok
 
-### Acceptance criteria
-- [ ] RLS aktif pada setiap tabel client-facing Phase 1.
-- [ ] Staff tidak dapat menaikkan role sendiri; role tidak dapat diubah lewat update biasa.
-- [ ] Publik hanya dapat membaca konten yang memang boleh dipublikasikan.
-- [ ] Menyembunyikan menu di UI tidak dianggap pengamanan; akses ditolak pada query langsung.
+**Tujuan:** pengunjung dapat mengajukan booking tanpa akun; Owner dapat memutuskan booking; database mencegah dua booking terkonfirmasi overlap. Seluruh task tetap `Blocked` sampai TITIS-220 `Done`.
 
-### Verification
-- [ ] Tes akses sebagai anonymous, Staff, dan Owner (query langsung, bukan lewat UI), termasuk kasus yang harus ditolak. Catat hasil aktual.
+### [TITIS-201] Finalisasi model booking dan aturan waktu
+- **Status:** Blocked | **Phase:** 3 | **Depends on:** TITIS-220
+- **Scope:** finalisasi schema/invariants sesuai PRD dan `DATABASE.md`.
+- **Out of scope:** notifikasi otomatis, self-service cancellation/reschedule, payment, atau kebijakan booking yang kompleks.
 
-### Evidence
-- Hasil aktual / file / commit / blocker: _belum ada_
+#### Acceptance criteria
+- [ ] Resource, field pengunjung, status `pending/confirmed/rejected/cancelled` yang disetujui, timezone, dan transisi status terdokumentasi.
+- [ ] Slot 60 menit; durasi kelipatan 60 menit maksimal 4 jam; buffer 15 menit; horizon maksimal 30 hari; timezone `Asia/Jakarta`.
+- [ ] Hanya `confirmed` yang memblokir; interval setengah-terbuka; makna buffer ditentukan tanpa ambiguitas.
+- [ ] Owner menghubungi pengunjung secara manual; form memberitahukan booking belum dikonfirmasi.
 
----
+#### Verification
+- [ ] Cross-check PRD, ARCHITECTURE, DATABASE, SECURITY; keputusan yang belum jelas diblokir.
 
-## [TITIS-109] CMS minimum
-- Status: Blocked | Phase: 1 | Depends on: TITIS-108
-- Scope: pengelolaan konten MVP di dashboard sesuai PRD.
-- Out of scope: website builder bebas, fitur di luar PRD.
-- Prasyarat keputusan: DEC-014 berstatus `Accepted`; OPEN-001, OPEN-006, OPEN-021 berstatus `Decided`.
+#### Evidence
+- Belum ada. DEC-006 dan detail database terkait harus disetujui sebelum implementasi jalur publik.
 
-### Acceptance criteria
-- [ ] Pengguna yang berwenang dapat mengubah konten MVP; input divalidasi.
-- [ ] Perubahan tampil di public website.
-- [ ] Loading, error, dan empty state tersedia; hak akses sesuai PRD (misalnya apakah Staff boleh mengedit).
+### [TITIS-202] Migration booking dan constraint anti-bentrok
+- **Status:** Blocked | **Phase:** 3 | **Depends on:** TITIS-201, TITIS-215
+- **Scope:** tabel booking, constraints, indexes, dan exclusion/range strategy sesuai `DATABASE.md`.
+- **Out of scope:** mengandalkan pemeriksaan UI/SELECT saja untuk menjamin ketersediaan.
 
-### Verification
-- [ ] Uji manual alur dari edit sampai tampil di publik; test komponen untuk validasi.
+#### Acceptance criteria
+- [ ] Migration mencatat seluruh schema/constraints/indexes yang dibutuhkan.
+- [ ] Constraint menegakkan overlap dan buffer sebagaimana disetujui untuk booking `confirmed` pada resource yang sama.
+- [ ] `pending` tidak memblokir; resource berbeda tidak saling memblokir.
+- [ ] Error constraint dipetakan ke respons yang aman, misalnya slot tidak lagi tersedia.
 
-### Evidence
-- Hasil aktual / file / commit / blocker: _belum ada_
+#### Verification
+- [ ] Uji overlap, batas interval, buffer, status pending, resource berbeda, dan migration bersih.
 
----
+#### Evidence
+- Belum ada. Verifikasi `btree_gist`/exclusion constraint perlu dilakukan pada environment aktual.
 
-## [TITIS-110] Halaman public website MVP dan SEO
-- Status: Blocked | Phase: 1 | Depends on: TITIS-109, TITIS-006, TITIS-009
-- Scope: halaman publik sesuai PRD dan keputusan SEO.
-- Out of scope: form booking (Phase 2).
-- Prasyarat keputusan: DEC-011 berstatus `Accepted`; OPEN-006 dan OPEN-015 berstatus `Decided`.
+### [TITIS-203] Jalur write booking publik yang aman
+- **Status:** Blocked | **Phase:** 3 | **Depends on:** TITIS-202, TITIS-008
+- **Scope:** entry point terbatas (Edge Function sesuai DEC-006 bila disetujui) dan operasi database internal.
+- **Out of scope:** memberi akses SELECT publik terhadap tabel booking atau memberi anon kemampuan mengatur status.
 
-### Acceptance criteria
-- [ ] Halaman sesuai PRD dan referensi desain; responsif.
-- [ ] Metadata, URL, dan sitemap/indexing sesuai keputusan TITIS-006.
-- [ ] Aksesibilitas dasar: struktur heading, label, kontras, fokus.
+#### Acceptance criteria
+- [ ] Client hanya mengirim field yang dibutuhkan; status selalu ditetapkan sistem sebagai `pending`.
+- [ ] Validasi tepercaya memeriksa resource, waktu, durasi, jam operasional, batas 30 hari, kontak, dan payload.
+- [ ] Permission/grants mencegah bypass jalur publik; secret berhak tinggi hanya berada di server-side environment.
+- [ ] Respons tidak membocorkan booking/data pribadi lain.
 
-### Verification
-- [ ] Cek responsif, periksa metadata pada hasil build, audit aksesibilitas manual.
+#### Verification
+- [ ] Test valid/invalid payload dan direct call terhadap function/RPC yang tidak boleh publik.
 
-### Evidence
-- Hasil aktual / file / commit / blocker: _belum ada_
+#### Evidence
+- Belum ada. DEC-006 harus `Accepted` sebelum jalur ini dipilih final.
 
----
+### [TITIS-204] Form booking publik
+- **Status:** Blocked | **Phase:** 3 | **Depends on:** TITIS-203
+- **Scope:** form field minimum, client validation untuk UX, dan loading/success/error state.
+- **Out of scope:** akun pengunjung, pembayaran, notifikasi otomatis, dan self-service booking management.
 
-## [TITIS-111] Deploy Phase 1 ke environment yang diputuskan di TITIS-005
-- Status: Blocked | Phase: 1 | Depends on: TITIS-110, TITIS-005
-- Scope: deploy ke environment yang disepakati; konfigurasi env var lewat mekanisme provider.
-- Out of scope: domain produksi final bila belum diputuskan. Deploy yang memengaruhi pengguna nyata butuh persetujuan eksplisit.
-- Prasyarat keputusan: DEC-012 berstatus `Accepted`; OPEN-014 berstatus `Decided`.
+#### Acceptance criteria
+- [ ] Resource, mulai/selesai, nama, kontak, jumlah orang, dan catatan opsional tersedia sesuai PRD.
+- [ ] Pesan sukses menyatakan permintaan diterima untuk ditinjau; tidak menyiratkan booking sudah confirmed.
+- [ ] Privacy notice singkat dan proteksi spam yang disetujui tampil.
+- [ ] Invalid input, network error, retry, dan sukses memiliki feedback yang jelas.
 
-### Acceptance criteria
-- [ ] Build berasal dari commit yang diketahui.
-- [ ] Auth redirect URL dan URL publik sesuai konfigurasi.
-- [ ] Refresh pada rute dalam tidak menghasilkan 404 (fallback SPA bekerja).
-- [ ] Tidak ada secret di bundle.
+#### Verification
+- [ ] UI tests dan manual checks keyboard/mobile serta request/error behavior.
 
-### Verification
-- [ ] Smoke test di URL deploy: login, halaman publik, edit konten. Periksa console tanpa menampilkan secret.
-- [ ] Catat commit, waktu rilis, hasil, dan masalah yang diketahui.
+#### Evidence
+- Belum ada.
 
-### Evidence
-- Hasil aktual / file / commit / blocker: _belum ada_
+### [TITIS-205] Dashboard booking Owner
+- **Status:** Blocked | **Phase:** 3 | **Depends on:** TITIS-202, TITIS-107, TITIS-108
+- **Scope:** lihat/filter detail booking serta konfirmasi, tolak, dan batalkan sesuai status yang disepakati.
+- **Out of scope:** Staff, komunikasi otomatis, dan portal pengunjung.
 
----
+#### Acceptance criteria
+- [ ] Owner dapat memfilter booking berdasarkan tanggal/status/resource.
+- [ ] Hanya Owner dapat membaca detail pribadi dan memutuskan status.
+- [ ] Konfirmasi bentrok ditolak oleh database dan mendapat pesan operasional yang jelas.
+- [ ] UI mengomunikasikan pending dan kegagalan jaringan tanpa state palsu.
 
-## [TITIS-112] README setup diverifikasi
-- Status: Blocked | Phase: 1 | Depends on: TITIS-101, TITIS-103, TITIS-104, TITIS-111
-- Scope: lengkapi `README.md` dengan prasyarat, env, migrasi, command, testing, dan deployment yang sudah dicoba.
-- Out of scope: menulis hal yang belum diverifikasi.
+#### Verification
+- [ ] Tes transisi status dan direct API access sebagai anonymous serta Owner.
 
-### Acceptance criteria
-- [ ] Setiap perintah di README sudah dijalankan dari clone bersih.
-- [ ] Bagian yang belum terverifikasi tetap bertanda "belum tersedia".
+#### Evidence
+- Belum ada.
 
-### Verification
-- [ ] Ikuti README dari awal di sesi atau mesin bersih tanpa bantuan lisan; catat hambatan.
+### [TITIS-206] Perlindungan spam/abuse untuk form publik
+- **Status:** Blocked | **Phase:** 3 | **Depends on:** TITIS-203
+- **Scope:** proteksi minimum sesuai DEC-017, misalnya validasi ketat dan honeypot; rate limiting bila tersedia dan layak.
+- **Out of scope:** mewajibkan Cloudflare Turnstile atau layanan pihak ketiga tanpa keputusan Owner/analisis risiko.
 
-### Evidence
-- Hasil aktual / file / commit / blocker: _belum ada_
+#### Acceptance criteria
+- [ ] Proteksi sederhana dijelaskan, dapat diuji, dan tidak dianggap sebagai pengganti validasi server.
+- [ ] Jika Turnstile atau layanan lain dipilih, DEC-017 diperbarui dan secret berada di server saja.
+- [ ] Pesan privasi/form mengikuti PRD; log tidak menyimpan data pribadi yang tidak dibutuhkan.
 
----
+#### Verification
+- [ ] Tes jalur normal, honeypot/validasi, dan kegagalan validasi sesuai solusi yang benar-benar dibuat.
 
-## [TITIS-113] CI minimal (type-check, lint, test, build)
-- Status: Blocked | Phase: 1 | Depends on: TITIS-101, TITIS-108
-- Scope: buat `.github/workflows/ci.yml` yang menjalankan script yang sama dengan lokal (type-check, lint, test, build). Test database dan pemeriksaan selisih tipe ter-generate ditambahkan bila TITIS-105 dan test RLS (TITIS-108) sudah dapat dijalankan di CI.
-- Out of scope: e2e dan deploy otomatis (TITIS-403, TITIS-404).
-- Prasyarat keputusan: DEC-015 berstatus `Accepted`.
+#### Evidence
+- Belum ada. DEC-017 saat ini `Proposed`.
 
-### Acceptance criteria
-- [ ] Workflow hanya memanggil script yang benar-benar ada di `package.json`; tidak ada step untuk script yang tidak ada.
-- [ ] Workflow lulus pada commit yang diketahui; hasil dicatat.
-- [ ] Tidak ada secret di file workflow atau log; tidak ada deploy ke production dari workflow ini.
+### [TITIS-207] Transisi, pembatalan, dan penanganan booking
+- **Status:** Blocked | **Phase:** 3 | **Depends on:** TITIS-205
+- **Scope:** aturan perubahan status Owner dan penanganan kegagalan konfirmasi.
+- **Out of scope:** pembatalan/reschedule mandiri oleh pengunjung dan notifikasi otomatis.
 
-### Verification
-- [ ] Jalankan script yang sama secara lokal dan bandingkan hasilnya dengan CI. Mendorong (push) branch uji ke remote memerlukan izin eksplisit pemilik (`AGENTS.md` §3.2).
+#### Acceptance criteria
+- [ ] Transisi status diizinkan/ditolak secara tepercaya dan terdokumentasi.
+- [ ] Booking yang ditolak/dibatalkan tidak dianggap sebagai slot confirmed yang memblokir.
+- [ ] Dua konfirmasi yang bersaing tidak dapat sama-sama menciptakan overlap.
 
-### Evidence
-- Hasil aktual / file / commit / blocker: _belum ada_
+#### Verification
+- [ ] Tes state transition dan race/concurrency sesuai kemampuan environment test.
 
----
+#### Evidence
+- Belum ada.
 
-## [TITIS-114] Exit review PHASE 1
-- Status: Blocked | Phase: 1 | Depends on: TITIS-101 sampai TITIS-113
-- Scope: buktikan exit criteria Phase 1.
-- Out of scope: pekerjaan Phase 2.
+### [TITIS-208] Test booking, authorization, dan concurrency
+- **Status:** Blocked | **Phase:** 3 | **Depends on:** TITIS-203, TITIS-205, TITIS-206, TITIS-207
+- **Scope:** validasi input, akses, overlap, buffer, batas interval, dan concurrent confirmation.
 
-### Acceptance criteria
-- [ ] Owner dapat login, mengelola konten MVP, dan perubahan tampil di public website.
-- [ ] Pengguna tanpa izin tidak dapat mengakses atau mengubah data admin (terbukti lewat tes).
-- [ ] Migration dapat direproduksi dan test terkait lulus.
+#### Acceptance criteria
+- [ ] Test mencakup waktu lampau, end <= start, resource nonaktif, durasi/jam operasional/horizon tidak valid.
+- [ ] Test membuktikan pending tidak memblokir, confirmed overlap ditolak, buffer/batas diuji, resource berbeda tetap independen.
+- [ ] Dua konfirmasi overlap yang terjadi bersamaan tidak dapat sama-sama sukses.
+- [ ] Anonymous tidak bisa mengubah status atau membaca booking internal.
 
-### Verification
-- [ ] Rangkum bukti dari task Phase 1; perbarui status ringkas di bagian 1 dan status tingkat tinggi di guide.
+#### Verification
+- [ ] Jalankan test aktual pada database/test environment; bedakan test sekuensial dari concurrency test yang sungguh menjalankan request bersamaan.
 
-### Evidence
-- Hasil aktual / file / commit / blocker: _belum ada_
+#### Evidence
+- Belum ada.
 
----
+### [TITIS-209] Preview deploy dan smoke test booking
+- **Status:** Blocked | **Phase:** 3 | **Depends on:** TITIS-208, TITIS-005
+- **Scope:** uji jalur booking pada environment non-production yang disetujui.
+- **Out of scope:** release production penuh.
 
-## 7. PHASE 2–4 — Daftar Ringkas
+#### Acceptance criteria
+- [ ] Environment preview tidak menggunakan database production.
+- [ ] Form submit, pesan pending, dashboard Owner, dan penolakan bentrok diuji.
+- [ ] Tidak ada secret di client bundle/log; environment dan commit dicatat.
 
-Semua `Blocked` sampai fase sebelumnya selesai. Setiap task di-expand ke format lengkap (bagian 4) saat fasenya menjadi aktif. Exit criteria tiap fase ada di `TITIS_MASTER_BUILD_GUIDE_FINAL.md` §7. Kolom "Prasyarat keputusan" memetakan OPEN (`PRD.md` §8) dan DEC (`ARCHITECTURE.md` §3) yang harus `Decided`/`Accepted` sebelum task dimulai.
+#### Verification
+- [ ] Smoke test URL preview aktual dan catat masalah.
 
-### PHASE 2 — Booking & Resource Scheduling
+#### Evidence
+- Belum ada.
 
-| ID | Judul | Depends on | Prasyarat keputusan |
-|---|---|---|---|
-| TITIS-201 | Finalisasi model booking sesuai OPEN-007 s.d. 009 dan OPEN-019/020: resource, durasi, zona waktu (mengikuti OPEN-013), status, buffer, aturan bentrok, expiry | TITIS-114 | OPEN-007, 008, 009, 019 |
-| TITIS-202 | Migration booking dan resource, termasuk pencegahan bentrok di database | TITIS-201 | DEC-007; OPEN-009, 020 |
-| TITIS-203 | Jalur publik yang aman (RPC atau Edge Function sesuai arsitektur); status awal dipaksa sistem | TITIS-202 | DEC-006, DEC-017 |
-| TITIS-204 | Form booking publik (validasi client untuk UX, state loading/sukses/error) | TITIS-203 | OPEN-007, 020 |
-| TITIS-205 | Dashboard booking Owner/Staff: lihat, konfirmasi, tolak, ubah status sesuai izin | TITIS-202 | OPEN-002, 008 |
-| TITIS-206 | Proteksi spam/abuse untuk form publik | TITIS-203 | DEC-017 |
-| TITIS-207 | Pembatalan, reschedule, dan expiry (bila masuk scope PRD) | TITIS-205 | OPEN-008 |
-| TITIS-208 | Test: anonymous/Staff/Owner, concurrency overlap, batas interval, input tidak valid, kegagalan request | TITIS-203, TITIS-205, TITIS-206 | — |
-| TITIS-209 | Deploy dan smoke test booking | TITIS-208 | DEC-012 |
-| TITIS-210 | Exit review PHASE 2 | TITIS-209 | — |
+### [TITIS-210] Exit review PHASE 3
+- **Status:** Blocked | **Phase:** 3 | **Depends on:** TITIS-201 sampai TITIS-209
+- **Scope:** buktikan acceptance criteria booking dan anti-bentrok terpenuhi.
 
-Inti exit criteria: aturan overlap tidak bergantung pada pemeriksaan UI; tidak ada jalur yang memungkinkan pengunjung mengonfirmasi booking sendiri.
+#### Acceptance criteria
+- [ ] Pengunjung dapat mengajukan permintaan booking; hanya Owner dapat memutuskan.
+- [ ] Bentrok, buffer, request bersamaan, dan akses tidak sah dibuktikan lewat test.
+- [ ] Data pribadi tidak terbuka pada jalur publik.
+- [ ] Owner menyetujui lanjut ke Phase 4.
 
-### PHASE 3 — POS, Manual Payments & Sales Insight
+#### Verification
+- [ ] Rangkum hasil task Phase 3 dan perbarui bagian 1.
 
-| ID | Judul | Depends on | Prasyarat keputusan |
-|---|---|---|---|
-| TITIS-301 | Finalisasi aturan harga, diskon, pajak, dan pembulatan sesuai OPEN-003, -010, -011 (mata uang mengikuti OPEN-013) | TITIS-114 | OPEN-003, 010, 011, 012 |
-| TITIS-302 | Katalog produk/layanan (skema, pengelolaan, RLS) | TITIS-301 | OPEN-010 |
-| TITIS-303 | Skema order, item (snapshot harga), dan pembayaran | TITIS-302 | DEC-009; OPEN-010, 011 |
-| TITIS-304 | Checkout atomik dengan validasi total di sisi tepercaya | TITIS-303 | DEC-008, DEC-009 |
-| TITIS-305 | Perlindungan double-submit/retry (idempotency atau setara) | TITIS-304 | DEC-008 |
-| TITIS-306 | Pembayaran manual: DP, pelunasan, dan saldo tanpa hitung ganda | TITIS-303, TITIS-304 | OPEN-004, 011 |
-| TITIS-307 | Void/refund/koreksi dengan jejak audit (bila masuk scope PRD) | TITIS-306 | OPEN-010, 011 |
-| TITIS-308 | UI POS: keranjang, checkout, struk sederhana dari browser, riwayat transaksi | TITIS-304, TITIS-305, TITIS-306 | OPEN-010 |
-| TITIS-309 | Sales Insight: definisi metrik terdokumentasi, SQL view/function | TITIS-304, TITIS-306, TITIS-307 | OPEN-005, 012 |
-| TITIS-310 | Test: transaksi gagal di tengah proses, manipulasi harga, double-submit, DP+pelunasan, pembatalan, rekonsiliasi dengan fixture hitungan manual | TITIS-304 s.d. 309 | — |
-| TITIS-311 | Deploy dan smoke test POS | TITIS-310 | — |
-| TITIS-312 | Exit review PHASE 3 | TITIS-311 | — |
-
-Inti exit criteria: checkout gagal dengan aman tanpa data parsial; total dan saldo konsisten; laporan dapat direkonsiliasi.
-
-### PHASE 4 — Hardening, Release & Open-Source Readiness
-
-| ID | Judul | Depends on | Prasyarat keputusan |
-|---|---|---|---|
-| TITIS-401 | Review keamanan semua tabel, function, dan jalur publik (anonymous/Owner/Staff) | TITIS-312 | — |
-| TITIS-402 | Migration dari basis bersih + seed demo sintetis | TITIS-312 | — |
-| TITIS-403 | Perluas CI dari TITIS-113: test database, e2e, dan pemeriksaan lain — hanya dari script yang benar-benar ada | TITIS-113, TITIS-402 | DEC-015 |
-| TITIS-404 | Tes e2e alur kritis: login, edit konten, booking, konfirmasi/penolakan, checkout, pembayaran, laporan | TITIS-312 | DEC-013 (alat E2E) |
-| TITIS-405 | Responsif, keyboard/focus, dan aksesibilitas | TITIS-312 | DEC-013 (alat a11y) |
-| TITIS-406 | Backup dan pemulihan: dokumentasi dan simulasi aman | TITIS-402 | — |
-| TITIS-407 | Audit lisensi dan atribusi dependency/aset (font, ikon, gambar) | TITIS-312 | — |
-| TITIS-408 | Dokumen kontribusi dan pelaporan kerentanan: `CONTRIBUTING.md`, `SECURITY.md` root, `CHANGELOG.md` bila mulai merilis | TITIS-407 | — |
-| TITIS-409 | README final: setup, env, migrasi, testing, deployment, known limitations | TITIS-401 s.d. 406 | — |
-| TITIS-410 | Prosedur rilis, rollback, persetujuan, dan known issues | TITIS-409 | DEC-012; OPEN-014 |
-| TITIS-411 | Review rilis dan persetujuan pemilik | TITIS-410 | — |
-
-Inti exit criteria: rilis dapat dibuat ulang dari repository dengan instruksi yang diuji; tidak ada temuan keamanan blocker; pemilik menyetujui rilis.
+#### Evidence
+- Belum ada.
 
 ---
 
-## 8. Parking Lot — Di Luar MVP / Ditunda
+## 8. PHASE 4 — POS, Reports, Hardening dan Release
 
-Tidak dikerjakan kecuali scope diubah secara sengaja, dengan dampak yang disetujui dan dicatat.
+**Tujuan:** checkout lunas tersimpan atomik dan idempotent; riwayat serta laporan bisa direkonsiliasi; security/release checks dilakukan sebelum deploy. Seluruh task berikut tetap `Blocked` sampai TITIS-210 `Done`.
+
+### [TITIS-301] Finalisasi kontrak checkout POS
+- **Status:** Blocked | **Phase:** 4 | **Depends on:** TITIS-210, TITIS-213, TITIS-007
+- **Scope:** kunci input checkout dan aturan bisnis sesuai PRD/ARCHITECTURE.
+- **Out of scope:** diskon, pajak khusus, DP, pelunasan bertahap, void/refund, stok, dan payment gateway.
+
+#### Acceptance criteria
+- [ ] Input terpercaya hanya mencakup ID item aktif, kuantitas valid, metode `cash`/`transfer`/`qris`, dan `client_request_id`.
+- [ ] Total final dihitung ulang dari harga database; IDR disimpan sebagai integer tipe aman.
+- [ ] Order/item/payment harus tersimpan atomik; item menyimpan snapshot nama/harga.
+- [ ] Nomor transaksi unik dijamin database; status final merepresentasikan transaksi lunas.
+
+#### Verification
+- [ ] Cross-check `DATABASE.md`, `SECURITY.md`, dan DEC-008/009 sebelum schema/function dibuat.
+
+#### Evidence
+- Belum ada. DEC-009 masih `Proposed` dalam Architecture yang diberikan.
+
+### [TITIS-302] Migration orders, order_items, dan payments
+- **Status:** Blocked | **Phase:** 4 | **Depends on:** TITIS-301
+- **Scope:** schema transaksi minimal dan constraints/indexes yang dibutuhkan.
+- **Out of scope:** fitur refund/void, status pembayaran bertahap, dan inventory.
+
+#### Acceptance criteria
+- [ ] Schema mendukung order lunas, snapshot item, metode pembayaran manual, dan request ID idempotency.
+- [ ] Constraint mencegah data inti invalid dan nomor transaksi duplikat.
+- [ ] Migration dapat diterapkan dari database test bersih; tidak ada perubahan manual pada production.
+
+#### Verification
+- [ ] Replay migrations dan jalankan tes constraint yang tersedia.
+
+#### Evidence
+- Belum ada.
+
+### [TITIS-303] Atomic checkout database function/RPC
+- **Status:** Blocked | **Phase:** 4 | **Depends on:** TITIS-302, TITIS-008
+- **Scope:** satu operasi tepercaya yang memvalidasi Owner, item aktif/harga/kuantitas/metode, menghitung total, menyimpan order/items/payment, dan mengembalikan hasil tersimpan.
+- **Out of scope:** perhitungan total final di client atau beberapa mutation non-atomik.
+
+#### Acceptance criteria
+- [ ] Header, item snapshot, dan payment commit bersama atau rollback bersama.
+- [ ] Harga dan total dari client tidak dipercaya.
+- [ ] Permission function/grants ditinjau; `SECURITY DEFINER` hanya bila diperlukan, dengan privilege minimum, `search_path` aman, nama schema eksplisit, dan `EXECUTE` terbatas.
+- [ ] Item nonaktif, kuantitas/payload/metode invalid, dan pengguna bukan Owner ditolak.
+
+#### Verification
+- [ ] Test checkout sukses, invalid input, permission denial, dan rollback saat operasi gagal.
+
+#### Evidence
+- Belum ada.
+
+### [TITIS-304] Idempotency dan perlindungan retry checkout
+- **Status:** Blocked | **Phase:** 4 | **Depends on:** TITIS-303
+- **Scope:** memastikan double-submit/retry tidak membuat penjualan ganda.
+
+#### Acceptance criteria
+- [ ] Request ID sama dan payload identik mengembalikan hasil transaksi yang sudah ada atau hasil ekuivalen tanpa duplikasi.
+- [ ] Request ID sama dengan payload berbeda ditolak sebagai konflik.
+- [ ] Retry setelah timeout menggunakan ID yang sama; frontend tidak otomatis membuat request transaksi baru dengan ID baru.
+
+#### Verification
+- [ ] Jalankan tes request duplikat, payload berbeda, dan retry setelah hasil ambigu.
+
+#### Evidence
+- Belum ada.
+
+### [TITIS-305] UI POS: cart dan checkout
+- **Status:** Blocked | **Phase:** 4 | **Depends on:** TITIS-303, TITIS-304, TITIS-214
+- **Scope:** pilih item aktif, kuantitas, estimasi total, dan review sebelum checkout.
+- **Out of scope:** POS offline, inventory, diskon, pajak, dan fitur transaksi yang tidak disetujui.
+
+#### Acceptance criteria
+- [ ] Hanya item aktif yang dapat dimasukkan ke keranjang.
+- [ ] Total yang tampil dijelaskan sebagai estimasi sampai server mengembalikan total final.
+- [ ] Submit/retry menggunakan client request ID yang sesuai; error tidak meninggalkan state sukses palsu.
+- [ ] UI meminta Owner meninjau keranjang sebelum checkout karena tidak ada void/refund pada MVP.
+
+#### Verification
+- [ ] Tes validasi item/kuantitas, loading, kegagalan network, success response, dan double-submit.
+
+#### Evidence
+- Belum ada.
+
+### [TITIS-306] Metode pembayaran manual dan pencatatan lunas
+- **Status:** Blocked | **Phase:** 4 | **Depends on:** TITIS-303, TITIS-305
+- **Scope:** tunai, transfer, QRIS manual sebagai metode untuk satu pembayaran lunas per transaksi.
+- **Out of scope:** gateway, webhook, DP, pelunasan, cicilan, refund, dan void.
+
+#### Acceptance criteria
+- [ ] Hanya metode pembayaran yang disetujui dapat dipilih.
+- [ ] Satu checkout yang berhasil menyimpan satu catatan pembayaran lunas.
+- [ ] UI dan dokumentasi tidak menyatakan verifikasi transfer/QRIS otomatis dilakukan oleh sistem.
+- [ ] Laporan menggunakan metode yang tersimpan pada transaksi.
+
+#### Verification
+- [ ] Test semua metode, input invalid, checkout gagal, dan hubungan payment-order.
+
+#### Evidence
+- Belum ada.
+
+### [TITIS-307] Riwayat dan detail transaksi
+- **Status:** Blocked | **Phase:** 4 | **Depends on:** TITIS-302, TITIS-303, TITIS-008
+- **Scope:** Owner dapat meninjau transaksi, item snapshot, total, waktu, dan metode pembayaran.
+- **Out of scope:** edit/hapus transaksi selesai atau koreksi akuntansi.
+
+#### Acceptance criteria
+- [ ] Daftar dan detail menampilkan hasil database yang tersimpan.
+- [ ] Snapshot tidak berubah ketika katalog diperbarui.
+- [ ] Transaksi selesai tidak dapat diedit/dihapus melalui UI atau direct API biasa.
+- [ ] Anonymous tidak dapat membaca order/payment/detail transaksi.
+
+#### Verification
+- [ ] Tes riwayat, snapshot, Owner access, dan penolakan anonymous/update/delete.
+
+#### Evidence
+- Belum ada.
+
+### [TITIS-308] Definisi dan query laporan dasar
+- **Status:** Blocked | **Phase:** 4 | **Depends on:** TITIS-303, TITIS-306, TITIS-007
+- **Scope:** definisi serta query penjualan periode, jumlah transaksi, total per metode pembayaran, dan booking per status.
+- **Out of scope:** akuntansi penuh, DP, void/refund, predictive analytics, dan dashboard analitik lanjutan.
+
+#### Acceptance criteria
+- [ ] Definisi setiap metrik terdokumentasi di sumber domain yang tepat.
+- [ ] Filter tanggal menghormati zona waktu bisnis `Asia/Jakarta`.
+- [ ] Query menghitung transaksi yang benar-benar tersimpan dan lunas; item terlaris hanya bila sederhana dan hasilnya dapat direkonsiliasi.
+- [ ] Hanya Owner dapat membaca laporan.
+
+#### Verification
+- [ ] Gunakan fixture kecil dengan hitungan manual dan periksa hasil tiap metrik.
+
+#### Evidence
+- Belum ada.
+
+### [TITIS-309] UI laporan dan ringkasan dashboard
+- **Status:** Blocked | **Phase:** 4 | **Depends on:** TITIS-308, TITIS-106
+- **Scope:** date range dan tampilan metrik dasar yang telah disepakati.
+- **Out of scope:** charting/analytics kompleks yang menambah dependency atau scope.
+
+#### Acceptance criteria
+- [ ] Owner dapat memilih rentang tanggal dan melihat metrik utama.
+- [ ] Empty/loading/error state jelas.
+- [ ] Angka mengikuti query sumber dan format Indonesia; tanggal mengikuti `Asia/Jakarta`.
+
+#### Verification
+- [ ] Bandingkan tampilan dengan fixture dan lakukan cek akses langsung.
+
+#### Evidence
+- Belum ada.
+
+### [TITIS-310] Tes integritas POS dan rekonsiliasi laporan
+- **Status:** Blocked | **Phase:** 4 | **Depends on:** TITIS-303 sampai TITIS-309
+- **Scope:** test transaksi, retry, laporan, dan kegagalan parsial.
+
+#### Acceptance criteria
+- [ ] Manipulasi harga/total browser tidak mengubah total final.
+- [ ] Item nonaktif/kuantitas invalid ditolak.
+- [ ] Checkout yang gagal tidak meninggalkan order/item/payment parsial.
+- [ ] Retry request identik tidak membuat transaksi duplikat; request ID sama dengan payload berbeda ditolak.
+- [ ] Snapshot tetap; payment method dan status lunas tepat; transaksi selesai tidak dapat diedit/hapus.
+- [ ] Laporan cocok dengan fixture hitungan manual.
+
+#### Verification
+- [ ] Jalankan test aktual terhadap environment test; catat keterbatasan integration/concurrency bila ada.
+
+#### Evidence
+- Belum ada.
+
+### [TITIS-311] Integrasi end-to-end alur MVP
+- **Status:** Blocked | **Phase:** 4 | **Depends on:** TITIS-310, TITIS-210
+- **Scope:** jalankan alur edit konten → ajukan booking → keputusan Owner → checkout → periksa laporan.
+- **Out of scope:** automation penuh menggunakan tool yang belum disetujui atau tidak tersedia.
+
+#### Acceptance criteria
+- [ ] Satu alur ujung-ke-ujung berhasil dijalankan pada environment test/preview yang benar.
+- [ ] Kegagalan utama dan akses tidak sah diperiksa.
+- [ ] Hasil aktual, environment, commit, dan keterbatasan dicatat.
+
+#### Verification
+- [ ] Manual E2E atau automated E2E sesuai DEC-013 yang disetujui dan tool tersedia.
+
+#### Evidence
+- Belum ada.
+
+### [TITIS-312] Checkpoint POS dan laporan sebelum hardening rilis
+- **Status:** Blocked | **Phase:** 4 | **Depends on:** TITIS-301 sampai TITIS-311
+- **Scope:** memastikan seluruh jalur POS/laporan lulus sebelum final hardening dan release review.
+
+#### Acceptance criteria
+- [ ] Checkout lunas, histori, idempotency, dan laporan telah diuji.
+- [ ] Bukti test direkonsiliasi dan blocker tercatat.
+- [ ] Owner menyetujui masuk ke hardening/release review, bukan dianggap sudah menyetujui deploy production.
+
+#### Verification
+- [ ] Review bukti TITIS-301..311.
+
+#### Evidence
+- Belum ada.
+
+### [TITIS-401] Security review seluruh tabel dan jalur publik
+- **Status:** Blocked | **Phase:** 4 | **Depends on:** TITIS-312
+- **Scope:** audit tabel, RLS, grants, views, RPC/functions, Edge Functions, Storage, Auth, booking, POS, dan laporan.
+- **Out of scope:** menganggap RLS saja cukup atau membuka akses luas untuk memperbaiki UX.
+
+#### Acceptance criteria
+- [ ] Anonymous dan Owner diuji untuk operasi yang diizinkan serta ditolak.
+- [ ] Tidak ada akses publik ke data booking internal, transaksi/payment, atau laporan.
+- [ ] Privilege function/grants, Storage policies, dan jalur `SECURITY DEFINER` ditinjau.
+- [ ] Temuan blocker diperbaiki sebelum rilis atau rilis ditahan.
+
+#### Verification
+- [ ] Jalankan test security yang tersedia dan tinjau SQL/policies secara read-only sebelum perubahan.
+
+#### Evidence
+- Belum ada.
+
+### [TITIS-402] Replay migration dari basis bersih dan seed sintetis
+- **Status:** Blocked | **Phase:** 4 | **Depends on:** TITIS-312
+- **Scope:** buktikan migration dan data demo sintetis dapat direproduksi.
+- **Out of scope:** reset database production atau memakai data pelanggan nyata untuk test.
+
+#### Acceptance criteria
+- [ ] Semua migration dapat diterapkan pada environment lokal/test bersih.
+- [ ] Seed hanya memakai data sintetis dan tidak menyimpan secret.
+- [ ] Constraint, RLS, function, grants, dan types berfungsi setelah replay.
+
+#### Verification
+- [ ] Jalankan prosedur replay/seed aktual pada environment aman.
+
+#### Evidence
+- Belum ada.
+
+### [TITIS-403] Perluas CI dengan database tests dan checks yang tersedia
+- **Status:** Blocked | **Phase:** 4 | **Depends on:** TITIS-113, TITIS-402
+- **Scope:** tambahkan test database, generated type check, atau E2E hanya bila command benar-benar tersedia dan stabil.
+- **Out of scope:** deployment production dari CI.
+
+#### Acceptance criteria
+- [ ] Workflow hanya menjalankan script/tool yang telah diverifikasi lokal.
+- [ ] Secret tidak berada di workflow/log; tidak ada production deploy.
+- [ ] Commit dan hasil CI tercatat.
+
+#### Verification
+- [ ] Bandingkan CI dengan hasil command lokal.
+
+#### Evidence
+- Belum ada.
+
+### [TITIS-404] E2E alur kritis
+- **Status:** Blocked | **Phase:** 4 | **Depends on:** TITIS-311, TITIS-403
+- **Scope:** otomasi atau catatan run-through alur login, edit content, booking, keputusan Owner, checkout, payment, laporan.
+- **Out of scope:** mewajibkan Playwright/alat baru sebelum DEC-013 disetujui.
+
+#### Acceptance criteria
+- [ ] Alur kritis punya bukti E2E aktual pada environment non-production.
+- [ ] Test tidak menggunakan data pelanggan/credential nyata.
+- [ ] Tool, command, dan keterbatasan dicatat.
+
+#### Verification
+- [ ] Jalankan E2E sesuai tool yang disetujui; bila automasi didefer, jalankan manual flow dan catat alasan.
+
+#### Evidence
+- Belum ada.
+
+### [TITIS-405] Final responsive, keyboard/focus, dan accessibility checks
+- **Status:** Blocked | **Phase:** 4 | **Depends on:** TITIS-219, TITIS-404
+- **Scope:** final regression pada halaman publik dan dashboard inti.
+- **Out of scope:** audit sertifikasi formal atau dependency tambahan tanpa persetujuan.
+
+#### Acceptance criteria
+- [ ] Halaman inti berfungsi pada mobile dan desktop.
+- [ ] Label, focus keyboard, kontras, validation message, empty/error state, dan 404 diperiksa.
+- [ ] Temuan yang menghalangi alur kritis diperbaiki atau diterima eksplisit Owner.
+
+#### Verification
+- [ ] Manual checks dan tools yang benar-benar tersedia.
+
+#### Evidence
+- Belum ada.
+
+### [TITIS-406] Rencana backup dan pemulihan environment produksi
+- **Status:** Blocked | **Phase:** 4 | **Depends on:** TITIS-402
+- **Scope:** pastikan pilihan paket/backup/recovery sesuai risiko serta anggaran aktual; dokumentasikan prosedur pemulihan yang dapat dilakukan.
+- **Out of scope:** mengasumsikan harga, batas paket, backup, atau PITR lama masih sama tanpa verifikasi saat ini.
+
+#### Acceptance criteria
+- [ ] Opsi backup/recovery yang benar-benar aktif diverifikasi dari dashboard/dokumentasi provider saat rilis.
+- [ ] Restore/rekonstruksi dites di environment yang aman jika fasilitas mendukung.
+- [ ] Risiko kehilangan data, RPO/RTO yang realistis, dan approval Owner dicatat.
+- [ ] Tidak ada operasi destruktif production tanpa persetujuan dan rencana pemulihan.
+
+#### Verification
+- [ ] Verifikasi fasilitas yang tersedia dan catat hasil/limit yang aktual; jangan memasukkan data sensitif ke evidence.
+
+#### Evidence
+- Belum ada.
+
+### [TITIS-407] Audit lisensi dependency dan aset
+- **Status:** Blocked | **Phase:** 4 | **Depends on:** TITIS-011, TITIS-312
+- **Scope:** periksa dependency serta font, ikon, gambar, dan aset yang masuk release.
+- **Out of scope:** menyalin kode/aset pihak lain tanpa izin atau evaluasi lisensi.
+
+#### Acceptance criteria
+- [ ] Lisensi dependency/aset yang dipakai diperiksa dan atribusi yang diwajibkan tersedia.
+- [ ] Tidak ada aset yang status hak pakainya tidak jelas tanpa tindakan/keputusan Owner.
+- [ ] License file utama tetap cocok dengan keputusan proyek.
+
+#### Verification
+- [ ] Periksa manifest/lockfile serta sumber aset aktual.
+
+#### Evidence
+- Belum ada.
+
+### [TITIS-408] Catat known limitations dan kesiapan operasional
+- **Status:** Blocked | **Phase:** 4 | **Depends on:** TITIS-401, TITIS-406, TITIS-407
+- **Scope:** rangkum keterbatasan MVP yang perlu diketahui pengguna/pengelola: SPA SEO, tidak ada DP/void/refund/stok/Staff, booking manual tanpa notifikasi otomatis.
+- **Out of scope:** menambah fitur untuk menghilangkan keterbatasan tersebut pada rilis ini.
+
+#### Acceptance criteria
+- [ ] Known limitations konsisten dengan PRD dan guide.
+- [ ] Prosedur operasional yang dibutuhkan Owner jelas, khususnya memeriksa keranjang sebelum checkout dan menghubungi pemohon booking secara manual.
+- [ ] Tidak ada janji fitur/SEO yang belum diimplementasikan.
+
+#### Verification
+- [ ] Review wording pada README dan UI penting.
+
+#### Evidence
+- Belum ada.
+
+### [TITIS-409] README final dan setup dari repository bersih
+- **Status:** Blocked | **Phase:** 4 | **Depends on:** TITIS-101, TITIS-103, TITIS-402, TITIS-403, TITIS-404, TITIS-407, TITIS-111
+- **Scope:** verifikasi README untuk prasyarat, env, migration, script, testing, deployment, lisensi, dan known limitations berdasarkan hasil aktual.
+- **Out of scope:** dokumentasi perintah yang belum pernah dicoba sebagai prosedur yang sudah terbukti.
+
+#### Acceptance criteria
+- [ ] Setup diuji dari clone/working copy bersih tanpa bantuan lisan bila memungkinkan.
+- [ ] Semua command yang ditulis benar-benar dijalankan; yang belum terverifikasi diberi label.
+- [ ] Deployment/environment/limitasi yang dijelaskan cocok dengan hasil aktual.
+- [ ] Tidak ada secret, data customer, atau credential nyata.
+
+#### Verification
+- [ ] Ikuti README dari awal dan catat setiap hambatan/perubahan.
+
+#### Evidence
+- Belum ada.
+
+### [TITIS-410] Checklist rilis, persetujuan environment, dan rollback
+- **Status:** Blocked | **Phase:** 4 | **Depends on:** TITIS-401, TITIS-402, TITIS-403, TITIS-404, TITIS-405, TITIS-406, TITIS-407, TITIS-408
+- **Scope:** siapkan keputusan akhir deployment, commit target, environment, backup/recovery, smoke tests, rollback, dan known issues sebelum meminta persetujuan Owner.
+- **Out of scope:** deployment production tanpa approval eksplisit.
+
+#### Acceptance criteria
+- [ ] Tidak ada security blocker yang diketahui.
+- [ ] Test/build yang diwajibkan selesai atau blocker diberi keputusan eksplisit dan rilis ditahan bila kritis.
+- [ ] Commit, environment, deployment steps, rollback frontend, dan prosedur recovery database tercatat.
+- [ ] Provider limits, domain, Auth redirect, CORS, secrets, serta backup diverifikasi aktual saat release.
+
+#### Verification
+- [ ] Review checklist dan bukti rilis sebelum diserahkan ke Owner.
+
+#### Evidence
+- Belum ada.
+
+### [TITIS-411] Persetujuan Owner dan deploy approval
+- **Status:** Blocked | **Phase:** 4 | **Depends on:** TITIS-410
+- **Scope:** memperoleh persetujuan eksplisit Owner untuk deployment yang akan memengaruhi pengguna nyata.
+- **Out of scope:** agent memutuskan rilis sendiri.
+
+#### Acceptance criteria
+- [ ] Owner meninjau commit target, hasil test, temuan security, keterbatasan, environment, dan rencana rollback.
+- [ ] Approval/rejection tercatat dengan tanggal dan commit target.
+- [ ] Bila ditolak, deployment dihentikan dan blocker dicatat.
+
+#### Verification
+- [ ] Konfirmasi eksplisit Owner; jangan menyamakan “review selesai” dengan “rilis disetujui”.
+
+#### Evidence
+- Belum ada.
+
+### [TITIS-412] Exit review PHASE 4 dan penerimaan MVP
+- **Status:** Blocked | **Phase:** 4 | **Depends on:** TITIS-301 sampai TITIS-312, TITIS-401 sampai TITIS-411
+- **Scope:** bukti seluruh alur MVP, release checks, dokumentasi, dan persetujuan pemilik.
+- **Out of scope:** fitur yang berada di Parking Lot.
+
+#### Acceptance criteria
+- [ ] Owner dapat login, mengelola company profile/CMS, katalog/resource, booking, checkout, riwayat, dan laporan.
+- [ ] Booking terkonfirmasi tidak overlap dan checkout tidak membuat data parsial/duplikat; semuanya punya bukti test.
+- [ ] Anonymous tidak dapat mengakses/mengubah data internal.
+- [ ] Migration dapat direproduksi; build/test/CI yang disepakati mempunyai hasil aktual.
+- [ ] README, lisensi, known limitations, dan deployment evidence lengkap.
+- [ ] Owner menyetujui penerimaan MVP dan tanggalnya dicatat.
+
+#### Verification
+- [ ] Tinjau bukti seluruh task Phase 4; update status ringkas, release note bila digunakan, dan guide status jika perlu.
+
+#### Evidence
+- Belum ada.
+
+---
+
+## 9. Parking Lot — Di Luar MVP / Ditunda
+
+Tidak dikerjakan kecuali scope atau fase diubah secara sengaja dengan alasan, dampak waktu/schema/security, dan persetujuan Owner.
 
 | ID | Item | Status | Syarat untuk dipertimbangkan |
 |---|---|---|---|
-| TITIS-901 | Payment gateway dan webhook pembayaran | Deferred | MVP stabil; ada kebutuhan nyata dari pengguna pilot; rencana sandbox, verifikasi webhook, dan idempotency |
-| TITIS-902 | Stok sederhana per produk (direct stock) | Deferred | Ada kebutuhan nyata; keputusan skema dan dampak ke checkout |
-| TITIS-903 | Inventaris berbasis resep, supplier, purchase order | Deferred | Di luar MVP; butuh revisi PRD |
-| TITIS-904 | Multi-tenant SaaS dan billing langganan | Deferred | Permintaan berulang dari beberapa bisnis |
-| TITIS-905 | POS offline | Deferred | Kebutuhan nyata dari pengguna pilot |
-| TITIS-906 | README bahasa Inggris | Deferred | Menjelang rilis publik |
-| TITIS-907 | Demo publik dengan akun terbatas | Deferred | Setelah TITIS-401; environment dan akun khusus, tanpa credential nyata |
+| TITIS-901 | Payment gateway dan webhook | Deferred | MVP manual stabil; ada kebutuhan nyata; rancangan verifikasi webhook, secret, dan idempotency disetujui. |
+| TITIS-902 | Stok sederhana per produk | Deferred | Ada kebutuhan pilot; revisi PRD dan dampak transaksi/catalog disepakati. |
+| TITIS-903 | Inventaris resep/BOM, supplier, purchase order | Deferred | Di luar MVP; membutuhkan desain domain dan revisi PRD. |
+| TITIS-904 | Multi-tenant SaaS dan billing | Deferred | Ada kebutuhan berulang dari lebih dari satu bisnis dan ada rencana tenancy/security. |
+| TITIS-905 | POS offline | Deferred | Ada kebutuhan operasional nyata dan strategi sinkronisasi konflik. |
+| TITIS-906 | README bahasa Inggris / multi-bahasa | Deferred | Setelah MVP; Bahasa Indonesia menjadi bahasa MVP. |
+| TITIS-907 | Demo publik dengan akun terbatas | Deferred | Setelah security review; gunakan environment/data sintetis dan akun khusus. |
+| TITIS-908 | Page builder/editor visual, HTML/CSS bebas | Deferred / Out of scope | Hanya dipertimbangkan lewat revisi produk; bukan bagian custom UI/UX berbasis kode. |
+| TITIS-909 | SSR/prerender SEO dinamis | Deferred | Kebutuhan SEO terukur membenarkan biaya/kompleksitas dan Owner menyetujui perubahan scope. |
+| TITIS-910 | DP, pelunasan bertahap, void/refund, koreksi transaksi | Deferred / Out of scope | Perlu desain payment ledger/audit/reconciliation dan revisi PRD; jangan diimplementasikan sebagai shortcut. |
+| TITIS-911 | Staff dan permission matrix | Deferred | Setelah MVP stabil, dengan revisi model auth/security. |
+| TITIS-912 | Notifikasi booking otomatis dan self-service reschedule/cancel | Deferred | Ada kebutuhan pilot, kebijakan privasi dan saluran pengiriman disetujui. |
+| TITIS-913 | Error tracking SaaS dan analytics lanjutan | Deferred | Hanya jika dibutuhkan dan disetujui setelah MVP. |
+| TITIS-914 | CONTRIBUTING.md / changelog release formal | Deferred | Menjelang rilis open-source/pengembangan kontributor; jangan membuat duplikat `SECURITY.md`. |
+| TITIS-915 | Otomatisasi retensi/penghapusan data | Deferred | Kebijakan retensi disetujui dan implementasi aman siap; PRD menyatakan otomatisasi bukan syarat MVP. |
 
 ---
 
-## 9. Pertanyaan Terbuka
+## 10. Pertanyaan dan Keputusan yang Memerlukan Tindak Lanjut
 
-Catat pertanyaan yang memengaruhi data, keamanan, alur pengguna, atau arsitektur. Hentikan implementasi terkait sampai terjawab.
+Gunakan tabel ini untuk pertanyaan yang benar-benar belum diselesaikan. Setelah diputuskan, perbarui sumber kebenaran terkait dan hapus/ubah status pertanyaan; jangan mempertahankan pertanyaan yang telah usang dari roadmap lama.
 
-| # | Pertanyaan | Owner | Task terdampak | Status |
+| ID | Pertanyaan/blocker | Owner | Task terdampak | Status |
 |---|---|---|---|---|
-| Q-01 | Hosting: apakah Cloudflare sudah menjadi keputusan pemilik? Draf lama menyebutnya tanpa DEC-012 / OPEN-014. Bila ya, catat sebagai usulan dan pilih Workers static assets atau Pages. | Pemilik proyek | TITIS-005, TITIS-111 | Open |
-| Q-02 | `DATABASE.md`, `SECURITY.md`, `TESTING.md`, dan `DESIGN.md` belum ikut diperiksa silang (tidak tersedia pada review 2026-10-10); rujukan pasal dan ID `TEST-*`/`THR-*`/`INV-*` ke dokumen itu belum terverifikasi. | Pemilik proyek | TITIS-012 | Open |
-| Q-03 | OPEN-019, OPEN-020, OPEN-021 (komunikasi hasil booking, data pribadi pengunjung, bahasa) ditambahkan sebagai usulan review. Setujui, ubah, atau tolak. | Pemilik proyek | TITIS-003 | Open |
-| Q-04 | Perubahan rencana kerja dari review 2026-10-10 (TITIS-113 CI minimal, dependensi TITIS-004/006/007/012/208/306/308/309/403) disetujui? | Pemilik proyek | TITIS-004, 006, 007, 012, 113 | Open |
+| Q-01 | Apakah Owner menyetujui `PRD.md` revisi 2026-10-15 sebagai baseline scope MVP? | Pemilik proyek | TITIS-002, TITIS-003, TITIS-014 | Open |
+| Q-02 | Keputusan DEC-006, DEC-009, DEC-011, DEC-013, DEC-016, DEC-017, DEC-020, dan DEC-021 masih `Proposed` di Architecture yang diberikan. Keputusan mana yang diterima/ditunda? | Pemilik proyek | TITIS-004, TITIS-006, TITIS-007, TITIS-008, TITIS-010, TITIS-014 | Open |
+| Q-03 | Apakah mockup/referensi desain yang akan disetujui benar-benar tersedia dalam repository dan cocok dengan template MVP? | Pemilik proyek | TITIS-009, TITIS-102, TITIS-211 | Open |
+| Q-04 | Apakah `DATABASE.md`, `SECURITY.md`, dan `TESTING.md` telah diperbarui dari model lama Owner/Staff dan alur DP/void ke Owner-only/POS lunas? | Pemilik proyek | TITIS-007, TITIS-008, TITIS-010, TITIS-012 | Open |
+| Q-05 | Domain final dan pilihan backup/recovery produksi masih perlu diputuskan/diverifikasi; apakah domain boleh tetap ditunda dan biaya/risiko recovery produksi dapat diterima? | Pemilik proyek | TITIS-005, TITIS-406, TITIS-410, TITIS-411 | Open |
 
 ---
 
-## 10. Log Perubahan TASK.md
+## 11. Log Perubahan TASK.md
 
 | Tanggal | Perubahan |
 |---|---|
-| 2026-10-10 | TASK.md dibuat. Phase 0 dan Phase 1 ditulis lengkap; Phase 2–4 berupa daftar ringkas. |
-| 2026-10-10 | Review konsistensi pendahuluan oleh AI (bukan pengganti TITIS-012; mencakup guide, PRD, ARCHITECTURE, AGENTS, TASK): ID task di PRD/ARCHITECTURE disesuaikan ke penomoran file ini; urutan dependensi TITIS-004/006/007/012 diperbaiki; TITIS-005 dan TITIS-111 tidak lagi mengasumsikan Cloudflare; kolom "Prasyarat keputusan" ditambahkan; TITIS-113 (CI minimal) ditambahkan dan exit review Phase 1 menjadi TITIS-114; dependensi TITIS-208, 306, 308, 309, 403 diperketat. Menunggu persetujuan pemilik (lihat Q-04). |
+| 2026-10-10 | TASK.md versi awal dibuat dengan Phase 0/1 lengkap dan Phase 2–4 ringkas. |
+| 2026-10-11 | Sejumlah task Phase 0 direview terhadap scope dan dokumen baseline sebelumnya; evidence historis dicatat pada versi terdahulu. |
+| 2026-10-15 | Diselaraskan dengan `PRD.md` dan `TITIS_MASTER_BUILD_GUIDE_FINAL.md` revisi 2026-10-15 serta `ARCHITECTURE.md` yang ditempel: MVP satu Owner; tanpa Staff, DP/pelunasan, void/refund, stok, page builder, atau SEO prerender wajib; roadmap diatur menjadi Phase 0 persiapan, Phase 1 fondasi/CMS, Phase 2 template/katalog/resource, Phase 3 booking, Phase 4 POS/laporan/hardening/release. DEC yang masih `Proposed` dijadikan blocker. Status/evidence historis ditandai belum diverifikasi ulang pada repository. |
