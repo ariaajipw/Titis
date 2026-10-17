@@ -1,6 +1,6 @@
 # DESIGN — Panduan Desain TITIS
 
-> **Status:** **Draft kerangka (Phase 0) — revisi 2026-10-16.** Nilai visual final (warna, skala tipografi, spasi) **sengaja belum diisi** karena harus berasal dari referensi desain **Portfolio** yang disetujui. Aturan aksesibilitas, state, pola interaksi, dan aturan motion sudah berlaku sebagai standar.
+> **Status:** **Draft kerangka (Phase 0) — revisi 2026-10-16, token difinalkan 2026-10-17.** Nilai token warna/tipografi/spasi/radius/border/elevasi/motion kini **final** (dark-only, §4.1–§4.3), bersumber dari referensi Portfolio yang disetujui dan keputusan Owner. Aturan aksesibilitas, state, pola interaksi, dan aturan motion berlaku sebagai standar.
 > **Sumber kebenaran untuk:** design tokens, layout, komponen, perilaku responsif, aksesibilitas, motion publik, dan referensi visual yang disetujui.
 > **Bukan untuk:** scope produk (`PRD.md`), hak akses dan aturan transaksi (`SECURITY.md`, `DATABASE.md`), pilihan library dan routing (`ARCHITECTURE.md`), roadmap dan workflow (`TITIS_MASTER_BUILD_GUIDE_FINAL.md`).
 > **Label:** `DQ-xx` = pertanyaan desain terbuka (§17). `DEC-xxx` = keputusan di `ARCHITECTURE.md` §4. `AC-xxx` = acceptance criteria di `PRD.md` §6. ID task hanya ditetapkan di `TASK.md` dan tidak dikutip di dokumen ini.
@@ -14,7 +14,7 @@
 - Palet: krem, navy, hijau, satu aksen koral.
 - Font: **JetBrains Mono** (heading dan body; angka uang/tabular memakai monospace).
 - Semantic design tokens (Tailwind v4, DEC-004) dan struktur §4.
-- Mode gelap masuk MVP (keputusan A, 2026-10-11) dengan toggle tema.
+- Mode gelap masuk MVP (keputusan A, 2026-10-11) sebagai tema utama tunggal (tanpa toggle light/dark; lihat baris 28).
 - Situs publik = company-profile landing page dengan CTA Booking; pemisahan public website dan dashboard.
 - Alur booking tiga tahap + layar hasil; daftar menjadi kartu di ponsel; laporan berupa tabel yang menggulir di dalam wadahnya.
 - Aksesibilitas WCAG 2.2 AA, state UI standar, target PageSpeed ≥ 90, rencana empat layar mockup.
@@ -25,6 +25,12 @@
 - Pemindaian barcode, cetak struk/print stylesheet, ekspor CSV, notifikasi, jadwal ulang booking, form kontak, halaman Pengaturan/akun Staff → **dihapus dari MVP** (daftar di §16).
 - **Multi-bahasa EN/ID dan SEO multilingual** → PRD §4.2/§7 menetapkan *Bahasa Indonesia saja* dan multi-bahasa *Deferred*. Keputusan lama (EN utama + ID) digantikan; lihat DQ-08.
 - Referensi `OPEN-xxx`, `TITIS-xxx`, `TEST-xxx` yang tidak lagi ada di PRD/ARCHITECTURE dihapus. Referensi `DEC-xxx` diperbarui ke nomor yang berlaku (mis. DEC-018 sekarang = client state, bukan tema; DEC-019 = error handling, bukan lisensi font).
+- **Mode gelap sebagai tema utama tunggal (tanpa toggle light/dark)** — Owner 2026-10-16. Toggle tema dihapus dari header publik dan sidebar/menu admin.
+- **UI bilingual: English default + Indonesian via selector** (public + admin) — Owner 2026-10-16. No i18n library without separate approval. CMS bilingual but content not auto-translated.
+- **Spam protection: honeypot + request limiting** — Owner 2026-10-16. Turnstile not required (deferred).
+- **Contact page map: external link only** — Owner 2026-10-16. No third-party embed.
+- **Rejection reason: optional** — Owner 2026-10-16. Field `decision_note` on booking table.
+- **Admin nav: DESIGN proposal baseline** — Owner 2026-10-16.
 
 **Dikoreksi:**
 - Daftar viewport wajib berisi **10 ukuran tetap** (sebelumnya tertulis "11" padahal hanya 10 yang terdaftar) ditambah tiga pemeriksaan tambahan (§7).
@@ -70,9 +76,11 @@
 
 ## 3. Referensi dan alur persetujuan desain
 
-- Lokasi referensi: `docs/design/references/`.
-- Penamaan usulan: `<area>-<halaman>-<viewport>-<tema>.png`, mis. `public-booking-mobile-light.png`, `admin-booking-list-desktop-dark.png`.
-- Sebuah referensi dianggap **disetujui** hanya bila dicatat di tabel di bawah dengan tanggal dan catatan keputusan yang belum selesai.
+- Lokasi referensi visual: `docs/design/references/`.
+- **Sumber desain-sistem (teks):** `docs/design/source/portfolio-design-system-v4.md` adalah catatan "as-built" dari sistem desain Portfolio (nilai warna/tipografi/spasi yang ada di kode sumbernya). Ia **bukan** mockup visual TITIS dan **bukan** spesifikasi yang boleh disalin utuh; ia menyediakan bukti nilai kandidat untuk token TITIS (§4).
+- **Mockup visual bersifat opsional** (keputusan Owner 2026-10-17): bukan prasyarat implementasi maupun penyelesaian token. Dasar keputusan desain adalah `DESIGN.md` (token final) dan referensi Portfolio; mockup visual dapat ditambahkan kemudian sebagai referensi QA bila diperlukan.
+- Penamaan usulan mockup: `<area>-<halaman>-<viewport>-<tema>.png`; karena TITIS dark-only, sufiks tema cukup `-dark`.
+- Sebuah referensi visual dianggap **disetujui** hanya bila dicatat di tabel di bawah dengan tanggal dan catatan keputusan.
 - Perubahan yang memengaruhi perilaku (bukan sekadar visual) harus ditulis di dokumen ini atau `PRD.md`, bukan hanya tersirat di gambar.
 
 | Referensi | Layar | Viewport / tema | Tanggal disetujui | Catatan |
@@ -85,55 +93,74 @@ Token diekspos sebagai variabel tema Tailwind v4 (CSS-first, DEC-004) dengan **n
 
 ### 4.1 Warna (peran)
 
-| Token (peran) | Kegunaan | Nilai | Syarat kontras |
-|---|---|---|---|
-| `color-bg` | Latar halaman | DQ-01 | — |
-| `color-surface` | Kartu/panel | DQ-01 | — |
-| `color-surface-muted` | Latar sekunder | DQ-01 | — |
-| `color-text` | Teks utama | DQ-01 | ≥ 4.5:1 terhadap `bg` dan `surface` |
-| `color-text-muted` | Teks sekunder | DQ-01 | ≥ 4.5:1 |
-| `color-primary` / `color-primary-contrast` | Aksi utama dan teks di atasnya | DQ-01 | teks ≥ 4.5:1; batas komponen ≥ 3:1 |
-| `color-accent` / `color-accent-contrast` | Aksen visual (identitas brand) | DQ-01 | teks ≥ 4.5:1; batas komponen ≥ 3:1 |
-| `color-border` | Garis/pembatas | DQ-01 | batas kontrol input ≥ 3:1 |
-| `color-focus-ring` | Indikator fokus | DQ-01 | ≥ 3:1 terhadap latar sekitar |
-| `color-success` | Status sukses/positif | DQ-01 | teks ≥ 4.5:1; **bukan** satu-satunya pembeda (sertakan ikon/teks) |
-| `color-warning` | Status peringatan | DQ-01 | idem |
-| `color-danger` | Status error/destruktif | DQ-01 | idem |
-| `color-info` | Status informasi | DQ-01 | idem |
+Palet final **dark-only** (disetujui 2026-10-17). Rasio kontras dihitung dari nilai hex (rumus WCAG 2.x), bukan pengukuran browser.
 
-**Palet identitas visual (nilai final mengisi DQ-01):**
-- Krem — latar utama `color-bg` mode terang.
-- Navy — teks utama `color-text`, heading, border primer.
-- Hijau — `color-success`, aksi positif, indikator status aktif.
-- Koral — `color-accent` (identitas visual). **Catatan kontras:** koral di atas krem kemungkinan tidak memenuhi 4.5:1 untuk teks; gunakan koral untuk aksen, elemen besar, atau latar tombol dengan teks berkontras cukup. Putuskan setelah diukur (§8.1), tanpa mengubah identitas palet.
+| Token (peran) | Kegunaan | Nilai final | Sumber | Kontras vs `color-bg` |
+|---|---|---|---|---|
+| `color-bg` | Latar halaman | `#1B3E5C` (navy) | Portfolio §2.1 `--background` (dark) | — |
+| `color-surface` | Kartu/panel | `#2D4D69` | Turunan: navy + putih 8% | teks 6.48:1 ✓ |
+| `color-surface-muted` | Latar sekunder | `#183853` | Turunan: navy + hitam 10% | teks 8.91:1 ✓ |
+| `color-text` | Teks utama | `#EDDBB5` (cream) | Identitas TITIS (cream sebagai teks) | 8.15:1 ✓ |
+| `color-text-muted` | Teks sekunder | `#AEAC9A` | Turunan: cream + navy 30% | 4.85:1 ✓ |
+| `color-primary` / `color-primary-contrast` | Aksi utama + teks di atasnya | `#FA6B48` / `#000000` | Portfolio `--accent`; kontras hitam (Owner) | hitam-on-coral 7.26:1 ✓ |
+| `color-accent` / `color-accent-contrast` | Aksen brand | `#FA6B48` / `#000000` | Portfolio `--accent` | 7.26:1 ✓ |
+| `color-border` | Garis/pembatas | `#8F948D` | Turunan: cream + navy 45% | 3.59:1 ✓ (≥3) |
+| `color-focus-ring` | Indikator fokus | `#FFFFFF` | Putih, kontras tinggi & beda dari teks cream | 11.11:1 ✓ |
+| `color-success` | Status sukses | `#B4C5BE` | Turunan: hijau `#2A5A44` + putih 65% | 6.17:1 ✓ |
+| `color-warning` | Status peringatan | `#F2B138` | Portfolio `--text-primary` dark (gold) | 5.88:1 ✓ |
+| `color-danger` | Status error/destruktif | `#F28B82` | Fungsional (merah aksesibel) | 4.65:1 ✓ |
+| `color-info` | Status informasi | `#82C7F5` | Fungsional (biru aksesibel) | 6.05:1 ✓ |
 
-**Mode gelap — masuk MVP (keputusan A, 2026-10-11).** Token warna mendukung dua mode (terang/gelap) lewat CSS custom properties.
-- Toggle tema wajib ada di header publik dan sidebar/menu admin.
-- Hormati `prefers-color-scheme`, izinkan pilihan manual, simpan di `localStorage`; state tema boleh lewat React Context sederhana (selaras DEC-018: tanpa global state library).
-- **Terapkan tema sebelum paint pertama** (inline script di `<head>` atau `color-scheme`) untuk mencegah flash tema (FOUC).
-- Referensi visual disimpan dengan sufiks `-light` dan `-dark`.
+**Identitas visual (krem, navy, hijau, koral) dipertahankan:**
+- Navy `#1B3E5C` — latar `color-bg` (di mode dark, navy adalah kanvas, bukan teks).
+- Krem `#EDDBB5` — teks utama `color-text`.
+- Hijau `#2A5A44` — sumber identitas `color-success` (diterangkan agar terbaca di navy).
+- Koral `#FA6B48` — `color-primary`/`color-accent`; teks di atasnya memakai **hitam** (putih di koral = 2.89:1, gagal AA — lihat Portfolio §2.2 D20).
+
+**Aturan:**
+- Status **tidak** boleh hanya mengandalkan warna (sertakan ikon/teks, §8).
+- Status dirancang terhadap `color-bg`; bila dipakai di `color-surface`, verifikasi ulang kontras (mis. `color-danger` di surface = 3.70:1).
+- Jangan menambah aksen/gradien dekoratif tambahan (Portfolio §2.3).
+- Utility yang dihasilkan Tailwind: `--color-bg` → `bg-bg`, `--color-text` → `text-text`, `--color-text-muted` → `text-text-muted`, dst.
+
+**Mode gelap tunggal (keputusan Owner 2026-10-16):** tanpa toggle light/dark; `prefers-color-scheme` tidak dipakai untuk switching. Token mendukung mode gelap saja.
 
 ### 4.2 Tipografi
 
 | Peran | Keterangan | Nilai |
 |---|---|---|
 | Keluarga font | **JetBrains Mono** dengan *fallback stack* sistem (`ui-monospace`, `SFMono-Regular`, `Menlo`, `monospace`) | Decided |
-| Skala | `display`, `h1`–`h4`, `body`, `body-sm`, `caption` | DQ-03 |
+| Skala | `display`, `h1`–`h4`, `body`, `body-sm`, `caption` | Final (lihat tabel di bawah) |
 | Aturan | Teks isi ≥ 16 px (1rem); baris isi ≤ ~75 karakter; tinggi baris longgar untuk paragraf; angka uang memakai angka tabular agar sejajar | — |
 | Pengiriman font | *Self-host* berkas woff2 dari rilis resmi (tanpa Google Fonts dan tanpa dependency npm tambahan); subset Latin (+ Latin-ext bila perlu); `font-display: swap`; preload hanya berkas yang kritis | Usulan |
 | Lisensi | **Terverifikasi 2026-10-16** dari repositori resmi `JetBrains/JetBrainsMono`: tipeface berlisensi **SIL OFL 1.1**, boleh dipakai gratis untuk komersial maupun non-komersial, kredit tidak diwajibkan. Saat font di-bundle, **sertakan salinan `OFL.txt` dan pemberitahuan hak cipta** dalam atribusi proyek (cek ulang pada rilis open-source). | Verified |
 
+**Skala semantik final (disetujui 2026-10-17).** Ukuran responsif memakai `clamp()`; dasar dari pola ukuran Portfolio (§3) dan skala Tailwind v4 untuk gap. Font-family tetap JetBrains Mono (bukan Roboto Flex — tidak diadopsi).
+
+| Token | Font-size | Line-height | Font-weight | Catatan |
+|---|---|---|---|---|
+| `display` | `clamp(2.5rem, 6vw + 1rem, 5rem)` | 1.1 | 700 | judul hero; tidak memakai Roboto Flex |
+| `h1` | `clamp(2rem, 4vw + 0.5rem, 3rem)` | 1.15 | 700 | judul section (~32–48 px) |
+| `h2` | `clamp(1.5rem, 3vw + 0.5rem, 2.25rem)` | 1.2 | 600 | |
+| `h3` | `clamp(1.25rem, 2vw + 0.5rem, 1.5rem)` | 1.25 | 600 | |
+| `h4` | `clamp(1.125rem, 1.5vw + 0.5rem, 1.25rem)` | 1.3 | 600 | |
+| `body` | `1rem` (16 px) | 1.6 | 400 | teks isi minimum |
+| `body-sm` | `0.875rem` (14 px) | 1.5 | 400 | teks pendukung dengan peran terbatas |
+| `caption` | `0.75rem` (12 px) | 1.4 | 400 | keterangan/kaki |
+
+Catatan: bobot `600`/`700` di-render sebagai *synthesized bold* bila hanya JetBrains Mono 400 yang di-self-host (Portfolio §3); saat font dibundel, muat rentang bobot yang diperlukan.
+
 ### 4.3 Spasi, bentuk, efek, dan gerak
 
-| Token | Aturan | Nilai |
+| Token | Aturan | Nilai final (disetujui 2026-10-17) |
 |---|---|---|
-| Skala spasi | Berbasis kelipatan konstan (Usulan: 4 px) | DQ-04 |
-| Radius | `sm`, `md`, `lg`, `full` | DQ-04 |
-| Border | Ketebalan standar dan gaya | DQ-04 |
-| Elevasi | 0–3 untuk kartu/dialog/menu | DQ-04 |
-| Lapisan (z-index) | Konten < header lengket < menu < dialog < toast | DQ-04 |
-| Gerak (UI) | Durasi singkat; **hormati `prefers-reduced-motion`** | DQ-04 |
-| Gerak (motion publik) | Token durasi dan easing dipakai bersama oleh CSS dan preset GSAP (§9.4). Usulan awal: `fast` 0.2 s, `base` 0.5 s, `slow` 0.8 s, easing keluar yang halus. | DQ-04 |
+| Skala spasi | Berbasis kelipatan 4 px | Menggunakan skala spasi native Tailwind v4 (`--spacing: 0.25rem` = 4 px) tanpa override |
+| Radius | `sm`, `md`, `lg`, `full` | Native Tailwind v4: `sm` 0.25rem (4 px), `md` 0.375rem (6 px), `lg` 0.5rem (8 px), `full` 9999 px |
+| Border | Ketebalan standar dan varian kuat | Standar `1px`; varian kuat `2px`; warna = `color-border` `#8F948D` |
+| Elevasi | 0–3 untuk kartu/dialog/menu | Pakai shadow native Tailwind v4 (`shadow-sm`/`shadow-md`/`shadow-lg`); tanpa bayangan dekoratif tambahan |
+| Lapisan (z-index) | Konten < header lengket < menu < dialog < toast | Dipertahankan (urutan logis); nilai konkret ditetapkan saat komponen dibuat |
+| Gerak (UI) | Durasi singkat; **hormati `prefers-reduced-motion`** | `fast` 180 ms, `base` 300 ms, `slow` 500 ms; easing `cubic-bezier(0.22, 1, 0.36, 1)` |
+| Gerak (motion publik) | Dipakai bersama CSS dan preset GSAP (§9.4) | Durasi/easing di atas; nilai Portfolio (§6): 180/250/300/500 ms |
 
 ### 4.4 Paritas dengan Portfolio
 
@@ -141,13 +168,13 @@ Status paritas hanya "SAMA" bila diverifikasi dari sumber Portfolio resmi. Karen
 
 | Aspek | Token/Pola TITIS | Status | Catatan |
 |---|---|---|---|
-| Warna (krem, navy, hijau, koral) | `color-*` (§4.1) | BELUM TERVERIFIKASI | Nilai kanonik mengisi DQ-01 |
-| Tipografi (JetBrains Mono + fallback) | §4.2 | BELUM TERVERIFIKASI | Font family final; lisensi sudah terverifikasi |
-| Skala tipografi | Skala semantik Tailwind v4 | BELUM TERVERIFIKASI | Menunggu DQ-03 |
-| Spasi, radius, border, elevasi | §4.3 | BELUM TERVERIFIKASI | Menunggu DQ-04 |
+| Warna (krem, navy, hijau, koral) | `color-*` (§4.1) | FINAL | Nilai navy/coral/gold = sumber Portfolio; cream = identitas TITIS; surface/status/border = turunan |
+| Tipografi (JetBrains Mono + fallback) | §4.2 | FINAL | Font family final (Roboto Flex **tidak** diadopsi); lisensi terverifikasi |
+| Skala tipografi | Skala semantik Tailwind v4 | FINAL | Turunan pola ukuran Portfolio + skala Tailwind v4 (§4.2) |
+| Spasi, radius, border, elevasi | §4.3 | FINAL | Skala native Tailwind v4 (spasi 4 px, radius sm/md/lg/full) |
 | Container, grid, ritme section | `max-w-prose`, grid admin 12 kolom, `py-12` mobile / `py-20` desktop (usulan) | BELUM TERVERIFIKASI | Ikuti ritme Portfolio |
 | Header dan footer | Komponen Header, Footer | BELUM TERVERIFIKASI | — |
-| Motion (durasi, easing, pola reveal) | §9.4 | BELUM TERVERIFIKASI | Jika Portfolio sudah memakai Lenis/GSAP, ambil pola gerak dari sana; jika tidak, §9.4 menjadi acuan awal |
+| Motion (durasi, easing, pola reveal) | §9.4 | FINAL (nilai) | Durasi 180/300/500 ms & easing dari Portfolio; dependency Lenis/GSAP tetap DQ-09 |
 | Ikon | `lucide-react` atau SVG inline | BELUM TERVERIFIKASI | `lucide-react` = dependency baru, perlu persetujuan (ARCHITECTURE §5.1) |
 | Komponen (7 MVP) | §5 | BELUM TERVERIFIKASI | — |
 
@@ -200,9 +227,9 @@ Aturan khusus:
 
 ### 6.1 Situs publik — company-profile landing page
 
-- **Header:** nama bisnis, navigasi utama (Tentang, Layanan/Menu, Ruang/Fasilitas bila aktif, Kontak), **toggle tema**, dan tombol **Booking** yang menonjol sebagai CTA utama. **Footer:** kontak, jam buka, tautan sosial.
+- **Header:** nama bisnis, navigasi utama (Tentang, Layanan/Menu, Ruang/Fasilitas bila aktif, Kontak), **pemilih bahasa** (English default, Indonesian via selector), dan tombol **Booking** yang menonjol sebagai CTA utama. **Footer:** kontak, jam buka, tautan sosial.
 - Header sederhana, **tidak menghilang otomatis saat scroll**; boleh mendapat gaya halus (border/bayangan) setelah scroll (§9.4, M5). Tidak ada sticky bottom bar Booking pada MVP.
-- **Viewport 320 px:** header tetap utuh (nama bisnis, toggle tema, tombol Booking, menu) tanpa overflow horizontal; navigasi boleh collapse ke menu hamburger, semua fungsi tetap terjangkau.
+- **Viewport 320 px:** header tetap utuh (nama bisnis, pemilih bahasa, tombol Booking, menu) tanpa overflow horizontal; navigasi boleh collapse ke menu hamburger, semua fungsi tetap terjangkau.
 - Konten dibatasi lebar baca; gambar responsif dengan teks alternatif. Bagian opsional tanpa data **tidak ditampilkan** (tanpa placeholder rusak, AC-WEB-01.4).
 - Tujuan konversi per halaman:
 
@@ -249,7 +276,6 @@ Hanya **satu akun Owner**; tidak ada role, Staff, atau navigasi berbasis peran. 
 - Kerangka: sidebar (desktop) / **menu geser (ponsel)** + area konten + header dengan identitas Owner dan logout.
 - Urutan navigasi (usulan, DQ-05): Ringkasan → Booking → Resource → Katalog → Kasir (POS) → Transaksi → Laporan → Profil & Konten.
 - Halaman daftar: filter di atas, tabel/daftar, paginasi, state kosong yang menjelaskan langkah berikutnya.
-- **Toggle tema** di bagian bawah sidebar (desktop) / menu geser (ponsel), dengan ikon matahari/bulan dan label aksesibel. Penempatan final menunggu keputusan Owner.
 - Area dashboard tidak diindeks (ARCHITECTURE §6.2) dan **tidak memakai Lenis maupun animasi GSAP** (§9).
 
 ## 7. Perilaku responsif
@@ -262,7 +288,7 @@ Hanya **satu akun Owner**; tidak ada role, Staff, atau navigasi berbasis peran. 
   - 1280 × 800 · 1440 × 900 · 1920 × 1080 (desktop)
 - **Pemeriksaan tambahan:** (a) zoom browser 200%; (b) reflow setara 400% diuji pada 320 CSS px (zoom 200% **bukan** reflow 400%); (c) di atas 1920 px konten memakai lebar container terbatas.
 - Konten tidak boleh memerlukan scroll horizontal pada halaman. Tabel lebar menggulir di dalam wadahnya.
-- Formulir, navigasi, dashboard, dan POS tetap dapat digunakan pada semua viewport wajib; uji **kedua tema**.
+- Formulir, navigasi, dashboard, dan POS tetap dapat digunakan pada semua viewport wajib; uji **tema gelap tunggal**.
 - Rotasi layar tidak menghilangkan isian booking. Safe-area (`env(safe-area-inset-*)`) diperhitungkan. Gunakan `dvh`/`svh`, bukan `100vh`, bila perlu. Tidak ada fungsi penting yang hanya tersedia lewat hover.
 
 | Breakpoint | Navigasi publik | Sidebar admin | Daftar | POS |
@@ -273,7 +299,7 @@ Hanya **satu akun Owner**; tidak ada role, Staff, atau navigasi berbasis peran. 
 
 **Kompatibilitas browser** (Chrome, Firefox, Safari iOS/macOS, Edge) perlu pengujian terpisah dan tidak diklaim pada tahap dokumentasi. Playwright WebKit **bukan** pengganti uji Safari sungguhan.
 
-**Matriks uji (rencana, bukan klaim):** empat layar representatif (Beranda publik, Booking mobile, daftar Booking admin, Kasir POS tablet landscape) diuji penuh pada **10 viewport × 2 tema = 20 kombinasi per layar**; halaman lain memakai sampel prioritas yang dicatat.
+**Matriks uji (rencana, bukan klaim):** empat layar representatif (Beranda publik, Booking mobile, daftar Booking admin, Kasir POS tablet landscape) diuji penuh pada **10 viewport × 1 tema = 10 kombinasi per layar**; halaman lain memakai sampel prioritas yang dicatat.
 
 ### 7.1 Target PageSpeed Insights (MVP)
 
@@ -315,24 +341,27 @@ Halaman: `/`, `/tentang`, `/layanan`, `/ruang`, `/booking`, `/kontak`. Rute 404 
 
 ### 8.1 Verifikasi kontras warna
 
-Semua pasangan harus diverifikasi pada mode terang dan gelap.
+TITIS dark-only; pasangan dihitung (WCAG 2.x) dari nilai final §4.1. Status "dihitung" = rasio matematis, **bukan** pengukuran browser.
 
-| Pasangan (token) | Terang | Gelap | Syarat |
+| Pasangan (token) | Rasio (dihitung) | Syarat | Verdict |
 |---|---|---|---|
-| `color-text` / `color-bg` | BELUM DIUKUR | BELUM DIUKUR | ≥ 4.5:1 |
-| `color-text` / `color-surface` | BELUM DIUKUR | BELUM DIUKUR | ≥ 4.5:1 |
-| `color-text-muted` / `color-bg` | BELUM DIUKUR | BELUM DIUKUR | ≥ 4.5:1 |
-| `color-primary` / `color-primary-contrast` | BELUM DIUKUR | BELUM DIUKUR | teks ≥ 4.5:1, batas ≥ 3:1 |
-| `color-accent` / `color-accent-contrast` | BELUM DIUKUR | BELUM DIUKUR | teks ≥ 4.5:1, batas ≥ 3:1 |
-| `color-border` / `color-bg` | BELUM DIUKUR | BELUM DIUKUR | batas input ≥ 3:1 |
-| `color-focus-ring` / `color-bg` | BELUM DIUKUR | BELUM DIUKUR | ≥ 3:1 |
-| `color-success`, `-warning`, `-danger`, `-info` / `color-bg` | BELUM DIUKUR | BELUM DIUKUR | teks ≥ 4.5:1 + ikon/teks |
+| `color-text` / `color-bg` | 8.15:1 | ≥ 4.5:1 | ✓ |
+| `color-text` / `color-surface` | 6.48:1 | ≥ 4.5:1 | ✓ |
+| `color-text-muted` / `color-bg` | 4.85:1 | ≥ 4.5:1 | ✓ |
+| `color-primary-contrast` / `color-primary` | 7.26:1 | teks ≥ 4.5:1 | ✓ |
+| `color-accent-contrast` / `color-accent` | 7.26:1 | teks ≥ 4.5:1 | ✓ |
+| `color-border` / `color-bg` | 3.59:1 | batas input ≥ 3:1 | ✓ |
+| `color-focus-ring` / `color-bg` | 11.11:1 | ≥ 3:1 | ✓ |
+| `color-success` / `color-bg` | 6.17:1 | ≥ 4.5:1 + ikon/teks | ✓ |
+| `color-warning` / `color-bg` | 5.88:1 | ≥ 4.5:1 + ikon/teks | ✓ |
+| `color-danger` / `color-bg` | 4.65:1 | ≥ 4.5:1 + ikon/teks | ✓ |
+| `color-info` / `color-bg` | 6.05:1 | ≥ 4.5:1 + ikon/teks | ✓ |
 
-Pengukuran dilakukan setelah token final (DQ-01) tersedia, memakai pemeriksa kontras dan/atau pemeriksaan otomatis sesuai keputusan DQ-10. Nilai tidak diisi sebelum diukur.
+**Catatan:** status warna dirancang terhadap `color-bg`; di `color-surface`, `color-danger` = 3.70:1 (< 4.5:1) — verifikasi ulang saat dipakai pada kartu. Pengukuran kontras di browser tetap dijadwalkan pada verifikasi visual (mengikuti DQ-10); rasio di atas belum dianggap sebagai bukti kepatuhan WCAG penuh.
 
 ### 8.2 SEO MVP (Vite SPA)
 
-Mengikuti PRD §7 dan ARCHITECTURE §7.2 (DEC-011 masih `Proposed`):
+Mengikuti PRD §7 dan ARCHITECTURE §7.2 (DEC-011 `Accepted`):
 - Judul dan meta description dasar per halaman, URL konsisten, tautan internal, struktur heading yang jelas, halaman 404 yang jelas.
 - Area dashboard tidak diindeks.
 - **Prerender/SSR, hreflang, dan sitemap multibahasa tidak termasuk MVP.** Jangan menjanjikan SEO teknis lengkap; konten dinamis pada SPA dapat terindeks kurang ideal. Dokumentasikan trade-off ini pada rilis.
@@ -344,6 +373,13 @@ Mengikuti PRD §7 dan ARCHITECTURE §7.2 (DEC-011 masih `Proposed`):
 ## 9. Motion publik: Lenis + GSAP
 
 **Status:** permintaan Owner 2026-10-16. Dependency baru memerlukan persetujuan dan pencatatan di `ARCHITECTURE.md` sebelum dipasang (ARCHITECTURE §5.1; lihat DQ-09). Sampai saat itu, bagian ini adalah **spesifikasi desain**, bukan izin instal.
+
+**Dependency deferred (conditional — require separate Owner approval before install):**
+- `lenis` — smooth scroll (DQ-09)
+- `gsap` — animation (DQ-09)
+- `lucide-react` — icons (not approved; current baseline uses inline SVG)
+- i18n library — not approved; bilingual UI uses simple string map (DQ-08)
+- Turnstile — not required; spam protection uses honeypot + request limiting (D-08)
 
 ### 9.1 Tujuan dan batas
 
@@ -421,7 +457,7 @@ Durasi dan easing memakai token §4.3 (DQ-04).
 
 ### 9.5 Posisi dalam timeline
 
-Motion berada setelah template publik usable (akhir Minggu 2 hingga celah Minggu 4 pada Guide §5) dan **menjadi item pertama yang dipangkas** (Guide §10 butir 1). Minimal yang harus ada lebih dulu: halaman publik statis lengkap, state loading/empty/error, kedua tema, dan lolos pemeriksaan §7.
+Motion berada setelah template publik usable (akhir Minggu 2 hingga celah Minggu 4 pada Guide §5) dan **menjadi item pertama yang dipangkas** (Guide §10 butir 1). Minimal yang harus ada lebih dulu: halaman publik statis lengkap, state loading/empty/error, tema gelap, dan lolos pemeriksaan §7.
 
 ---
 
@@ -451,7 +487,7 @@ Setiap alur data menyediakan state berikut (AC-QUAL-01.1; ARCHITECTURE §7.4).
 
 ## 12. Konten dan format
 
-- **Bahasa antarmuka MVP: Bahasa Indonesia** (PRD §7). Multi-bahasa *Deferred* (DQ-08).
+- **Bahasa antarmuka MVP: English default + Indonesian via selector** (public + admin) — Owner 2026-10-16. No i18n library without separate approval. CMS bilingual but content not auto-translated.
 - Disarankan memusatkan teks UI di satu tempat sederhana (tanpa library i18n) agar penambahan bahasa kelak tidak menuntut penulisan ulang komponen.
 - Format: Rupiah (IDR), format angka dan tanggal Indonesia, zona waktu bisnis `Asia/Jakarta` (WIB), satu formatter bersama. Format tidak ditentukan oleh preferensi browser.
 - Nada tulisan: sederhana, sopan, tidak teknis; pesan error tidak menyalahkan pengguna.
@@ -521,7 +557,7 @@ Empat skill membantu agent mengerjakan UI. Ringkasan peran di bawah adalah **pen
 ### 14.4 Verifikasi visual dengan Playwright
 
 **Yang diperiksa (rencana, bukan klaim):**
-- Tangkapan layar pada viewport §7 × tema terang/gelap untuk empat layar representatif (§15.1); layar lain sesuai sampel prioritas.
+- Tangkapan layar pada viewport §7 × tema gelap untuk empat layar representatif (§15.1); layar lain sesuai sampel prioritas.
 - **Tidak ada scroll horizontal** pada halaman (lebar scroll ≤ lebar klien) di semua viewport.
 - **Tidak ada error/peringatan konsol** saat memuat dan menavigasi.
 - **Dua lintasan:** (a) emulasi `reducedMotion: 'reduce'` untuk *baseline* yang deterministik (keadaan akhir, tanpa Lenis); (b) lintasan dengan motion untuk memeriksa bahwa reveal bekerja, header tidak menghilang, dan tidak ada elemen yang tetap tersembunyi setelah scroll penuh.
@@ -540,23 +576,23 @@ Empat skill membantu agent mengerjakan UI. Ringkasan peran di bawah adalah **pen
 
 ### 15.1 Empat layar representatif
 
-Sebelum implementasi UI dimulai, empat layar berikut dirancang dan disetujui sebagai representasi design system, dalam **mode terang dan gelap**, dengan token Portfolio. Bahasa tunggal (Indonesia), sehingga tidak ada varian per bahasa.
+Sebelum implementasi UI dimulai, empat layar berikut dirancang dan disetujui sebagai representasi design system, dalam **mode gelap (satu tema)** dengan token TITIS. Bahasa mengikuti keputusan bilingual (English default + Indonesian via selector).
 
 | # | Layar | Area | Alasan | Viewport mockup | Varian |
 |---|---|---|---|---|---|
-| 1 | **Beranda Publik** (`/`) | Publik | Landing paling sering diakses: header, hero, footer, toggle tema, titik motion | 320×640, 1440×900 | 4 |
-| 2 | **Booking Publik** (`/booking`) | Publik | Alur kritis: form 3 tahap, validasi, state loading/error/hasil | 320×640 | 2 |
-| 3 | **Dashboard Owner — Ringkasan** (`/admin`) | Admin | Titik masuk harian: sidebar, header, booking pending, ringkasan | 1440×900, 375×667 | 4 |
-| 4 | **Kasir / POS** (`/admin/pos`) | Admin | Alur transaksi: dua panel, keranjang, periksa keranjang, hasil | 1024×768 | 2 |
+| 1 | **Beranda Publik** (`/`) | Publik | Landing paling sering diakses: header, hero, footer, titik motion | 320×640, 1440×900 | 2 |
+| 2 | **Booking Publik** (`/booking`) | Publik | Alur kritis: form 3 tahap, validasi, state loading/error/hasil | 320×640 | 1 |
+| 3 | **Dashboard Owner — Ringkasan** (`/admin`) | Admin | Titik masuk harian: sidebar, header, booking pending, ringkasan | 1440×900, 375×667 | 2 |
+| 4 | **Kasir / POS** (`/admin/pos`) | Admin | Alur transaksi: dua panel, keranjang, periksa keranjang, hasil | 1024×768 | 1 |
 
-**Total: 12 varian.** Booking admin (daftar) adalah target QA tambahan, bukan pengganti layar representatif. Stitch hanya untuk komposisi layar yang belum ada di Portfolio, dengan token yang sama.
+**Total: 6 varian (dark-only).** Booking admin (daftar) adalah target QA tambahan, bukan pengganti layar representatif. Stitch hanya untuk komposisi layar yang belum ada di Portfolio, dengan token yang sama.
 
 ### 15.2 Mockup vs QA
 
 | Aspek | Mockup (persetujuan visual) | QA / verifikasi |
 |---|---|---|
 | Tujuan | Owner menyetujui visual dan komposisi | Bukti responsif, aksesibilitas, performa, fungsi |
-| Viewport | Sesuai tabel §15.1 | **10 viewport × 2 tema** (+ pemeriksaan tambahan §7) |
+| Viewport | Sesuai tabel §15.1 | **10 viewport × 1 tema (dark)** (+ pemeriksaan tambahan §7) |
 | Cakupan | 4 layar | 7 rute publik + 9 area dashboard (§13); 4 layar representatif diuji penuh |
 | Alat | Figma/Stitch → `docs/design/references/` | Playwright (§14.4), PageSpeed Insights, uji manual keyboard dan browser |
 | Lolos jika | Owner menyetujui dan mencatat di §3 | Kriteria §7.1 dan §8 terpenuhi dengan bukti aktual |
@@ -565,7 +601,7 @@ Sebelum implementasi UI dimulai, empat layar berikut dirancang dan disetujui seb
 
 ### 15.3 Mockup layar MVP lainnya
 
-Dirancang setelah layar representatif disetujui dan sebelum rilis, dengan pola dan token yang sama (varian minimum: 2 viewport × 2 tema).
+Dirancang setelah layar representatif disetujui dan sebelum rilis, dengan pola dan token yang sama (varian minimum: 2 viewport × 1 tema).
 
 | Prioritas | Layar | Jenis |
 |---|---|---|
@@ -591,7 +627,7 @@ Tidak dikerjakan kecuali PRD diubah secara eksplisit (PRD §10; Guide §10).
 | Ekspor CSV laporan, chart/visualisasi laporan | MVP: tabel saja | PRD §6.4 |
 | Notifikasi dan preferensi notifikasi; jadwal ulang/pembatalan mandiri pengunjung | Deferred | PRD §4.2 |
 | Form kontak, halaman Pengaturan/akun | Tidak ada di PRD | PRD §5 |
-| Multi-bahasa (EN/ID), pemilih bahasa, SEO multibahasa (hreflang/sitemap variasi) | Deferred; Bahasa Indonesia saja | PRD §4.2, §7 |
+| Multi-bahasa (EN/ID), pemilih bahasa, SEO multibahasa (hreflang/sitemap variasi) | **UI bilingual: English default + Indonesian via selector (public + admin)** — Owner 2026-10-16. No i18n library without separate approval. CMS bilingual but content not auto-translated. SEO multilingual deferred. | PRD §4.2, §7 |
 | Prerender/SSR dan SEO teknis lanjutan | Deferred | PRD §7; ARCHITECTURE §7.2 |
 | Draft/publish dan pratinjau konten | Perubahan tersimpan langsung berlaku | PRD §4.2 |
 | Page builder, editor tema/animasi untuk Owner | Out of scope | PRD §3.3 |
@@ -607,16 +643,16 @@ Tidak dikerjakan kecuali PRD diubah secara eksplisit (PRD §10; Guide §10).
 
 | ID | Pertanyaan | Status | Keputusan / catatan | Dibutuhkan sebelum |
 |---|---|---|---|---|
-| DQ-01 | Palet warna final (nilai token) | Open | — | Referensi Portfolio disetujui |
-| DQ-02 | Mode gelap masuk MVP? | **Decided** | **Masuk MVP** (2026-10-11). Dampak: QA ×2 tema. Bila waktu meleset, ajukan perubahan scope eksplisit; jangan dipangkas diam-diam. | Mockup |
-| DQ-03 | Skala tipografi dan lisensi JetBrains Mono | Skala **Open**; font family **Decided**; lisensi **Verified** | Lisensi SIL OFL 1.1 terverifikasi 2026-10-16 dari repositori resmi (§4.2). Skala menunggu referensi Portfolio. | Referensi Portfolio disetujui |
-| DQ-04 | Skala spasi, radius, border, elevasi, gerak (+ nilai token motion §9.4) | Open | — | Referensi Portfolio disetujui |
+| DQ-01 | Palet warna final (nilai token) | **Decided** | Disetujui 2026-10-17; nilai final dark-only dicatat di §4.1 (navy/cream/coral/hijau + turunan status) | — |
+| DQ-02 | Mode gelap masuk MVP? | **Decided** | **Masuk MVP** (2026-10-11); sejak 2026-10-16 menjadi **dark-only tanpa toggle light/dark** (Owner). Dampak QA: 1 tema (dark). | Mockup |
+| DQ-03 | Skala tipografi dan lisensi JetBrains Mono | Skala **Decided**; font family **Decided**; lisensi **Verified** | Lisensi SIL OFL 1.1 terverifikasi 2026-10-16 (§4.2). Skala semantik final (`display/h1–h4/body/body-sm/caption`) dicatat di §4.2; Roboto Flex tidak diadopsi. | — |
+| DQ-04 | Skala spasi, radius, border, elevasi, gerak (+ nilai token motion §9.4) | **Decided** | Disetujui 2026-10-17; nilai final di §4.3 (spasi/radius native Tailwind v4; durasi 180/300/500 ms; easing `cubic-bezier(0.22,1,0.36,1)`). Dependency Lenis/GSAP tetap DQ-09. | — |
 | DQ-05 | Urutan akhir navigasi admin dan isi Ringkasan | Open | Usulan: §6.2 | Gate Phase 0 |
 | DQ-06 | Viewport uji responsif | **Decided** | 10 ukuran tetap + 3 pemeriksaan tambahan (§7). Belum diverifikasi via tes. | Scaffold |
 | DQ-07 | Target aksesibilitas | **Target decided: WCAG 2.2 AA** | Konformansi belum diverifikasi. Alat otomatis mengikuti DQ-10. | Tes aksesibilitas |
-| DQ-08 | Bahasa antarmuka | **Superseded** | Keputusan lama (EN utama + ID, 2026-10-11) digantikan PRD rev. 2026-10-15: **Bahasa Indonesia saja; multi-bahasa Deferred.** Bila Owner tetap menginginkan EN/ID di MVP: revisi PRD §4.2/§7, catat dampak waktu (Guide §10), dan kembalikan bagian pemilih bahasa + SEO multibahasa. | Persetujuan PRD |
+| DQ-08 | Bahasa antarmuka | **Decided** | **UI bilingual: English default + Indonesian via selector (public + admin)** — Owner 2026-10-16. No i18n library without separate approval. CMS bilingual but content not auto-translated. | Mockup |
 | DQ-09 | Persetujuan dependency **Lenis + GSAP** | **Open** | Niat Owner 2026-10-16. Perlu: pencatatan di `ARCHITECTURE.md`, verifikasi lisensi Lenis, baca ulang lisensi GSAP terkait penjualan jasa ke klien, ukuran bundle, pin versi. | Sebelum `npm install` |
-| DQ-10 | Playwright (dev dependency) dan, opsional, axe untuk verifikasi visual/aksesibilitas | **Open** | Memperbarui DEC-013 (`Proposed`). Tidak boleh menghambat inti MVP. | Setup testing |
+| DQ-10 | Playwright (dev dependency) dan, opsional, axe untuk verifikasi visual/aksesibilitas | **Open** | Memperbarui DEC-013 (`Accepted`). Tidak boleh menghambat inti MVP. | Setup testing |
 | DQ-11 | Penolakan/pembatalan booking: perlu alasan? | Open | Bergantung `DATABASE.md`; PRD tidak mewajibkan. | Dashboard booking |
 | DQ-12 | Peta di halaman Kontak | Open | Usulan: **tautan eksternal** (tanpa embed pihak ketiga, demi performa dan CSP). PRD mengizinkan "peta/tautan eksternal bila diisi". | Halaman Kontak |
 
@@ -637,7 +673,7 @@ Status header diubah menjadi **READY FOR OWNER REVIEW** hanya setelah semua buti
 | 7 | Lisensi Lenis diverifikasi | ☐ | Belum; DQ-09 |
 | 8 | Persetujuan Owner atas Lenis + GSAP dicatat di `ARCHITECTURE.md` | ☐ | DQ-09 |
 | 9 | Persetujuan Owner atas Playwright dicatat dan DEC-013 diperbarui | ☐ | DQ-10 |
-| 10 | Keputusan bahasa (DQ-08) dikonfirmasi Owner | ☐ | Bertentangan dengan keputusan lama; perlu konfirmasi |
+| 10 | Keputusan bahasa (DQ-08) dikonfirmasi Owner | ✓ | Owner 2026-10-16: UI bilingual English default + Indonesian via selector; no i18n library |
 | 11 | Isi `SKILL.md` keempat skill diperiksa terhadap §14.1 | ☐ | Dilakukan saat skill dipasang |
 | 12 | `git diff --check` dan `git diff --stat -- DESIGN.md` hanya menunjukkan DESIGN.md untuk perubahan ini | ☐ | Jalankan di repositori; jangan diklaim tanpa bukti |
-| 13 | Nilai token final (DQ-01, DQ-03 skala, DQ-04) diisi dari Portfolio yang disetujui | ☐ | Menunggu referensi Portfolio |
+| 13 | Nilai token final (DQ-01, DQ-03 skala, DQ-04) diisi dari Portfolio yang disetujui | ✓ | Final 2026-10-17 (§4.1–§4.3); campuran nilai Portfolio, identitas TITIS, dan turunan |

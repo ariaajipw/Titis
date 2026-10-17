@@ -1,7 +1,7 @@
 # PRD — TITIS
 
-> **Status:** Baseline scope hasil revisi untuk ditinjau dan disetujui pemilik proyek.
-> **Revisi:** 2026-10-15
+> **Status:** Disetujui sebagai baseline MVP — revisi 2026-10-15, diperbarui per keputusan Owner 2026-10-16.
+> **Revisi:** 2026-10-16 (persetujuan Owner tertanggal 2026-10-16)
 > **Tujuan dokumen:** Menetapkan masalah, target pengguna, cakupan MVP, alur produk, serta kriteria penerimaan TITIS.
 > **Batas:** Detail implementasi teknis menjadi tanggung jawab `ARCHITECTURE.md`, `DATABASE.md`, dan `SECURITY.md`. Roadmap dan workflow proyek berada di `TITIS_MASTER_BUILD_GUIDE_FINAL.md`.
 
@@ -125,7 +125,7 @@ Pendekatan ini memberi ruang untuk custom design tanpa mengubah proyek menjadi p
 | Notifikasi email/WhatsApp otomatis | Deferred | Owner menghubungi pengunjung secara manual menggunakan kontak yang diberikan. |
 | Pembatalan/reschedule mandiri oleh pengunjung | Deferred | Perubahan booking ditangani Owner di luar alur publik. |
 | Multi-tenant SaaS dan billing | Out of scope | Satu instalasi untuk satu bisnis. |
-| Multi-bahasa | Deferred | Bahasa antarmuka dan konten MVP: Bahasa Indonesia. |
+| Multi-bahasa otomatis / i18n library | Deferred | Antarmuka UI bilingual (English default + Indonesian via selector) tanpa library i18n; konten CMS bilingual tetapi tidak diterjemahkan otomatis. |
 | Analitik lanjutan dan laporan akuntansi | Deferred | MVP hanya laporan operasional sederhana. |
 | Workflow draft/publish yang kompleks | Deferred | Perubahan konten yang disimpan langsung berlaku pada website publik. |
 | SEO lanjutan dan prerender/SSR dinamis | Deferred | Perlu diputuskan sebagai pengembangan terpisah; MVP tidak boleh mengklaim SEO teknis tingkat lanjut. |
@@ -148,7 +148,7 @@ MVP tidak dirancang sebagai sistem akuntansi resmi. Laporan penjualan merupakan 
 | Produk/Layanan | Katalog item aktif dengan field publik dan harga yang sama dengan POS |
 | Ruang/Fasilitas | Daftar resource yang bisa dipesan; boleh disembunyikan jika bisnis tidak memakai booking resource |
 | Booking | Formulir permintaan booking dan keterangan bahwa booking belum dikonfirmasi sampai Owner menyetujuinya |
-| Kontak | Alamat, jam buka, telepon/WhatsApp, tautan sosial, dan peta/tautan eksternal bila diisi |
+| Kontak | Alamat, jam buka, telepon/WhatsApp, tautan sosial, dan **tautan peta eksternal** bila diisi (tidak ada peta embedded) |
 | 404 | Pesan halaman tidak ditemukan dan tautan kembali |
 
 Halaman tambahan boleh dibuat melalui custom coding ketika memang diperlukan dalam proyek klien, tetapi tidak menjadi syarat pada template dasar MVP.
@@ -191,10 +191,11 @@ Acceptance criteria berikut menjadi batas untuk MVP. Detail teknis tes dapat dip
 - AC-CMS-01.3 Field wajib dan format input divalidasi, dengan pesan error yang dapat dipahami.
 - AC-CMS-01.4 Gambar yang diunggah dibatasi oleh tipe dan ukuran yang diperbolehkan.
 - AC-CMS-01.5 Pengunjung anonim tidak dapat mengubah konten, katalog, konfigurasi resource, atau data internal.
+- AC-CMS-01.6 Owner dapat mengedit konten dalam dua bahasa (English + Indonesian) untuk field yang disediakan; tidak ada terjemahan otomatis.
 
 **US-DESIGN-01 — Developer menyesuaikan tampilan untuk klien**
 
-- AC-DESIGN-01.1 Template dasar menggunakan komponen dan design tokens yang konsisten.
+- AC-DESIGN-01.1 Template dasar menggunakan komponen dan design tokens yang konsisten dengan **single dark theme sebagai primary** (tidak ada light/dark toggle).
 - AC-DESIGN-01.2 Developer dapat mengganti atau menata ulang komponen publik melalui kode tanpa mengganti model data atau membangun ulang modul booking/POS.
 - AC-DESIGN-01.3 Custom design tidak mengharuskan Owner mengedit kode untuk memperbarui konten sehari-hari.
 - AC-DESIGN-01.4 Perubahan desain tidak menurunkan aksesibilitas dasar atau responsivitas halaman inti.
@@ -209,12 +210,12 @@ Acceptance criteria berikut menjadi batas untuk MVP. Detail teknis tes dapat dip
 - AC-BOOK-01.4 Waktu tidak valid, waktu lampau, resource nonaktif, durasi di luar batas, atau waktu di luar jam operasional ditolak oleh lapisan tepercaya.
 - AC-BOOK-01.5 Setelah berhasil, pengunjung menerima pesan bahwa permintaannya diterima untuk ditinjau, bukan konfirmasi reservasi.
 - AC-BOOK-01.6 Respons publik tidak menampilkan data pribadi atau rincian booking orang lain.
-- AC-BOOK-01.7 Form memuat pemberitahuan singkat penggunaan data kontak dan perlindungan spam sederhana.
+- AC-BOOK-01.7 Form memuat pemberitahuan singkat penggunaan data kontak dan perlindungan spam sederhana (honeypot + request limiting; Turnstile tidak diperlukan).
 
 **US-BOOK-02 — Owner mengelola booking**
 
 - AC-BOOK-02.1 Owner dapat melihat dan memfilter daftar booking berdasarkan tanggal/status/resource.
-- AC-BOOK-02.2 Owner dapat mengonfirmasi, menolak, atau membatalkan booking.
+- AC-BOOK-02.2 Owner dapat mengonfirmasi, menolak (dengan alasan opsional), atau membatalkan booking.
 - AC-BOOK-02.3 Sistem menolak konfirmasi jika booking berbenturan dengan booking terkonfirmasi lain untuk resource yang sama.
 - AC-BOOK-02.4 Pencegahan bentrok tetap berlaku jika dua permintaan konfirmasi terjadi hampir bersamaan; database hanya boleh menerima hasil yang tidak bentrok.
 - AC-BOOK-02.5 Booking pending tidak memblokir waktu, sehingga Owner dapat menerima satu dan menolak yang lain.
@@ -228,6 +229,7 @@ Acceptance criteria berikut menjadi batas untuk MVP. Detail teknis tes dapat dip
 - Pemesanan maksimal 30 hari ke depan.
 - Resource dan jam operasional dapat dikelola Owner. Aturan slot/buffer/horizon merupakan konfigurasi proyek untuk MVP, bukan halaman pengaturan kompleks di dashboard.
 - Hanya booking `confirmed` yang menghalangi waktu. Interval dianggap setengah-terbuka `[mulai, selesai)`, sehingga booking berikutnya boleh mulai tepat ketika rentang booking sebelumnya berakhir jika buffer tidak membuatnya overlap.
+- Owner menolak booking dengan alasan opsional (`rejection_reason`).
 - Tidak ada pembatalan atau reschedule mandiri oleh pengunjung. Owner mengelola perubahan secara manual.
 - Tidak ada notifikasi otomatis. Owner menghubungi pengunjung melalui kontak yang disimpan.
 
@@ -283,15 +285,16 @@ Acceptance criteria berikut menjadi batas untuk MVP. Detail teknis tes dapat dip
 
 ---
 
-## 7. Data, Privasi, Bahasa, dan SEO
+## 7. Data, Privasi, Bahasa, Tema, dan SEO
 
-- Mata uang: Rupiah (IDR).
+- Mata uang: Rupiah (IDR) — disimpan sebagai integer `bigint` rupiah di database; di TypeScript/JSON sebagai string; tidak menggunakan floating-point untuk uang.
 - Format angka/tanggal: format Indonesia.
 - Zona waktu bisnis: `Asia/Jakarta`.
-- Bahasa MVP: Bahasa Indonesia.
-- Form booking menampilkan pemberitahuan penggunaan data kontak yang singkat.
+- Bahasa antarmuka UI: **English default + Indonesian via selector** (public + admin); **tanpa library i18n** kecuali disetujui terpisah. Konten CMS bilingual tetapi tidak diterjemahkan otomatis.
+- Tema UI MVP: **Single dark theme sebagai primary** — tidak ada light/dark toggle pada MVP.
+- Form booking menampilkan pemberitahuan penggunaan data kontak yang singkat dan perlindungan spam sederhana (honeypot + request limiting; Turnstile tidak diperlukan).
 - Kebijakan retensi yang direncanakan: data kontak pengunjung dipertahankan maksimum 12 bulan kecuali dibutuhkan lebih lama secara sah; catatan transaksi keuangan tidak dihapus otomatis. Otomatisasi retensi bukan bagian MVP dan perlu dirancang terpisah.
-- SEO MVP terbatas pada struktur halaman yang jelas, judul/deskripsi dasar, URL yang konsisten, dan link internal. Jangan menjanjikan prerender/SSR atau SEO teknis lengkap pada MVP.
+- SEO MVP terbatas pada: struktur halaman yang jelas, judul/deskripsi dasar (metadata), URL yang konsisten, heading yang bermakna, link internal, dan halaman 404. **Prerender/SSR dan multilingual SEO deferred** — tidak menjanjikan SEO teknis lengkap pada MVP.
 - Karena frontend baseline adalah Vite SPA dan konten diambil secara dinamis, kebutuhan SEO berbasis konten dinamis perlu diuji dan strategi prerender/SSR dapat menjadi fase berikutnya. Keterbatasan ini harus disampaikan transparan dalam dokumentasi rilis.
 
 ---
@@ -300,10 +303,10 @@ Acceptance criteria berikut menjadi batas untuk MVP. Detail teknis tes dapat dip
 
 MVP dianggap memenuhi target ketika seluruh hal berikut dibuktikan:
 
-1. Owner dapat login, memperbarui konten, mengelola katalog, mengelola booking, membuat transaksi, dan melihat laporan.
-2. Template company profile berjalan, dan struktur komponen memungkinkan custom UI/UX melalui kode tanpa mengubah backend inti.
-3. Pengunjung dapat mengirim booking; hanya Owner dapat memutuskan status; booking terkonfirmasi tidak bisa berbenturan.
-4. POS menghitung harga di lapisan tepercaya, menyimpan snapshot item/harga, serta tidak membuat transaksi ganda akibat retry yang sama.
+1. Owner dapat login, memperbarui konten (bilingual English/Indonesian), mengelola katalog, mengelola booking, membuat transaksi, dan melihat laporan.
+2. Template company profile berjalan dengan **single dark theme**, dan struktur komponen memungkinkan custom UI/UX melalui kode tanpa mengubah backend inti.
+3. Pengunjung dapat mengirim booking (UI bilingual English/Indonesian); hanya Owner dapat memutuskan status; booking terkonfirmasi tidak bisa berbenturan.
+4. POS menghitung harga di lapisan tepercaya (IDR integer), menyimpan snapshot item/harga, serta tidak membuat transaksi ganda akibat retry yang sama.
 5. Laporan dapat direkonsiliasi dengan data transaksi uji.
 6. Pengujian akses membuktikan data internal tidak terbuka kepada pengguna anonim.
 7. Halaman utama berfungsi pada ponsel dan desktop.
@@ -321,7 +324,7 @@ MVP dianggap memenuhi target ketika seluruh hal berikut dibuktikan:
 | Vite SPA membatasi SEO dinamis | Konten mungkin tidak terindeks seideal halaman SSR/prerender | Batasi klaim SEO MVP; ukur kebutuhan SEO dan buat strategi lanjutan sebelum menjanjikan kepada klien. |
 | Booking pending menumpuk | Owner dapat lupa mengambil keputusan | Dashboard menonjolkan pending; tidak ada notifikasi otomatis pada MVP. |
 | Tidak ada void/refund | Kesalahan checkout sulit diperbaiki | Konfirmasi keranjang sebelum checkout; transaksi selesai tidak bisa dihapus; jelaskan keterbatasan ke pengguna pilot. |
-| Form booking publik dapat disalahgunakan | Spam booking | Validasi, honeypot atau perlindungan sederhana, dan evaluasi rate limiting sebelum penggunaan lebih luas. |
+| Form booking publik dapat disalahgunakan | Spam booking | Validasi, honeypot + request limiting pada MVP; Turnstile tidak diperlukan. |
 | Scope creep | Fitur inti tidak selesai | Fitur di luar §4 tidak dikerjakan tanpa revisi scope dan dampak waktu tertulis. |
 | Kebocoran data | Informasi pribadi atau transaksi terlihat publik | RLS, privilege minimum, tes akses negatif, dan review function/grants. |
 

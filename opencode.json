@@ -1,0 +1,38 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "permission": {
+    "read": {
+      "*": "allow",
+      "*.env": "deny",
+      "*.env.*": "deny",
+      "*.env.example": "allow",
+      "**/*.pem": "deny",
+      "**/*.key": "deny",
+      "**/*.p12": "deny",
+      "**/*.pfx": "deny",
+      "**/*.crl": "deny",
+      "**/*.csr": "deny",
+      "**/*.der": "deny",
+      "**/*.cer": "deny"
+    },
+    "edit": {
+      "*": "ask",
+      "*.env": "deny",
+      "*.env.*": "deny",
+      "*.env.example": "ask"
+    },
+    "bash": {
+      "*": "ask",
+      "git status*": "allow",
+      "git diff*": "allow",
+      "git log*": "allow",
+      "git reset*": "deny",
+      "git clean*": "deny",
+      "git restore*": "deny",
+      "git push*": "deny",
+      "rm -rf*": "deny",
+      "supabase db reset*": "deny",
+      "npm run db:reset*": "deny"
+    }
+  }
+}

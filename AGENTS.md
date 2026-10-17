@@ -1,12 +1,12 @@
 # AGENTS.md — Aturan Kerja AI Agent untuk TITIS
 
-> **Status:** Draft revisi 2026-10-15 — menunggu persetujuan pemilik proyek melalui `TASK.md` → TITIS-001.
+> **Status:** Draft revisi 2026-10-15 — Owner decisions D-01..D-10 received 2026-10-16; pending review via `TASK.md` → TITIS-001.
 >
 > **Berlaku untuk:** semua AI coding agent (OpenCode, Codex CLI, Claude Code, agent di Cursor, dan alat sejenis).
 >
 > **Kedudukan:** file ini mengatur *bagaimana agent boleh bekerja*. Kebutuhan produk ada di `PRD.md`, pilihan arsitektur di `ARCHITECTURE.md`, roadmap dan release gate di `TITIS_MASTER_BUILD_GUIDE_FINAL.md`, dan pekerjaan aktual di `TASK.md`. Jangan menyalin isi dokumen-dokumen tersebut ke sini. Alat yang memiliki file instruksi sendiri (misalnya `CLAUDE.md`) harus merujuk ke file ini, bukan menggandakan aturan.
 >
-> **Baseline proyek:** revisi dokumen tanggal 2026-10-15. MVP ditujukan untuk satu instalasi/satu bisnis dengan satu akun Owner, company profile/CMS, katalog bersama website dan POS, booking anti-bentrok, checkout POS lunas, dan laporan dasar. Status repository dan persetujuan Owner tetap harus diperiksa; isi file ini bukan bukti bahwa keputusan sudah disetujui atau fitur sudah diimplementasikan.
+> **Baseline proyek:** revisi dokumen tanggal 2026-10-15. MVP ditujukan untuk satu instalasi/satu bisnis dengan satu akun Owner, company profile/CMS, katalog bersama website dan POS, booking anti-bentrok, checkout POS lunas, dan laporan dasar. **UI bilingual: English default + Indonesian via selector (public + admin); CMS bilingual content; no i18n library. Single dark theme primary (no light/dark toggle).** Status repository dan persetujuan Owner tetap harus diperiksa; isi file ini bukan bukti bahwa keputusan sudah disetujui atau fitur sudah diimplementasikan.
 
 ---
 

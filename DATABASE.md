@@ -1,8 +1,8 @@
 # DATABASE — Rancangan Data TITIS
 
-> **Status:** Draft rancangan Phase 0. Ini model konseptual, bukan schema yang sudah diterapkan. Keputusan yang masih `Proposed` di `ARCHITECTURE.md` belum menjadi izin implementasi.
+> **Status:** Disetujui sebagai baseline MVP — revisi 2026-10-15, diperbarui per keputusan Owner 2026-10-16.
 >
-> **Baseline yang dipakai:** `PRD.md`, `TITIS_MASTER_BUILD_GUIDE_FINAL.md`, dan `ARCHITECTURE.md` revisi 2026-10-15.
+> **Baseline yang dipakai:** `PRD.md`, `TITIS_MASTER_BUILD_GUIDE_FINAL.md`, dan `ARCHITECTURE.md` revisi 2026-10-16 (DEC all Accepted).
 >
 > **Sumber kebenaran untuk:** entitas konseptual, relasi, status, aturan integritas data, dan alasan desain.
 >
@@ -35,22 +35,22 @@ Rancangan ini mengikuti baseline PRD/arsitektur terbaru:
 - nominal uang berupa integer rupiah; tidak ada floating-point, diskon, pajak tambahan, pembulatan khusus, DP, refund, void, stok, atau edit/hapus transaksi selesai pada MVP;
 - data kontak pengunjung direncanakan disimpan maksimal 12 bulan kecuali ada kebutuhan hukum yang sah; otomatisasi penghapusan bukan syarat MVP.
 
-### 1.2 Keputusan arsitektur yang belum boleh diasumsikan selesai
+### 1.2 Keputusan arsitektur yang telah disetujui (Owner 2026-10-16)
 
-Sebelum implementasi terkait dimulai, periksa status aktual di `ARCHITECTURE.md`:
+Semua keputusan berikut telah disetujui dan diterapkan ke rancangan data. Periksa status aktual di `ARCHITECTURE.md` sebelum implementasi terkait dimulai:
 
-| Keputusan | Status pada arsitektur revisi 2026-10-15 | Dampak pada rancangan data |
+| Keputusan | Status (Owner 2026-10-16) | Dampak pada rancangan data |
 |---|---|---|
-| DEC-006 — jalur write booking publik | Proposed | Grants, RPC/function internal, dan jalur booking publik belum boleh dikunci untuk implementasi. |
-| DEC-009 — representasi uang | Proposed | Baseline PRD/arsitektur adalah IDR integer rupiah, tetapi keputusan ini harus diterima sebelum schema POS dibekukan. |
-| DEC-011 — SEO publik | Proposed | Metadata dasar diperlukan; prerender/SSR lanjutan bukan kebutuhan schema MVP. |
-| DEC-013 — tooling testing | Proposed | Test database dan strategi verifikasi final perlu disetujui sebelum release gate terkait. |
-| DEC-016 — autentikasi Owner | Proposed | Pola bootstrap Owner dan hubungan identitas Auth dengan profil belum boleh dianggap final. |
-| DEC-017 — proteksi spam booking | Proposed | Anti-abuse final memengaruhi jalur publik; Turnstile tidak wajib kecuali disetujui/dibutuhkan. |
-| DEC-020 — template versus custom UI/UX | Proposed | CMS hanya menyimpan konten terstruktur; desain/layout tetap berasal dari kode. |
-| DEC-021 — domain data/katalog | Proposed | Nama tabel dan bentuk katalog dalam dokumen ini tetap konseptual sampai keputusan diterima. |
+| DEC-006 — jalur write booking publik | Accepted | Grants, RPC/function internal, dan jalur booking publik dikunci per DEC-006. |
+| DEC-009 — representasi uang | Accepted | Baseline PRD/arsitektur: IDR integer rupiah (`bigint`/string), tanpa diskon/pajak/pembulatan khusus. |
+| DEC-011 — SEO publik | Accepted | Metadata dasar diperlukan; prerender/SSR lanjutan bukan kebutuhan schema MVP. |
+| DEC-013 — tooling testing | Accepted | Vitest/RTL + tes database wajib; Playwright/axe deferred. |
+| DEC-016 — autentikasi Owner | Accepted | Satu akun Owner, tanpa signup publik; bootstrap terkontrol. |
+| DEC-017 — proteksi spam booking | Accepted | Honeypot + request limiting; Turnstile tidak wajib. |
+| DEC-020 — template versus custom UI/UX | Accepted | CMS hanya menyimpan konten terstruktur; desain/layout dari kode. |
+| DEC-021 — domain data/katalog | Accepted | Katalog tunggal `products` untuk publik dan POS; nama tabel dikunci. |
 
-Status di tabel ini mencerminkan salinan `ARCHITECTURE.md` yang diberikan untuk penyusunan dokumen. Periksa kembali file repository sebelum bertindak.
+Status di tabel ini mencerminkan persetujuan Owner tertanggal 2026-10-16. Sebelumnya DEC-006, 009, 011, 013, 016, 017, 020, 021 berstatus `Proposed`; DEC-002, 007, 012, 014, 019 berstatus `Accepted*`. Semua kini `Accepted`.
 
 ---
 
@@ -90,9 +90,9 @@ Pengunjung tidak menerima UUID internal sebagai kode referensi yang dapat diguna
 
 - Mata uang MVP: **Rupiah (IDR)**. Satu instalasi tidak mengonfigurasi multi-currency.
 - Harga dan total disimpan sebagai integer rupiah dengan tipe database yang cukup, misalnya `bigint`.
-- `bigint` bisa melampaui rentang aman JavaScript `number`; di boundary TypeScript/JSON nominal perlu diperlakukan sebagai string atau dikonversi melalui fungsi aman.
+- `bigint` bisa melampaui rentang aman JavaScript `number`; di boundary TypeScript/JSON nominal **wajib diperlakukan sebagai string** atau dikonversi melalui fungsi aman.
 - Tidak ada diskon, pajak tambahan, basis points, DP/pelunasan, refund, void, atau pembulatan khusus pada MVP. Jangan menyediakan kolom untuk alur yang tidak masuk scope hanya untuk mengakomodasi rancangan lama.
-- DEC-009 berstatus `Proposed` pada arsitektur yang diberikan; jangan memfinalkan migration uang sebelum status keputusan tersebut ditangani.
+- DEC-009 berstatus **Accepted** (Owner 2026-10-16); representasi uang IDR integer `bigint` di DB, string di TS/JSON sudah dikunci.
 
 ### 3.4 Retensi dan data pribadi
 
@@ -237,7 +237,7 @@ Sebelum migration, tetapkan satu aturan konsisten untuk hari tutup, beberapa int
 | `status` | text not null | Status awal dipaksakan sistem, bukan diterima dari payload pengunjung. |
 | `decided_by` | uuid nullable, FK ke `owner_profiles.user_id` | Owner yang memutuskan status. |
 | `decided_at` | timestamptz nullable | Waktu keputusan terakhir yang relevan. |
-| `decision_note` | text nullable | Catatan internal opsional; tidak ditampilkan ke pengunjung. |
+| `decision_note` | text nullable | Alasan penolakan Owner (opsional); tidak ditampilkan ke pengunjung. |
 | `created_at`, `updated_at` | timestamptz | Dikelola database. |
 | `blocking_starts_at`, `blocking_ends_at` | timestamptz (kolom internal turunan, bila dipakai untuk exclusion constraint) | Nilai dikelola trigger/database, tidak dapat diubah client. Rentang blocking mencakup buffer 15 menit. |
 
@@ -334,11 +334,11 @@ erDiagram
 |---|---|---|---|
 | Baru | `pending` | Jalur publik tepercaya | Sistem menetapkan status; client tidak dapat mengirim `confirmed` atau status lain. |
 | `pending` | `confirmed` | Owner | Validasi ulang resource, jam, horizon, durasi, buffer, dan overlap pada saat konfirmasi. |
-| `pending` | `rejected` | Owner | Status akhir; catatan keputusan opsional. |
+| `pending` | `rejected` | Owner | Status akhir; **alasan penolakan opsional (`decision_note`)**. |
 | `pending` | `cancelled` | Owner | Status akhir. |
 | `confirmed` | `cancelled` | Owner | Status akhir; resource tidak lagi diblokir setelah pembaruan status atomik. |
 
-Transisi lain harus ditolak. Tidak ada pengunjung yang dapat mengubah status atau membaca daftar booking internal. DEC-006 masih `Proposed`; jalur implementasi publik harus disetujui sebelum migration/function final.
+Transisi lain harus ditolak. Tidak ada pengunjung yang dapat mengubah status atau membaca daftar booking internal. DEC-006 **Accepted** (Owner 2026-10-16); jalur implementasi publik dikunci per DEC-006.
 
 ### 6.2 Order, order item, dan payment
 
@@ -400,7 +400,7 @@ Pemeriksaan slot di UI atau query `SELECT` sebelum insert tidak menjamin keselam
 5. Periksa apakah `btree_gist` tersedia/dapat dipakai di environment target. Tangani exclusion violation, misalnya SQLSTATE `23P01`, menjadi pesan aman “slot tidak lagi tersedia”.
 6. Tes mencakup overlap, interval berurutan tepat, buffer, resource berbeda, status pending, input waktu invalid, perubahan jam, dan dua konfirmasi konkuren yang sesungguhnya.
 
-DEC-007 berstatus `Accepted*` pada tabel keputusan arsitektur, tetapi detail buffer harus konsisten antara constraint, trigger/function, dan tes sebelum implementasi booking dianggap siap.
+DEC-007 berstatus **Accepted** (Owner 2026-10-16; dipromosikan dari Accepted* setelah V-01), tetapi detail buffer harus konsisten antara constraint, trigger/function, dan tes sebelum implementasi booking dianggap siap.
 
 ### 7.2 Strategi checkout atomik
 
@@ -497,19 +497,19 @@ URL tersebut adalah titik awal untuk verifikasi, bukan bukti bahwa migration akt
 
 ## 12. Blocker sebelum schema final
 
-Butir berikut harus diselesaikan pada task yang sesuai sebelum migration terkait dibekukan. Menuliskannya di sini tidak berarti keputusan telah diterima.
+Butir berikut harus diselesaikan pada task yang sesuai sebelum migration terkait dibekukan. Semua DEC terkait kini **Accepted** (Owner 2026-10-16).
 
 | Butir | Yang harus dikunci | Terkait |
 |---|---|---|
-| D-01 | Persetujuan DEC-009 dan kontrak uang final; baseline saat ini IDR integer rupiah, tanpa diskon/pajak khusus. | TITIS-004, TITIS-302; sebelum migration POS |
-| D-02 | Prosedur bootstrap, pemulihan, dan mapping akun Owner; tidak ada signup publik. | DEC-016, TITIS-104/TITIS-107 |
-| D-03 | Jalur publik booking dan grants/function internal; tidak ada akses publik yang membypass validasi. | DEC-006, TITIS-203 |
-| D-04 | Konfirmasi bahwa model katalog tunggal `products` sesuai DEC-021. | TITIS-004, TITIS-213 |
-| D-05 | Semantik jam operasional: hari tutup, interval harian, jam bisnis versus override resource, dan interval yang melewati tengah malam. | TITIS-215 dan TITIS-201 |
-| D-06 | Pilihan teknis enforcement buffer 15 menit pada exclusion constraint dan bukti request bersamaan. | DEC-007, TITIS-202 |
-| D-07 | Bentuk JSONB yang diizinkan per halaman/section dan metadata yang bisa diedit Owner. | DEC-014, DEC-020, TITIS-104/TITIS-109 |
+| D-01 | Kontrak uang final IDR integer `bigint` (DB) / string (TS); tanpa diskon/pajak khusus. | TITIS-004, TITIS-302; sebelum migration POS |
+| D-02 | Prosedur bootstrap, pemulihan, dan mapping akun Owner; tidak ada signup publik. | DEC-016 (Accepted), TITIS-104/TITIS-107 |
+| D-03 | Jalur publik booking dan grants/function internal; tidak ada akses publik yang membypass validasi. | DEC-006 (Accepted), TITIS-203 |
+| D-04 | Konfirmasi model katalog tunggal `products` sesuai DEC-021. | TITIS-004, TITIS-213 |
+| D-05 | Semantik jam operasional: hari tutup, interval harian, jam bisnis versus override resource, interval melewati tengah malam. | TITIS-215 dan TITIS-201 |
+| D-06 | Pilihan teknis enforcement buffer 15 menit pada exclusion constraint dan bukti request bersamaan. | DEC-007 (Accepted), TITIS-202 |
+| D-07 | Bentuk JSONB yang diizinkan per halaman/section dan metadata yang bisa diedit Owner. | DEC-014 (Accepted), DEC-020 (Accepted), TITIS-104/TITIS-109 |
 | D-08 | Policy RLS/grants/Storage untuk semua tabel/jalur yang dipakai MVP. | `SECURITY.md`, TITIS-008/TITIS-108/TITIS-401 |
-| D-09 | Katalog kasus uji formal dan fixture direvisi agar tidak membawa asumsi Staff, DP, refund, void, atau multi-currency dari rancangan lama. | DEC-013, `TESTING.md`, TITIS-010/TITIS-310/TITIS-403 |
+| D-09 | Katalog kasus uji formal dan fixture direvisi agar tidak membawa asumsi Staff, DP, refund, void, atau multi-currency dari rancangan lama. | DEC-013 (Accepted), `TESTING.md`, TITIS-010/TITIS-310/TITIS-403 |
 
 ---
 
@@ -533,7 +533,7 @@ Jika kebutuhan baru muncul, ubah PRD lebih dahulu, periksa keputusan arsitektur 
 
 ## 14. Checklist review rancangan
 
-- [ ] `DATABASE.md` sudah ditinjau terhadap PRD/Architecture revisi 2026-10-15 melalui TITIS-007.
+- [ ] `DATABASE.md` sudah ditinjau terhadap PRD/Architecture revisi 2026-10-16 (DEC all Accepted) melalui TITIS-007.
 - [ ] Tidak ada asumsi Staff, DP/pelunasan, payment gateway, refund/void, diskon/pajak khusus, inventaris, atau multi-currency yang masih diperlakukan sebagai MVP.
 - [ ] Katalog produk/layanan merupakan satu-satunya sumber harga publik/POS.
 - [ ] Identitas Owner dan bootstrap-nya tidak mengizinkan signup atau penetapan role oleh client.
@@ -542,6 +542,6 @@ Jika kebutuhan baru muncul, ubah PRD lebih dahulu, periksa keputusan arsitektur 
 - [ ] Checkout lunas bersifat atomik dan idempotent; snapshot item/harga tersimpan; transaksi selesai tidak dapat diedit/hapus.
 - [ ] Definisi laporan menggunakan transaksi tersimpan dan zona waktu `Asia/Jakarta`.
 - [ ] Retensi data pribadi, migration workflow, generated types, RLS/grants, dan tes terkait memiliki rujukan yang benar.
-- [ ] Semua keputusan `Proposed` yang membatasi schema ditangani sebelum migration terkait dimulai.
+- [ ] Semua DEC kini `Accepted` (Owner 2026-10-16); tidak ada `Proposed` yang membatasi schema.
 
 **Status hasil review:** belum dinyatakan `Done` hanya berdasarkan pembuatan dokumen. Isi acceptance criteria dan evidence aktual harus dicatat pada `TASK.md` → TITIS-007 setelah review lintas dokumen dan verifikasi dilakukan.

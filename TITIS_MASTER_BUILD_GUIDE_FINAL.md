@@ -62,7 +62,7 @@ Jangan mengimplementasikan item berikut kecuali pemilik proyek mengubah scope se
 - Inventaris/stok, resep/BOM, supplier, dan purchase order.
 - POS offline, notifikasi otomatis, reschedule/pembatalan mandiri oleh pengunjung.
 - Multi-tenant SaaS, billing, analitik lanjutan, dan sistem akuntansi.
-- Multi-bahasa dan SEO dinamis SSR/prerender tingkat lanjut.
+- **Multi-bahasa beyond bilingual UI selector (English default + Indonesian)**, i18n library, dan SEO dinamis SSR/prerender tingkat lanjut.
 
 Rincian kebutuhan dan kriteria penerimaan wajib mengikuti `PRD.md`. Fitur deferred tidak boleh diam-diam dianggap bagian MVP.
 
@@ -112,7 +112,7 @@ Gunakan fungsi/RPC database untuk operasi checkout multi-record bila sesuai deng
 | Auth | Satu akun Owner; signup publik dimatikan |
 | Hosting frontend | Cloudflare Workers Static Assets sesuai baseline proyek; verifikasi setup aktual sebelum deployment |
 | Repository | Git + GitHub; lockfile dan runtime version disimpan |
-| Language | Bahasa Indonesia untuk UI MVP |
+| Language | **Bilingual UI: English default + Indonesian via selector** (public + admin); CMS bilingual content management; no i18n library without separate approval |
 | Deployment model | Satu frontend dan satu proyek backend per instalasi bisnis; bukan multi-tenant SaaS |
 
 Versi paket dan runtime harus diverifikasi saat scaffold berdasarkan dokumentasi resmi dan dikunci di lockfile. Jangan mengandalkan versi yang hanya disebut model AI.
@@ -162,6 +162,8 @@ Checklist:
 - [ ] Model satu bisnis dan satu Owner disepakati.
 - [ ] Aturan booking: resource, jam operasional, status, buffer, batas waktu, dan anti-bentrok dicatat.
 - [ ] Aturan checkout: metode pembayaran, harga DB, snapshot, idempotency, dan transaksi lunas dicatat.
+- [ ] **Strategi bahasa: bilingual UI (English default + Indonesian via selector) disepakati; CMS bilingual content management; no i18n library.**
+- [ ] **Desain: single dark theme sebagai primary (no light/dark toggle, no dominant white background) disepakati.**
 - [ ] Stack, data flow, auth, RLS, serta deployment direction tercatat di `ARCHITECTURE.md` / `SECURITY.md`.
 - [ ] `AGENTS.md` dan `TASK.md` tersedia sebelum coding lintas modul.
 
@@ -209,7 +211,7 @@ Deliverables:
 - [ ] Status pending tidak memblokir slot, tetapi konfirmasi yang bertabrakan ditolak oleh database.
 - [ ] Dashboard Owner dapat melihat, mengonfirmasi, menolak, dan membatalkan booking.
 - [ ] Data pribadi booking tidak dapat dibaca publik.
-- [ ] Ada perlindungan spam sederhana dan pesan privasi.
+- [ ] **Proteksi spam: honeypot + request limiting** (Turnstile tidak wajib) dan pesan privasi.
 - [ ] Test mencakup input tidak valid, overlap, batas interval, dua konfirmasi bersamaan, unauthorized access, dan error network.
 
 **Exit criteria:** acceptance criteria booking di `PRD.md` lulus, termasuk test concurrency/anti-bentrok di database. Tidak cukup hanya memeriksa jadwal di UI.

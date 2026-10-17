@@ -1,8 +1,8 @@
 # SECURITY — Desain Keamanan TITIS
 
-> **Status:** Draft Phase 0 — menunggu review/persetujuan Owner melalui `TASK.md` → TITIS-008. Belum ada kontrol keamanan yang boleh dianggap terimplementasi hanya berdasarkan dokumen ini.
+> **Status:** Disetujui sebagai baseline MVP — revisi 2026-10-15, diperbarui per keputusan Owner 2026-10-16.
 >
-> **Baseline dokumen:** revisi 2026-10-15. MVP satu instalasi untuk satu bisnis, satu akun Owner, website publik/CMS, katalog bersama, booking anti-bentrok, POS lunas dengan pembayaran manual, dan laporan operasional dasar.
+> **Baseline dokumen:** revisi 2026-10-16. MVP satu instalasi untuk satu bisnis, satu akun Owner, website publik/CMS, katalog bersama, booking anti-bentrok, POS lunas dengan pembayaran manual, dan laporan operasional dasar.
 >
 > **Sumber kebenaran untuk:** prinsip keamanan, model ancaman, matriks izin, strategi RLS/grants, jalur akses publik, kebijakan secret/logging, dan security gate.
 >
@@ -10,7 +10,7 @@
 >
 > **Rujukan:** `PRD.md` untuk scope produk; `ARCHITECTURE.md` untuk keputusan teknis; `DATABASE.md` untuk model data/invariants; `TESTING.md` untuk prosedur dan identifier test; `AGENTS.md` untuk batas kerja agent; `TASK.md` untuk status dan bukti.
 >
-> Keputusan arsitektur berstatus `Proposed` belum menjadi persetujuan implementasi. Status keputusan pada dokumen ini harus diverifikasi kembali terhadap `ARCHITECTURE.md` repository sebelum pekerjaan terkait dimulai.
+> Semua keputusan arsitektur kini `Accepted` (Owner 2026-10-16); tidak ada `Proposed` yang membatasi implementasi keamanan.
 
 ---
 
@@ -55,7 +55,7 @@
 [Browser: Anonymous / Owner]
         | input tidak tepercaya; publishable key dan sesi bila login
         v
-[Supabase Auth / API / Storage / jalur Edge Function bila disetujui]
+[Supabase Auth / API / Storage / jalur Edge Function]
         | grants + RLS + validasi input
         v
 [PostgreSQL: constraints, RLS, trigger, RPC]
@@ -67,7 +67,7 @@
 - Frontend tidak pernah menerima `service_role`, secret key Supabase, password database, atau secret server lainnya.
 - Public site hanya menerima field yang sengaja dipublikasikan. Jangan mengekspos seluruh row tabel internal untuk memenuhi kebutuhan UI publik.
 - Identitas Owner harus diperiksa melalui sumber data/claim yang tepercaya dan tidak dapat dimanipulasi sendiri oleh pengguna. Jangan memakai `user_metadata` yang dapat diedit pengguna sebagai satu-satunya dasar otorisasi.
-- Jalur publik booking belum boleh dianggap final selama DEC-006 dan DEC-017 masih `Proposed` pada arsitektur acuan.
+- Jalur publik booking dan anti-abuse (DEC-006, DEC-017) **disetujui (Accepted)** Owner 2026-10-16; implementasi dikunci per keputusan tersebut.
 
 ## 4. Matriks izin konseptual
 
@@ -81,7 +81,7 @@ Matriks ini adalah **desain yang diusulkan**, bukan deskripsi policy aktif. Hak 
 | SEC-PERM-04 | Membaca resource/jam yang diperlukan untuk form booking | Ya, subset publik | Ya | Tidak mengungkap booking lain, kontak pemesan, atau catatan internal |
 | SEC-PERM-05 | Mengajukan booking baru | Ya, melalui jalur publik terbatas yang disetujui | Ya, sesuai alur dashboard bila diperlukan | Sistem memaksa `pending`; tidak menerima status/pelaku dari client |
 | SEC-PERM-06 | Membaca daftar atau detail booking internal | Tidak | Ya | `reference_code` bukan kredensial untuk membaca booking |
-| SEC-PERM-07 | Mengonfirmasi, menolak, atau membatalkan booking | Tidak | Ya, melalui jalur terkontrol | Validasi ulang transisi dan ketersediaan; constraint DB mencegah bentrok |
+| SEC-PERM-07 | Mengonfirmasi, menolak (dengan alasan opsional), atau membatalkan booking | Tidak | Ya, melalui jalur terkontrol | Validasi ulang transisi dan ketersediaan; constraint DB mencegah bentrok |
 | SEC-PERM-08 | Mengelola profil, CMS, katalog, resource, dan jam operasional | Tidak | Ya | Validasi bentuk/field; operasi media memiliki kontrol tambahan |
 | SEC-PERM-09 | Membaca atau membuat order, item transaksi, dan pembayaran | Tidak | Ya | Checkout hanya lunas; nilai resmi ditentukan lapisan tepercaya |
 | SEC-PERM-10 | Membaca riwayat transaksi dan laporan | Tidak | Ya | Data tidak boleh tersedia pada endpoint publik |
@@ -145,7 +145,7 @@ Jalur publik yang disetujui harus:
 7. Tidak mengungkap data pemesan lain, detail ketersediaan internal yang sensitif, SQL, stack trace, atau detail konfigurasi.
 8. Menyediakan pemberitahuan penggunaan data kontak dan perlindungan spam sederhana yang telah diputuskan.
 
-DEC-006 (jalur booking publik) dan DEC-017 (anti-abuse) berstatus `Proposed` pada `ARCHITECTURE.md` yang diberikan. Pilihan implementasi akhir—termasuk apakah memakai Edge Function dan bagaimana RPC internal dipanggil—harus disetujui sebelum task implementasi booking dimulai. Jangan mengizinkan akses `anon` ke fungsi internal jika itu dapat melewati validasi yang dimaksudkan.
+DEC-006 (jalur booking publik) dan DEC-017 (anti-abuse) **disetujui (Accepted)** Owner 2026-10-16. Implementasi akhir menggunakan Edge Function sebagai entry point publik dengan operasi database internal; RPC internal tidak diberi `EXECUTE` ke `anon`. Anti-abuse: honeypot + request limiting; Turnstile tidak wajib. Jangan mengizinkan akses `anon` ke fungsi internal jika itu dapat melewati validasi yang dimaksudkan.
 
 ### 6.2 Checkout POS
 
@@ -160,7 +160,7 @@ Checkout hanya dijalankan oleh Owner terautentikasi melalui satu jalur terpercay
 - Mengembalikan hasil transaksi yang telah tersimpan, bukan sekadar mengulang total dari frontend.
 - Tidak menyediakan void, refund, DP/pelunasan, diskon, pajak tambahan, stok, atau edit/hapus transaksi selesai pada MVP.
 
-DEC-008 berstatus `Accepted` pada arsitektur acuan, sedangkan DEC-009 (uang IDR integer rupiah) berstatus `Proposed`. Verifikasi status aktual sebelum membekukan implementasi schema/fungsi POS. Kebijakan privilege dan fungsi final tetap harus ditinjau berdasarkan migration nyata.
+DEC-008 dan DEC-009 **disetujui (Accepted)** Owner 2026-10-16. Uang: IDR integer `bigint` di DB, string di TS/JSON; tanpa floating-point. Kebijakan privilege dan fungsi final tetap harus ditinjau berdasarkan migration nyata.
 
 ### 6.3 Supabase Storage dan media
 
@@ -282,8 +282,7 @@ Temuan lain harus dicatat sebagai risiko/known issue dengan severity, dampak, mi
 ## 12. Autentikasi dan pengelolaan akun Owner
 
 - MVP memiliki satu akun Owner dan tidak menyediakan signup publik.
-- Metode Auth, mapping ke profil Owner, prosedur bootstrap pertama, pemulihan/ganti Owner, dan pencabutan akses harus mengikuti keputusan DEC-016 setelah `Accepted`.
-- Selama DEC-016 masih `Proposed`, jangan mengunci skema final atau membangun jalur bootstrap yang belum disetujui.
+- Metode Auth, mapping ke profil Owner, prosedur bootstrap pertama, pemulihan/ganti Owner, dan pencabutan akses mengikuti **DEC-016 (Accepted, Owner 2026-10-16)**.
 - Sumber otorisasi harus dapat dipercaya dan tidak dikendalikan melalui metadata yang dapat diedit pengguna sendiri. Bila `owner_profiles` digunakan, mapping harus dibuat/dikelola lewat jalur operator/tepercaya yang terdokumentasi.
 - Akun yang tidak aktif atau tidak lagi cocok dengan mapping Owner tidak boleh melakukan operasi bisnis. Kegagalan membaca sumber otorisasi harus menghasilkan penolakan, bukan pemberian akses.
 - Prosedur login, logout, session expiry, reset password, redirect URL, dan error message harus diuji menggunakan kemampuan Supabase Auth versi aktual. Pesan login tidak perlu membocorkan apakah email tertentu terdaftar.
@@ -322,4 +321,4 @@ Proyek masih dalam tahap perencanaan. Bagian ini merupakan rancangan kebijakan, 
 
 ## Catatan status dokumen
 
-Review dokumen dilakukan melalui `TASK.md` → TITIS-008. Sebelum menandai task `Done`, cocokkan matriks izin dan desain ini dengan `PRD.md`, `ARCHITECTURE.md`, serta `DATABASE.md`; selaraskan katalog test melalui TITIS-010; dan catat bukti tinjauan aktual. Jangan mengubah status DEC dari `Proposed` menjadi `Accepted` tanpa persetujuan eksplisit Owner.
+Review dokumen dilakukan melalui `TASK.md` → TITIS-008. Sebelum menandai task `Done`, cocokkan matriks izin dan desain ini dengan `PRD.md`, `ARCHITECTURE.md`, serta `DATABASE.md`; selaraskan katalog test melalui TITIS-010; dan catat bukti tinjauan aktual. Semua DEC kini `Accepted` (Owner 2026-10-16).

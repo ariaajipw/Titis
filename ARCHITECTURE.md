@@ -1,9 +1,9 @@
 # ARCHITECTURE — TITIS
 
-> **Status:** Draft Phase 0 — disejajarkan dengan `PRD.md` dan `TITIS_MASTER_BUILD_GUIDE_FINAL.md` revisi 2026-10-15. Keputusan yang ditandai `Proposed` masih memerlukan persetujuan pemilik proyek sebelum task implementasi terkait dimulai.
+> **Status:** Disetujui sebagai baseline MVP — revisi 2026-10-15, diperbarui per keputusan Owner 2026-10-16.
 > **Sumber kebenaran:** struktur aplikasi, aliran data, modul, routing, integrasi, batas frontend/server, dan keputusan library.
 > **Bukan sumber kebenaran untuk:** product scope/acceptance criteria (`PRD.md`), schema yang benar-benar diterapkan (migration files), penjelasan domain database (`DATABASE.md`), security policy/threat model (`SECURITY.md`), desain visual (`DESIGN.md`), dan status task (`TASK.md`).
-> **Revisi:** 2026-10-15 — scope diselaraskan dengan MVP satu bulan: company profile fleksibel, booking anti-bentrok, POS lunas, dan satu akun Owner.
+> **Revisi:** 2026-10-16 — keputusan Owner D-01..D-10, V-01 diterapkan; 8 DEC Proposed→Accepted, 5 Accepted*→Accepted.
 
 ---
 
@@ -78,28 +78,28 @@ Status keputusan mengikuti konvensi: `Proposed` = diajukan tetapi belum disetuju
 | ID | Topik | Status saat revisi | Ringkasan | Gate terkait |
 |---|---|---|---|---|
 | DEC-001 | Frontend Vite + React + TypeScript | Accepted | SPA; versi paket dikunci saat scaffold | Scaffold |
-| DEC-002 | Routing | Accepted* | React Router v7; tidak mewajibkan prerender/SSR | Routing |
+| DEC-002 | Routing | Accepted | React Router v7; tidak mewajibkan prerender/SSR | Routing |
 | DEC-003 | Form validation | Accepted | Native HTML + Valibot; validasi server tetap wajib | Forms |
 | DEC-004 | Styling | Accepted | Tailwind CSS v4 + design tokens | Design system |
 | DEC-005 | Server state | Accepted | TanStack Query; aturan cache/error di §7 | Data fetching |
-| DEC-006 | Public booking write path | Proposed | Jalur publik terbatas melalui Edge Function dan operasi database internal; tidak memberi akses write luas ke `anon` | Sebelum booking |
-| DEC-007 | Booking anti-bentrok | Accepted* | PostgreSQL exclusion constraint untuk booking confirmed; detail buffer diverifikasi bersama schema dan tes | Sebelum booking |
+| DEC-006 | Public booking write path | Accepted | Jalur publik terbatas melalui Edge Function dan operasi database internal; tidak memberi akses write luas ke `anon` | Sebelum booking |
+| DEC-007 | Booking anti-bentrok | Accepted | PostgreSQL exclusion constraint untuk booking confirmed; detail buffer diverifikasi bersama schema dan tes | Sebelum booking |
 | DEC-008 | Atomic checkout + idempotency | Accepted | Satu operasi terpercaya untuk order, items, payment | Sebelum POS |
-| DEC-009 | Representasi uang | Proposed | Menggantikan model generik multi-currency/discount lama: IDR, integer rupiah (`bigint`/string di TypeScript); tanpa diskon/pajak/pembulatan khusus | Sebelum schema POS |
+| DEC-009 | Representasi uang | Accepted | IDR, integer rupiah (`bigint`/string di TypeScript); tanpa diskon/pajak/pembulatan khusus | Sebelum schema POS |
 | DEC-010 | Database TypeScript types | Accepted | Generate dari schema/migrations, bukan ketik manual | Scaffold + schema changes |
-| DEC-011 | SEO publik | Proposed | Menggantikan keputusan lama yang mewajibkan prerender: metadata dasar pada MVP; prerender/SSR lanjutan deferred | Public pages |
-| DEC-012 | Hosting dan environment | Accepted* | Cloudflare Workers Static Assets + Supabase; domain final tetap terbuka | Deployment |
-| DEC-013 | Tooling testing | Proposed | Meninjau ulang rencana lama yang mewajibkan Playwright/axe: Vitest/RTL dan tes database wajib; E2E tooling tambahan tidak boleh menghambat core MVP | Testing setup |
-| DEC-014 | CMS content/rendering | Accepted* | Konten terstruktur dan rendering aman; tanpa HTML/script bebas | CMS |
+| DEC-011 | SEO publik | Accepted | Metadata dasar pada MVP; prerender/SSR lanjutan deferred | Public pages |
+| DEC-012 | Hosting dan environment | Accepted | Cloudflare Workers Static Assets + Supabase; domain final tetap terbuka | Deployment |
+| DEC-013 | Tooling testing | Accepted | Vitest/RTL dan tes database wajib; E2E tooling tambahan tidak boleh menghambat core MVP | Testing setup |
+| DEC-014 | CMS content/rendering | Accepted | Konten terstruktur dan rendering aman; tanpa HTML/script bebas | CMS |
 | DEC-015 | Runtime/package manager/CI | Accepted | npm, Node 24 LTS baseline, lockfile; CI mengikuti scripts nyata | Scaffold |
-| DEC-016 | Authentication | Proposed | Menggantikan model Owner/Staff lama: satu akun Owner, tanpa signup publik; Staff/role matrix dikeluarkan dari MVP | Sebelum auth |
-| DEC-017 | Booking spam/abuse | Proposed | Menggantikan rencana Turnstile wajib: proteksi sederhana; Turnstile tidak wajib kecuali disetujui atau diperlukan berdasarkan risiko | Sebelum booking publik |
+| DEC-016 | Authentication | Accepted | Satu akun Owner, tanpa signup publik; Staff/role matrix dikeluarkan dari MVP | Sebelum auth |
+| DEC-017 | Booking spam/abuse | Accepted | Proteksi sederhana (honeypot + request limiting); Turnstile tidak wajib | Sebelum booking publik |
 | DEC-018 | Client state | Accepted | Tanpa global state library tambahan; Context hanya bila diperlukan | Scaffold |
-| DEC-019 | Error handling/observability | Accepted* | Error state konsisten; tanpa error-tracking pihak ketiga pada MVP | Data UI |
-| DEC-020 | Template vs custom UI/UX | Proposed | Perubahan konten oleh Owner; custom layout oleh developer melalui kode | Sebelum CMS/design |
-| DEC-021 | Domain data/catalog | Proposed | Katalog bersama publik/POS; tabel minimum dan relasi dijelaskan di §8 | Sebelum migrations |
+| DEC-019 | Error handling/observability | Accepted | Error state konsisten; tanpa error-tracking pihak ketiga pada MVP | Data UI |
+| DEC-020 | Template vs custom UI/UX | Accepted | Perubahan konten oleh Owner; custom layout oleh developer melalui kode | Sebelum CMS/design |
+| DEC-021 | Domain data/catalog | Accepted | Katalog bersama publik/POS; tabel minimum dan relasi dijelaskan di §8 | Sebelum migrations |
 
-`*` Accepted mengikuti keputusan terdahulu yang tidak bertentangan secara prinsip; tetap cek kecocokan dengan dokumen dan versi aktual saat implementasi. Tanggal approval dari keputusan baru diisi setelah persetujuan pemilik proyek. Jangan menafsirkan keputusan `Proposed` sebagai izin implementasi.
+Semua DEC telah disetujui Owner tertanggal 2026-10-16. `*` Accepted* sebelumnya (DEC-002, 007, 012, 014, 019) dipromosikan ke `Accepted` setelah verifikasi V-01 konsistensi dengan baseline PRD 2026-10-15.
 
 ---
 
@@ -132,6 +132,35 @@ Dependency baru hanya boleh ditambahkan jika:
 4. Lockfile diperbarui dan tes/build yang relevan dijalankan.
 
 Jangan menambah Zustand, React Hook Form, page-builder library, payment SDK, error-tracking SaaS, atau library lain hanya karena generator UI menghasilkannya.
+
+### 5.2 Approved dependencies (Owner-approved 2026-10-16)
+
+Dependency berikut disetujui untuk baseline MVP. Dependency deferred atau conditional catat di kolom **Note**.
+
+| Area | Package | Note |
+|---|---|---|
+| Frontend core | Vite, React 19.x, TypeScript | — |
+| Styling | Tailwind CSS v4 | CSS-first config, design tokens dari `DESIGN.md` |
+| Routing | React Router v7 | Public + admin routes; lazy load admin bundle |
+| Server state | TanStack Query | Cache/invalidation per §7 |
+| Form | Valibot | Native HTML forms; no React Hook Form |
+| Backend client | @supabase/supabase-js | Single frontend client |
+| Auth | Supabase Auth | Owner-only; no signup |
+| Storage | Supabase Storage | Logo, hero, product images only |
+| Testing | Vitest, React Testing Library, @testing-library/user-event | Unit/integration; Playwright/axe deferred |
+| Database test | pgTAP / `supabase test db` | If available; concurrency tests required |
+| Build/lint/typecheck | TypeScript, ESLint, Prettier | Scripts in `package.json` |
+| Runtime | Node 24 LTS | `.nvmrc`, `engines` field |
+| CI | GitHub Actions | Only for scripts that run locally |
+| **Deferred / conditional** | | |
+| Animation | Lenis, GSAP | Separate task approval required |
+| Icons | lucide-react | Separate task approval required |
+| i18n library | (none) | No i18n library without separate approval |
+| CAPTCHA | Turnstile | Not required; only if risk assessment demands |
+| Error tracking | (none) | Deferred |
+| Page builder | (none) | Out of scope |
+| Payment SDK | (none) | Out of scope |
+| Global state | (none) | Out of scope |
 
 ---
 
@@ -203,7 +232,7 @@ Mengikuti `PRD.md`, SEO MVP dibatasi pada:
 - struktur heading dan konten yang dapat diakses;
 - halaman 404 yang jelas.
 
-**Prerender, SSR, dan otomasi build ulang ketika konten berubah bukan syarat MVP.** Vite SPA mengambil konten secara dinamis sehingga hasil indeksasi mesin pencari mungkin terbatas. Dokumentasikan trade-off ini dan jangan menjanjikan SEO teknis lanjutan kepada klien sebelum kebutuhan tersebut dikaji sebagai scope terpisah.
+**Prerender, SSR, dan multilingual SEO deferred** — bukan syarat MVP. Vite SPA mengambil konten secara dinamis sehingga hasil indeksasi mesin pencari mungkin terbatas. Dokumentasikan trade-off ini dan jangan menjanjikan SEO teknis lanjutan kepada klien sebelum kebutuhan tersebut dikaji sebagai scope terpisah.
 
 ### 7.3 Server state dengan TanStack Query
 
@@ -252,6 +281,7 @@ Jangan membuat semua tabel lebih awal hanya karena muncul di daftar konsep. Fina
 - Sanitasi teks kaya pada subset markup yang secara eksplisit diizinkan bila memang dibutuhkan. Hindari `dangerouslySetInnerHTML` dengan konten CMS tak tepercaya.
 - Media disimpan di Storage dengan batas tipe/ukuran dan kontrol upload; referensi media divalidasi sebelum ditampilkan.
 - Design/layout berasal dari komponen kode. CMS mengubah konten dan visibilitas section yang diizinkan, bukan script atau markup arbitrer.
+- **Owner dapat mengedit konten dalam dua bahasa (English + Indonesian) untuk field yang disediakan; tidak ada terjemahan otomatis.**
 - Kebutuhan SEO per halaman hanya metadata dasar pada MVP; konten SEO dinamis lanjutan tidak boleh membuat scope diam-diam berubah.
 
 ### 8.3 Katalog bersama
@@ -266,7 +296,7 @@ Jangan membuat semua tabel lebih awal hanya karena muncul di daftar konsep. Fina
 
 - Mata uang MVP: **IDR**; tidak ada pilihan multi-currency pada MVP.
 - Simpan nominal rupiah sebagai bilangan bulat dengan tipe database yang cukup (misalnya `bigint`); jangan gunakan floating-point.
-- Karena PostgreSQL `bigint` bisa melampaui rentang aman JavaScript `number`, tipe uang hasil generate/adapter harus diperlakukan sebagai string atau dikonversi dengan aturan yang aman. Jangan melakukan aritmetika uang final di frontend.
+- Karena PostgreSQL `bigint` bisa melampaui rentang aman JavaScript `number`, tipe uang hasil generate/adapter harus diperlakukan sebagai **string** di batas TypeScript/JSON; jangan melakukan aritmetika uang final di frontend.
 - Kuantitas POS memakai integer positif dengan batas yang disepakati. Harga/kuantitas divalidasi di database.
 - Simpan instant sebagai `timestamptz`. Zona waktu bisnis MVP adalah `Asia/Jakarta`; filter laporan menghormati batas hari pada zona waktu itu.
 - Nomor transaksi unik harus dijamin database. Format tampilan final dapat mengikuti PRD, tetapi keunikan tidak boleh hanya bergantung pada counter frontend.
@@ -347,12 +377,12 @@ Mengikuti `PRD.md`:
 
 ### 10.4 Jalur publik dan anti-abuse
 
-DEC-006/DEC-017 perlu mengunci implementasi tepat sebelum booking dibuat:
+DEC-006/DEC-017 (disetujui 2026-10-16) mengunci implementasi tepat sebelum booking dibuat:
 
 - Jalur publik hanya menerima field yang dibutuhkan dan tidak menyediakan `SELECT` publik atas data booking.
 - Usulan jalur: Supabase Edge Function sebagai entry point publik, dengan operasi database internal yang hanya dapat dipanggil oleh jalur tepercaya. RPC internal tidak diberi `EXECUTE` ke `anon` jika hal itu memungkinkan bypass proteksi.
 - Validasi aturan bisnis tetap dilakukan ulang pada lapisan database/internal; validasi Edge Function saja tidak cukup.
-- MVP memerlukan perlindungan spam sederhana yang bisa diverifikasi, misalnya honeypot plus pembatasan permintaan yang layak pada jalur publik bila tersedia. Cloudflare Turnstile boleh dipakai bila disetujui atau risiko pilot membutuhkannya, tetapi integrasi pihak ketiga tidak menjadi kewajiban diam-diam dari PRD.
+- MVP memerlukan perlindungan spam sederhana yang bisa diverifikasi: **honeypot plus pembatasan permintaan** yang layak pada jalur publik bila tersedia. Cloudflare Turnstile boleh dipakai bila disetujui atau risiko pilot membutuhkannya, tetapi integrasi pihak ketiga tidak menjadi kewajiban diam-diam dari PRD.
 - Jika Edge Function menggunakan secret berhak tinggi, validasi input wajib ketat karena service role melewati RLS. Secret hanya berada di server-side environment.
 - Respons publik tidak boleh memuat nama, kontak, waktu lengkap, atau detail booking pengguna lain.
 
@@ -498,7 +528,7 @@ Tambahkan public site key Turnstile hanya jika integrasinya disetujui. Site key 
 | Pending tidak memblokir slot | Beberapa request dapat memilih slot yang sama sebelum Owner meninjau | Dashboard pending; constraint mencegah dua konfirmasi yang berbenturan |
 | Tidak ada void/refund | Kesalahan transaksi tidak bisa dikoreksi melalui UI MVP | Tinjau keranjang sebelum checkout; tampilkan keterbatasan; jangan edit/hapus transaksi selesai |
 | Single Owner | Tidak ada operasional multipengguna | Sengaja dibatasi untuk menghemat waktu; Staff dapat menjadi fase lanjutan |
-| Form publik rentan spam | Potensi request palsu | Validasi tepercaya dan perlindungan sederhana; evaluasi CAPTCHA/rate limit jika penggunaan nyata memerlukannya |
+| Form publik rentan spam | Potensi request palsu | Validasi tepercaya dan **perlindungan sederhana (honeypot + request limiting)**; evaluasi CAPTCHA/rate limit jika penggunaan nyata memerlukannya |
 | Scope creep | Timeline satu bulan mudah terlewati | Fitur deferred tidak masuk tanpa keputusan dan trade-off tertulis |
 
 ---

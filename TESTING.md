@@ -69,7 +69,7 @@ Aturan umum:
 
 ### 3.2 Tidak termasuk pengujian fitur yang belum masuk MVP
 
-Jangan memperlakukan hal-hal berikut sebagai acceptance criteria MVP kecuali scope diubah secara eksplisit: akun Staff/permission matrix, page builder drag-and-drop, layout yang diedit Owner secara bebas, DP/pelunasan bertahap, payment gateway/webhook, refund/void, pengeditan transaksi selesai, diskon/kupon/pajak kompleks, stok/inventaris, POS offline, notifikasi otomatis, pembatalan/reschedule mandiri oleh pengunjung, multi-tenant SaaS, multi-bahasa, serta SEO dinamis SSR/prerender tingkat lanjut.
+Jangan memperlakukan hal-hal berikut sebagai acceptance criteria MVP kecuali scope diubah secara eksplisit: akun Staff/permission matrix, page builder drag-and-drop, layout yang diedit Owner secara bebas, DP/pelunasan bertahap, payment gateway/webhook, refund/void, pengeditan transaksi selesai, diskon/kupon/pajak kompleks, stok/inventaris, POS offline, notifikasi otomatis, pembatalan/reschedule mandiri oleh pengunjung, multi-tenant SaaS, **multi-bahasa (beyond bilingual UI selector), i18n library, SEO dinamis SSR/prerender tingkat lanjut, Turnstile, Lenis, GSAP, lucide-react**.
 
 ## 4. Strategi dan Lapisan Pengujian
 
@@ -79,7 +79,7 @@ Jangan memperlakukan hal-hal berikut sebagai acceptance criteria MVP kecuali sco
 | Component/UI | Menguji perilaku komponen yang terlihat pengguna, interaksi, label, dan state | Vitest + React Testing Library |
 | Integration frontend/API | Menguji interaksi antar-komponen, query/mutation, penanganan error, dan boundary data | Vitest serta test setup repository |
 | Database/security | Menguji constraints, function/RPC, transaction atomicity, RLS, grants, dan izin | Supabase test database; pgTAP bila sudah tersedia/terkonfigurasi |
-| End-to-end/smoke | Memeriksa alur lintas fitur secara manual atau menggunakan E2E tooling yang memang tersedia | Checklist alur; jangan mengasumsikan framework E2E sudah terpasang |
+| End-to-end/smoke | Memeriksa alur lintas fitur secara manual atau menggunakan E2E tooling yang memang tersedia | Checklist alur; **Playwright + axe (accessibility) deferred — manual a11y checks untuk MVP**; jangan mengasumsikan framework E2E sudah terpasang |
 | Release verification | Memeriksa type-check, lint, test, build, migrations, konfigurasi environment, dan dokumentasi | Script aktual dari repository serta checklist manual |
 
 Gunakan Vitest dan React Testing Library untuk unit/component test. Gunakan database test terisolasi untuk aturan yang harus ditegakkan oleh PostgreSQL/Supabase. Jika `supabase test db` atau pgTAP belum tersedia, tandai sebagai gap tooling dan sepakati cara verifikasi sebelum release; jangan menganggap tes database telah dilakukan hanya karena tes frontend lulus.
@@ -147,6 +147,9 @@ Untuk seluruh halaman publik, bandingkan implementasi dengan `DESIGN.md` dan acc
 | UI-016 | P0 | Keamanan render konten CMS | Simpan teks yang menyerupai HTML/script pada field uji yang mengizinkan teks biasa | Konten tampil sebagai teks aman; tidak ada script/HTML berbahaya yang dieksekusi |
 | UI-017 | P1 | Komponen dan design token | Periksa halaman publik terhadap token/komponen yang didefinisikan | Komponen konsisten; custom UI/UX dapat mengubah presentasi tanpa mengubah model data inti |
 | UI-018 | P1 | Format bahasa dan angka | Periksa tanggal, waktu, angka dan nominal pada UI | Bahasa utama Indonesia; tanggal/angka/nominal mengikuti format yang disepakati dan IDR |
+| UI-019 | P0 | Single dark theme | Periksa seluruh halaman publik dan dashboard | Hanya tema gelap yang ditampilkan; tidak ada toggle light/dark; tidak ada latar belakang putih dominan |
+| UI-020 | P0 | Language selector | Buka halaman publik, ubah bahasa melalui selector (English default → Indonesian) | UI berubah bahasa; selector terlihat dan berfungsi; CMS bilingual content management tidak diuji otomatis |
+| UI-021 | P0 | Contact page — external map link | Buka halaman Kontak | Peta ditampilkan sebagai tautan eksternal (maps.google.com atau serupa), bukan embed/iframe |
 
 **Kriteria lulus UI:** seluruh kasus P0 lulus pada halaman/flow yang tersedia; tidak ada blocker responsivitas atau aksesibilitas dasar. Catat ukuran layar, browser, halaman, bukti visual, dan defect yang ditemukan.
 
@@ -170,7 +173,7 @@ Tes akses harus dilakukan melalui jalur yang benar-benar diekspos aplikasi—ter
 | SEC-012 | P0 | Secret tidak terekspos | Periksa source, bundle frontend, konfigurasi, log, dan file contoh environment | Tidak ada service-role key, password database, atau server secret di frontend/repository/log; `.env.example` hanya berisi placeholder |
 | SEC-013 | P0 | Validasi server-side | Kirim nilai invalid langsung melewati UI untuk aturan kritis yang relevan | Database/server menolak input; validasi client tidak menjadi satu-satunya enforcement |
 | SEC-014 | P1 | Penanganan error permission | Jalankan operasi tanpa izin dari UI | UI menampilkan error yang sesuai dan tidak mengklaim operasi berhasil |
-| SEC-015 | P1 | Proteksi spam booking | Jalankan skenario sederhana sesuai mekanisme yang benar-benar diterapkan, mis. honeypot/rate limit bila tersedia | Mekanisme yang diterapkan bekerja; tidak membuat klaim perlindungan yang belum diimplementasikan |
+| SEC-015 | P1 | Proteksi spam booking (honeypot + rate limit) | Jalankan skenario: kirim booking dengan field honeypot terisi; kirim booking berulang dalam periode singkat | Honeypot menolak submit yang terisi; rate limit membatasi request per periode yang ditetapkan; mekanisme yang diterapkan bekerja |
 
 **Catatan:** review `SECURITY.md`, grants, policy, dan definisi function/RPC aktual wajib dilakukan. RLS saja bukan pengganti pemeriksaan privilege dan izin `EXECUTE` function.
 
@@ -220,8 +223,9 @@ Untuk batas buffer, hasil tes harus mengikuti definisi yang benar-benar dipakai 
 | BOOK-022 | P0 | Pengunjung mencoba mengubah/membatalkan booking orang lain | Operasi ditolak; data tidak berubah |
 | BOOK-023 | P0 | Owner melihat dan memfilter booking | Daftar/detail serta filter tanggal/status/resource cocok dengan fixture dan hanya tersedia untuk Owner |
 | BOOK-024 | P0 | Owner menolak atau membatalkan booking | Status berubah sesuai state transition yang diizinkan; booking tidak diperlakukan sebagai confirmed aktif |
-| BOOK-025 | P1 | Waktu melewati pergantian hari/bulan di `Asia/Jakarta` | Validasi dan daftar tanggal menggunakan zona waktu bisnis secara konsisten |
-| BOOK-026 | P1 | Network error saat submit | UI tidak menyatakan booking berhasil tanpa konfirmasi; retry tidak membuat duplikasi yang tidak diinginkan jika mekanisme deduplikasi tersedia |
+| BOOK-025 | P0 | Owner menolak booking dengan alasan opsional | Field `rejection_reason` dapat diisi atau dikosongkan; status berubah ke ditolak; alasan tersimpan jika diisi |
+| BOOK-026 | P1 | Waktu melewati pergantian hari/bulan di `Asia/Jakarta` | Validasi dan daftar tanggal menggunakan zona waktu bisnis secara konsisten |
+| BOOK-027 | P1 | Network error saat submit | UI tidak menyatakan booking berhasil tanpa konfirmasi; retry tidak membuat duplikasi yang tidak diinginkan jika mekanisme deduplikasi tersedia |
 
 ### 8.3 Cara menjalankan test concurrency
 
